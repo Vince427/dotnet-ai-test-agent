@@ -4,27 +4,27 @@ AI-powered UI testing for WinForms, WPF, and .NET desktop apps with FlaUI.
 
 ## Vision
 
-Ce projet vise à construire un MVP de test desktop piloté par agent IA.
-L'idée est de démontrer une boucle simple:
+This project aims to build a desktop testing MVP powered by an AI agent.
+The goal is to demonstrate a simple loop:
 
-1. lancer une app desktop .NET,
-2. observer l'UI,
-3. décider d'une action,
-4. exécuter l'action,
-5. vérifier le résultat.
+1. launch a .NET desktop app,
+2. observe the UI,
+3. decide the next action,
+4. execute the action,
+5. verify the result.
 
-## Positionnement
+## Positioning
 
 - desktop-first,
 - local-first,
-- démonstration simple,
-- architecture prête pour évoluer vers une approche plus agentique.
+- simple demo-first approach,
+- architecture ready to evolve into a more agentic system.
 
-## V1
+## V1 goal
 
-La V1 doit prouver un scénario de login sur une app WinForms sample.
+V1 should prove a login scenario on a sample WinForms application.
 
-## Docs clés
+## Key documents
 
 - `docs/spec.md`
 - `docs/architecture.md`
@@ -33,10 +33,10 @@ La V1 doit prouver un scénario de login sur une app WinForms sample.
 - `WORKFLOW.md`
 - `prompts/master-agent.md`
 
-## Licence
+## License
 
 MIT.
 
-## Démarrage
+## Getting started
 
-Voir `scripts/run-demo.ps1`.
+See `scripts/run-demo.ps1`.

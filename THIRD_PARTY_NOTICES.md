@@ -24,4 +24,4 @@
 
 ## Note
 
-Vérifier à nouveau les licences exactes des packages NuGet choisis au moment de l'intégration réelle.
+Recheck the exact licenses of the final NuGet packages you choose when you integrate them for real.

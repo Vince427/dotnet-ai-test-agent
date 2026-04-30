@@ -29,3 +29,5 @@ coverage/
 secrets.json
 .DS_Store
 Thumbs.db
+AppPackages/
+WORKFLOW.local.md

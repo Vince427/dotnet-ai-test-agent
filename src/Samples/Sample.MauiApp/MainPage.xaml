@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Sample.MauiApp.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30,50" Spacing="25" VerticalOptions="Start" HorizontalOptions="Center" WidthRequest="400">
+            <Label Text="Welcome to the MAUI AI Agent Target" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center" />
+
+            <Label Text="Username:" />
+            <Entry x:Name="txtUsername" AutomationId="txtUsername" Placeholder="Enter username" />
+
+            <Label Text="Password:" />
+            <Entry x:Name="txtPassword" AutomationId="txtPassword" IsPassword="True" Placeholder="Enter password" />
+
+            <Button x:Name="btnLogin" AutomationId="btnLogin" Text="Login" Clicked="OnLoginClicked" HorizontalOptions="Start" WidthRequest="100" />
+
+            <Label x:Name="lblStatus" AutomationId="lblStatus" Text="Ready" TextColor="Gray" HorizontalOptions="End" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

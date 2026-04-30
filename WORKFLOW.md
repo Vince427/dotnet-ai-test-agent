@@ -8,10 +8,10 @@ agent:
   max_retry_backoff_ms: 10000
 
 scoring:
-  abort_threshold: -20
+  abort_threshold: -100
 
 polling:
-  interval_ms: 500
+  interval_ms: 2000
 
 workspace:
   root: ./runs

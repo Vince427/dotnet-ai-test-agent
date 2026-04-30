@@ -42,7 +42,10 @@ public class WorkflowConfig
     /// </summary>
     public static WorkflowConfig Load(string? workflowPath = null)
     {
+        LoadDotEnv();
         workflowPath ??= FindWorkflowFile();
+        var cwd = Directory.GetCurrentDirectory();
+        Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_cwd=\"{cwd}\" config_path=\"{workflowPath}\"");
         if (workflowPath == null || !File.Exists(workflowPath))
         {
             Console.WriteLine("[WorkflowConfig] No WORKFLOW.md found, using defaults.");
@@ -69,24 +72,13 @@ public class WorkflowConfig
         }
 
         // Resolve $VAR environment variables
-        config.LlmEndpoint = ResolveEnvVar(config.LlmEndpoint) ??
-                             Environment.GetEnvironmentVariable("LLM_ENDPOINT") ?? "http://localhost:4000";
-        config.LlmApiKey = ResolveEnvVar(config.LlmApiKey) ??
-                           Environment.GetEnvironmentVariable("LLM_API_KEY") ?? "dummy-key";
-        config.LlmModel = ResolveEnvVar(config.LlmModel) ??
-                          Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gpt-4o-mini";
+        var envEndpoint = Environment.GetEnvironmentVariable("LLM_ENDPOINT");
+        var envApiKey = Environment.GetEnvironmentVariable("LLM_API_KEY");
+        var envModel = Environment.GetEnvironmentVariable("LLM_MODEL");
 
-        // Ensure default goal exists
-        if (!config.Goals.ContainsKey("default"))
-        {
-            config.Goals["default"] = new AgentGoal
-            {
-                Description = "Log in to the application using username 'admin' and password 'password123'.",
-                SuccessCondition = "Login successful",
-                MaxSteps = 30,
-                Identifier = "login"
-            };
-        }
+        config.LlmEndpoint = ResolveEnvVar(config.LlmEndpoint) ?? envEndpoint;
+        config.LlmApiKey = ResolveEnvVar(config.LlmApiKey) ?? envApiKey;
+        config.LlmModel = ResolveEnvVar(config.LlmModel) ?? envModel;
 
         return config;
     }
@@ -96,10 +88,10 @@ public class WorkflowConfig
     /// </summary>
     public AgentGoal GetGoal(string? name = null)
     {
-        if (!string.IsNullOrEmpty(name) && Goals.ContainsKey(name))
-            return Goals[name];
-        if (Goals.ContainsKey("default"))
-            return Goals["default"];
+        if (!string.IsNullOrEmpty(name) && Goals.TryGetValue(name, out var namedGoal))
+            return namedGoal;
+        if (Goals.TryGetValue("default", out var defaultGoal))
+            return defaultGoal;
         return new AgentGoal();
     }
 
@@ -136,6 +128,37 @@ public class WorkflowConfig
             dir = parent.FullName;
         }
         return null;
+    }
+
+    private static void LoadDotEnv()
+    {
+        var startDirs = new[] { Directory.GetCurrentDirectory(), AppDomain.CurrentDomain.BaseDirectory };
+        foreach (var startDir in startDirs)
+        {
+            var dir = startDir;
+            for (int i = 0; i < 5; i++)
+            {
+                var path = Path.Combine(dir, ".env");
+                if (File.Exists(path))
+                {
+                    Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_dotenv_found=\"{path}\"");
+                    foreach (var line in File.ReadAllLines(path))
+                    {
+                        if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
+                        var parts = line.Split(['='], 2);
+                        if (parts.Length != 2) continue;
+                        var key = parts[0].Trim();
+                        var val = parts[1].Trim();
+                        Environment.SetEnvironmentVariable(key, val);
+                        Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_env_set=\"{key}\"");
+                    }
+                    return;
+                }
+                var parent = Directory.GetParent(dir);
+                if (parent == null) break;
+                dir = parent.FullName;
+            }
+        }
     }
 
     private static string? ResolveEnvVar(string? value)

@@ -132,8 +132,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     {
         EnsureWindow();
         var el = FindElement(automationId);
-        var box = el?.AsTextBox();
-        if (box is null) throw new InvalidOperationException("TextBox not found: " + automationId);
+        var box = el?.AsTextBox() ?? throw new InvalidOperationException("TextBox not found: " + automationId);
         box.Focus();
         box.Text = value;
     }
@@ -141,8 +140,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     public void Click(string automationId)
     {
         EnsureWindow();
-        var el = FindElement(automationId);
-        if (el is null) throw new InvalidOperationException("Element not found: " + automationId);
+        var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
         el.Focus();
 
         // Try Button.Invoke first, then fall back to mouse click
@@ -159,8 +157,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     public void DoubleClick(string automationId)
     {
         EnsureWindow();
-        var el = FindElement(automationId);
-        if (el is null) throw new InvalidOperationException("Element not found: " + automationId);
+        var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
         el.Focus();
         Mouse.DoubleClick(el.GetClickablePoint());
     }
@@ -168,8 +165,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     public void Scroll(string automationId, string direction)
     {
         EnsureWindow();
-        var el = FindElement(automationId);
-        if (el is null) throw new InvalidOperationException("Element not found: " + automationId);
+        var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
         el.Focus();
         var amount = string.Equals(direction, "up", StringComparison.OrdinalIgnoreCase) ? 3 : -3;
         Mouse.Scroll(amount);
@@ -178,8 +174,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     public string ReadText(string automationId)
     {
         EnsureWindow();
-        var el = FindElement(automationId);
-        if (el is null) throw new InvalidOperationException("Element not found: " + automationId);
+        var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
 
         // Try label first, then textbox
         try { return el.AsLabel().Text; } catch { }
@@ -218,9 +213,6 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
 
     public void Dispose()
     {
-        if (_automation != null)
-        {
-            _automation.Dispose();
-        }
+        _automation?.Dispose();
     }
 }

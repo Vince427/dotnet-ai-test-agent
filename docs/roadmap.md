@@ -12,12 +12,13 @@
 - multi-strategy element resolution
 - extended action types
 
-## V2 — Vision + OCR
+## V2 — Vision-First & Multi-Modal Perception
 
-- screenshot + OCR (Tesseract) perception layer
-- vision LLM integration (GPT-4o / Pixtral)
-- perception fusion (UIA + OCR + vision)
-- richer memory with embeddings
+- vision LLM integration (Claude 4.7 Opus / Gemini 3.1 Pro / GPT-5.5)
+- vision-first perception (replacing local OCR): VLM reads the screen to compensate for poor WinForms DOM semantics
+- bounding box overlay generation for precision clicking
+- perception fusion (UIA semantics + Visual semantics)
+- *All local dependencies MUST strictly remain under MIT license.*
 
 ## V3 — Intelligent Agent
 

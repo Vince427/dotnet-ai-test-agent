@@ -2,28 +2,46 @@
 
 ## Mission
 
-Construire un MVP local, simple et démontrable d'agent IA de test desktop pour .NET.
+Build a local, simple, demo-first MVP of an AI desktop testing agent for .NET.
 
-## Priorité absolue
+## Absolute priorities
 
-Toujours privilégier:
+Always prefer:
 
-1. le runnable,
-2. la clarté,
-3. la démo,
-4. la simplicité,
-5. l'évolutivité légère.
+1. runnable code,
+2. clarity,
+3. demo value,
+4. simplicity,
+5. lightweight evolvability.
 
-## Interdictions V1
+## V1 exclusions
 
-Ne pas ajouter sans justification explicite:
+Do not add any of the following without an explicit reason:
 
 - microservices,
 - Kubernetes,
 - Temporal,
 - Azure,
-- auth complexe,
-- base de données complexe,
-- architecture multi-agent distribuée,
-- dashboard enterprise,
-- infra cloud avancée.
+- complex auth,
+- complex databases,
+- distributed multi-agent architecture,
+- enterprise dashboards,
+- advanced cloud infrastructure.
+
+## Work loop
+
+1. Read `docs/spec.md`.
+2. Read `docs/architecture.md`.
+3. Check `docs/repo-structure.md`.
+4. Implement the smallest runnable increment.
+5. Run the verification scripts.
+6. Fix issues before adding another layer.
+
+## Definition of done
+
+A task is done only if:
+
+- the code builds,
+- the demo run works,
+- the files stay aligned with the spec,
+- no refactor introduces unnecessary complexity.

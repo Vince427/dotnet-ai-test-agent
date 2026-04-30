@@ -18,11 +18,12 @@ public class LlmService
 {
     private readonly AIAgent _agent;
 
-    public LlmService()
+    public LlmService(WorkflowConfig config)
     {
-        var proxyEndpointUrl = Environment.GetEnvironmentVariable("LLM_ENDPOINT") ?? "http://localhost:4000";
-        var apiKey = Environment.GetEnvironmentVariable("LLM_API_KEY") ?? "dummy-key";
-        var modelName = Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gpt-4o-mini";
+        // Enforce configuration: fail fast if keys are missing
+        var proxyEndpointUrl = config.LlmEndpoint ?? throw new InvalidOperationException("LLM_ENDPOINT is not configured. Check your WORKFLOW.md or .env file.");
+        var apiKey = config.LlmApiKey ?? throw new InvalidOperationException("LLM_API_KEY is not configured. Check your WORKFLOW.md or .env file.");
+        var modelName = config.LlmModel ?? "gpt-4o-mini"; 
 
         var proxyEndpoint = new Uri(proxyEndpointUrl);
         var openAiClientOptions = new OpenAIClientOptions { Endpoint = proxyEndpoint };

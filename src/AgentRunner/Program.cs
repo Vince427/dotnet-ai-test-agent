@@ -47,12 +47,16 @@ internal static class Program
         };
 
         // --- Initialize components ---
+        // --- Load Config ---
+        var config = WorkflowConfig.Load();
+
+        // --- Initialize components ---
         var logger = new StructuredLogger(goal.Identifier, null);
         var memory = new AgentMemory();
         var loopDetector = new LoopDetector();
-        var scoring = new ScoringEngine();
+        var scoring = new ScoringEngine { AbortThreshold = config.AbortThreshold };
         var artifactWriter = new ArtifactWriter();
-        var llmService = new LlmService();
+        var llmService = new LlmService(config);
 
         var runArtifact = new RunArtifact
         {
@@ -138,6 +142,7 @@ internal static class Program
                 {
                     logger.Error("LLM call failed", ex);
                     scoring.ScoreAction("Wait", false, false);
+                    await Task.Delay(config.PollIntervalMs); // Wait before retrying to avoid spamming 429
                     continue;
                 }
 

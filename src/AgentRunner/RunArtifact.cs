@@ -1,0 +1,40 @@
+using System;
+using System.Collections.Generic;
+
+namespace DesktopAiTestAgent.AgentRunner;
+
+/// <summary>
+/// Represents a complete agent run, capturing all steps and outcomes.
+/// Inspired by Symphony's Run Attempt entity.
+/// </summary>
+public class RunArtifact
+{
+    public string RunId { get; set; } = Guid.NewGuid().ToString("N")[..8];
+    public string? GoalDescription { get; set; }
+    public string? GoalIdentifier { get; set; }
+    public string? TargetWindow { get; set; }
+    public DateTime StartedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? EndedAt { get; set; }
+    public string Result { get; set; } = "Running"; // Running, Succeeded, Failed, Aborted, LoopDetected
+    public int FinalScore { get; set; }
+    public string? ErrorMessage { get; set; }
+    public List<RunStep> Steps { get; set; } = [];
+}
+
+/// <summary>
+/// One step within an agent run.
+/// </summary>
+public class RunStep
+{
+    public int StepNumber { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public string? UiStateSnapshot { get; set; }
+    public string? ActionType { get; set; }
+    public string? ActionTarget { get; set; }
+    public string? ActionValue { get; set; }
+    public string? Reasoning { get; set; }
+    public string? Outcome { get; set; } // Succeeded, Failed, LoopDetected
+    public int ScoreDelta { get; set; }
+    public int CumulativeScore { get; set; }
+    public string? ScreenshotPath { get; set; }
+}

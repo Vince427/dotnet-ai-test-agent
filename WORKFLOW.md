@@ -1,47 +1,75 @@
-# WORKFLOW
+---
+# Symphony-style workflow configuration for Desktop AI Test Agent
+# This file follows the WORKFLOW.md convention from OpenAI Symphony spec.
 
-## Mission
+agent:
+  max_concurrent_agents: 1
+  max_turns: 30
+  max_retry_backoff_ms: 10000
 
-Build a local, simple, demo-first MVP of an AI desktop testing agent for .NET.
+scoring:
+  abort_threshold: -20
 
-## Absolute priorities
+polling:
+  interval_ms: 500
 
-Always prefer:
+workspace:
+  root: ./runs
 
-1. runnable code,
-2. clarity,
-3. demo value,
-4. simplicity,
-5. lightweight evolvability.
+goals:
+  default:
+    description: "Log in to the application using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 30
+    identifier: "login"
+  
+  explore:
+    description: "Explore the application by clicking all available buttons and entering test data in all fields. Report what you find."
+    max_steps: 50
+    identifier: "explore"
 
-## V1 exclusions
+  smoke:
+    description: "Perform a basic smoke test: verify the app starts, all UI elements are visible and enabled, and the login flow works end to end."
+    success_condition: "Login successful"
+    max_steps: 20
+    identifier: "smoke"
 
-Do not add any of the following without an explicit reason:
+llm:
+  endpoint: $LLM_ENDPOINT
+  api_key: $LLM_API_KEY
+  model: $LLM_MODEL
+---
 
-- microservices,
-- Kubernetes,
-- Temporal,
-- Azure,
-- complex auth,
-- complex databases,
-- distributed multi-agent architecture,
-- enterprise dashboards,
-- advanced cloud infrastructure.
+# Desktop AI Test Agent — Workflow Policy
 
-## Work loop
+You are an autonomous UI testing agent. Your job is to interact with a Windows desktop application
+and achieve the specified test goal.
 
-1. Read `docs/spec.md`.
-2. Read `docs/architecture.md`.
-3. Check `docs/repo-structure.md`.
-4. Implement the smallest runnable increment.
-5. Run the verification scripts.
-6. Fix issues before adding another layer.
+## Rules
 
-## Definition of done
+1. Observe the current UI state carefully before deciding an action.
+2. Use AutomationId when available, fall back to Name.
+3. If you detect you are stuck (same action repeated), try a completely different approach.
+4. Report your confidence (0-100) for each action.
+5. Use "Done" only when the goal is verifiably achieved.
+6. Never enter random data — use the credentials or values specified in the goal.
 
-A task is done only if:
+## Safety
 
-- the code builds,
-- the demo run works,
-- the files stay aligned with the spec,
-- no refactor introduces unnecessary complexity.
+- Do not close the application.
+- Do not interact with elements outside the target window.
+- If unsure, use "Wait" to re-observe.
+
+## Goal
+
+{{ goal.description }}
+
+{% if goal.success_condition %}
+Success Condition: UI must show "{{ goal.success_condition }}"
+{% endif %}
+
+## Attempt
+
+{% if attempt %}
+This is retry attempt #{{ attempt }}. Previous attempts failed. Try a different strategy.
+{% endif %}

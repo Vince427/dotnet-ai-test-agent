@@ -3,40 +3,55 @@
 ```text
 src/
   AgentRunner/
+    Program.cs          — Symphony-inspired orchestrator loop
+    LlmService.cs       — LLM integration (Microsoft.Agents.AI)
+    AgentMemory.cs      — history + facts + visited screens
+    LoopDetector.cs     — anti-loop sliding window
+    ScoringEngine.cs    — reward/penalty scoring
+    StructuredLogger.cs — key=value structured logging
+    RunArtifact.cs      — run report model
+    ArtifactWriter.cs   — writes JSON + screenshots + markdown
+    WorkflowConfig.cs   — typed config from WORKFLOW.md
   Core/
+    AgentAction.cs      — action model
+    AgentGoal.cs        — goal model
+    IAutomationDriver.cs — driver interface
+    UiElement.cs        — UI element model
+    UiSnapshot.cs       — UI state snapshot
   UIAutomation/
+    FlaUiDesktopDriver.cs — FlaUI implementation
   Samples/
-    Sample.WinFormsApp/
+    Sample.WinFormsApp.Net8/
+    Sample.WinFormsApp.Net48/
 
 docs/
   spec.md
   architecture.md
   repo-structure.md
   roadmap.md
-  github-web-upload.md
-  repo-metadata.md
 
 prompts/
   master-agent.md
   fix-build.md
 
 scripts/
-  run-demo.ps1
+  run-net8.ps1
+  run-net48.ps1
   check.ps1
+  run-demo.ps1
 
+WORKFLOW.md    — Symphony-style policy + config
 README.md
-WORKFLOW.md
-.gitignore
 LICENSE
-THIRD_PARTY_NOTICES.md
 ```
 
 ## Folder roles
 
 - `src/Core`: models, interfaces, and lightweight abstractions.
-- `src/UIAutomation`: FlaUI integration layer.
-- `src/AgentRunner`: observe → decide → act loop.
-- `src/Samples/Sample.WinFormsApp`: demo target application.
+- `src/UIAutomation`: FlaUI integration layer with generic tree walking.
+- `src/AgentRunner`: Symphony-inspired orchestrator (observe → decide → act → score → record).
+- `src/Samples`: demo target applications.
 - `docs/`: project source-of-truth documents.
 - `prompts/`: reusable prompts for AI dev agents.
 - `scripts/`: local demo and verification scripts.
+- `runs/`: generated per-run artifact directories (gitignored).

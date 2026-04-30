@@ -1,4 +1,3 @@
-## Visual Studio / .NET
 .vs/
 [Bb]in/
 [Oo]bj/
@@ -15,28 +14,18 @@ TestResults/
 *.suo
 *.userosscache
 *.sln.docstates
-
-## Rider / VS Code
 .idea/
 .vscode/
-
-## NuGet
 *.nupkg
 *.snupkg
 packages/
 !packages/build/
-
-## Logs / local outputs
 *.log
 runs/
 screenshots/
 coverage/
-
-## Env / secrets
 .env
 .env.*
 secrets.json
-
-## OS
 .DS_Store
 Thumbs.db

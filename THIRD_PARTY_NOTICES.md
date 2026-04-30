@@ -1,0 +1,27 @@
+# Third Party Notices
+
+## Planned dependencies
+
+### FlaUI
+- Project: https://github.com/FlaUI/FlaUI
+- Purpose: Windows UI automation for .NET
+- License: MIT
+
+### Microsoft Agent Framework (future)
+- Project: https://github.com/microsoft/agent-framework
+- Purpose: agent orchestration and reasoning abstractions
+- License: MIT
+
+### Temporal (future)
+- Project: https://github.com/temporalio/temporal
+- Purpose: durable workflow orchestration
+- License: MIT
+
+### OpenTelemetry .NET (future)
+- Project: https://github.com/open-telemetry/opentelemetry-dotnet
+- Purpose: logging, traces, observability
+- License: Apache-2.0
+
+## Note
+
+Vérifier à nouveau les licences exactes des packages NuGet choisis au moment de l'intégration réelle.

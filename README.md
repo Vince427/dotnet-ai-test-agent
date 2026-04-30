@@ -1,42 +1,60 @@
 # Desktop AI Test Agent
 
-AI-powered UI testing for WinForms, WPF, and .NET desktop apps with FlaUI.
+AI-powered UI testing for WinForms and .NET desktop apps with FlaUI.
 
-## Vision
+## V1.2 Dual Target
 
-This project aims to build a desktop testing MVP powered by an AI agent.
-The goal is to demonstrate a simple loop:
+This version is designed to work with both:
 
-1. launch a .NET desktop app,
-2. observe the UI,
-3. decide the next action,
-4. execute the action,
-5. verify the result.
+- legacy WinForms on .NET Framework 4.8
+- modern WinForms on .NET 8
 
-## Positioning
+## What is included
 
-- desktop-first,
-- local-first,
-- simple demo-first approach,
-- architecture ready to evolve into a more agentic system.
+- shared Core library
+- shared UIAutomation library using FlaUI
+- shared AgentRunner
+- sample WinForms app for .NET Framework 4.8
+- sample WinForms app for .NET 8
+- PowerShell scripts to run either sample
 
-## V1 goal
+## Default credentials
 
-V1 should prove a login scenario on a sample WinForms application.
+- Username: `admin`
+- Password: `password123`
 
-## Key documents
+## Requirements
 
-- `docs/spec.md`
-- `docs/architecture.md`
-- `docs/repo-structure.md`
-- `docs/roadmap.md`
-- `WORKFLOW.md`
-- `prompts/master-agent.md`
+### For .NET 8 sample
 
-## License
+- .NET 8 SDK installed
 
-MIT.
+### For .NET Framework 4.8 sample
 
-## Getting started
+- Visual Studio Build Tools or Visual Studio with .NET Framework 4.8 targeting pack
 
-See `scripts/run-demo.ps1`.
+## Run .NET 8 sample
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-net8.ps1
+```
+
+## Run .NET Framework 4.8 sample
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-net48.ps1
+```
+
+## Manual usage
+
+Start one sample app first, then run the agent:
+
+```powershell
+dotnet run --project .\src\AgentRunner\AgentRunner.csproj -- "Sample Login App (.NET 8)"
+```
+
+or:
+
+```powershell
+dotnet run --project .\src\AgentRunner\AgentRunner.csproj -- "Sample Login App (.NET Framework 4.8)"
+```

@@ -1,7 +1,7 @@
-Write-Host "Checking repository..."
-Write-Host "- dotnet build"
-Write-Host "- optional tests"
-Write-Host "- basic script validation"
+$ErrorActionPreference = 'Stop'
 
-# Placeholder V1
-# Replace later with real dotnet commands.
+dotnet restore .\DesktopAiTestAgent.sln
+dotnet build .\src\AgentRunner\AgentRunner.csproj -f net48
+dotnet build .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows
+dotnet build .\src\Samples\Sample.WinFormsApp.Net48\Sample.WinFormsApp.Net48.csproj
+dotnet build .\src\Samples\Sample.WinFormsApp.Net8\Sample.WinFormsApp.Net8.csproj

@@ -34,7 +34,7 @@ public sealed class LoginForm : Form
         Controls.Add(_statusLabel);
     }
 
-    private void OnLoginClicked(object sender, EventArgs e)
+    private void OnLoginClicked(object? sender, EventArgs e)
     {
         if (_usernameTextBox.Text == "admin" && _passwordTextBox.Text == "password123")
         {

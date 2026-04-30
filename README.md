@@ -1,22 +1,47 @@
 # Desktop AI Test Agent
 
-AI-powered UI testing for WinForms and .NET desktop apps with FlaUI.
+AI-powered UI testing for WinForms and .NET desktop apps with FlaUI + OpenAI Symphony architecture.
 
-## V1.2 Dual Target
+## V1.3 — Generic Robo Agent (Symphony Foundation)
 
-This version is designed to work with both:
+This version transforms the agent from a hardcoded login-only tester into a **generic UI automation agent** capable of testing any WinForms application, inspired by [OpenAI's Symphony](https://github.com/openai/symphony) orchestration spec.
 
+### What's new in V1.3
+
+- **Generic UI tree discovery** — walks all UI elements, not just hardcoded IDs
+- **Dynamic goals** — configurable test objectives via CLI or WORKFLOW.md
+- **Symphony-style WORKFLOW.md** — YAML front matter config + prompt template
+- **Loop detection** — sliding window pattern analysis prevents infinite loops
+- **Scoring engine** — cumulative reward/penalty per action with abort threshold
+- **Structured logging** — Symphony-compatible key=value logs with context
+- **Run artifacts** — JSON report + screenshots + Markdown summary per run
+- **Multi-strategy element resolution** — AutomationId → Name fallback
+- **Extended actions** — Click, DoubleClick, EnterText, Scroll, Wait, Done, Explore
+
+### Architecture (Symphony-inspired)
+
+```
+WORKFLOW.md (policy + config)
+        ↓
+   Orchestrator (observe → decide → act → score → record)
+        ↓
+┌───────────────────────────────┐
+│         Agent Loop            │
+│  LoopDetector + ScoringEngine │
+│  + AgentMemory + StructuredLog│
+└───────┬───────────────────────┘
+        ↓               ↓
+   LlmService      FlaUiDesktopDriver
+   (LLM brain)     (UI automation arm)
+        ↓               ↓
+   OpenAI/Proxy    FlaUI + UI Automation
+```
+
+## Dual Target Support
+
+Works with both:
 - legacy WinForms on .NET Framework 4.8
 - modern WinForms on .NET 8
-
-## What is included
-
-- shared Core library
-- shared UIAutomation library using FlaUI
-- shared AgentRunner
-- sample WinForms app for .NET Framework 4.8
-- sample WinForms app for .NET 8
-- PowerShell scripts to run either sample
 
 ## Default credentials
 
@@ -25,36 +50,58 @@ This version is designed to work with both:
 
 ## Requirements
 
-### For .NET 8 sample
-
 - .NET 8 SDK installed
+- An LLM endpoint (local proxy at `http://localhost:4000` by default, or set `LLM_ENDPOINT`)
 
-### For .NET Framework 4.8 sample
+## Quick Start
 
-- Visual Studio Build Tools or Visual Studio with .NET Framework 4.8 targeting pack
-
-## Run .NET 8 sample
+### Run with default goal (login)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\run-net8.ps1
 ```
 
-## Run .NET Framework 4.8 sample
+### Run with custom goal
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run-net48.ps1
+# Start the sample app first
+dotnet run --project .\src\Samples\Sample.WinFormsApp.Net8
+
+# In another terminal, run the agent with a custom goal
+dotnet run --project .\src\AgentRunner -f net8.0-windows -- `
+    --window "Sample Login App (.NET 8)" `
+    --goal "Explore all UI elements and test the login flow" `
+    --success "Login successful" `
+    --goal-id "explore-login" `
+    --max-steps 20
 ```
 
-## Manual usage
+### CLI Arguments
 
-Start one sample app first, then run the agent:
+| Argument | Default | Description |
+|---|---|---|
+| `--window` | `Sample Login App (.NET 8)` | Target window title |
+| `--goal` | Login with admin/password123 | Goal description for the agent |
+| `--success` | `Login successful` | Text to match in UI for success |
+| `--goal-id` | `login` | Short identifier for logs/artifacts |
+| `--max-steps` | `30` | Maximum agent steps |
 
-```powershell
-dotnet run --project .\src\AgentRunner\AgentRunner.csproj -- "Sample Login App (.NET 8)"
-```
+## Run Artifacts
 
-or:
+Each agent run produces a directory under `runs/<run-id>/`:
+- `report.json` — full structured report with all steps
+- `summary.md` — human-readable Markdown summary
+- `screenshots/` — PNG screenshot at each step
 
-```powershell
-dotnet run --project .\src\AgentRunner\AgentRunner.csproj -- "Sample Login App (.NET Framework 4.8)"
-```
+## WORKFLOW.md
+
+The `WORKFLOW.md` file at the project root defines:
+- Agent settings (concurrency, max turns, retry backoff)
+- Scoring thresholds
+- Predefined goals (default, explore, smoke)
+- LLM configuration (with `$ENV_VAR` support)
+- Prompt template for the agent
+
+## Roadmap
+
+See `docs/roadmap.md` for the full plan from V1 through V8.

@@ -31,7 +31,9 @@ public class ScoringEngine
             delta += 2;
         else if (string.Equals(actionType, "Wait", StringComparison.OrdinalIgnoreCase))
             delta += 0; // neutral
-        else if (string.Equals(actionType, "Done", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(actionType, "Assert", StringComparison.OrdinalIgnoreCase) && succeeded)
+            delta += 3; // strong reward for correct assertion
+        else if (string.Equals(actionType, "Done", StringComparison.OrdinalIgnoreCase) && succeeded)
             delta += 5; // goal achieved
         else if (string.Equals(actionType, "Explore", StringComparison.OrdinalIgnoreCase) && succeeded)
             delta += 1;
@@ -46,9 +48,20 @@ public class ScoringEngine
         if (isLoop)
             delta -= 10;
 
+        var outcomeText = outcome ?? "";
+
+        if (outcomeText.IndexOf("guard_force_reject", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            delta -= 20;
+        }
+
+        if (outcomeText.IndexOf("guard_abort", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            delta -= 50;
+        }
+
         // Outcome bonus
-        if (!string.IsNullOrEmpty(outcome) &&
-            outcome!.IndexOf("success", StringComparison.OrdinalIgnoreCase) >= 0)
+        if (outcomeText.IndexOf("success", StringComparison.OrdinalIgnoreCase) >= 0)
         {
             delta += 10;
             SuccessCount++;

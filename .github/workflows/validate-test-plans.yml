@@ -1,0 +1,46 @@
+name: Validate desktop test plans
+
+on:
+  pull_request:
+    paths:
+      - 'tests/**'
+      - 'schemas/**'
+      - 'src/AgentRunner/**'
+      - 'src/AgentRunner.Tests/**'
+      - 'scripts/validate-test-plans.ps1'
+      - '.github/workflows/validate-test-plans.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'tests/**'
+      - 'schemas/**'
+      - 'src/AgentRunner/**'
+      - 'src/AgentRunner.Tests/**'
+      - 'scripts/validate-test-plans.ps1'
+      - '.github/workflows/validate-test-plans.yml'
+
+jobs:
+  validate-test-plans:
+    name: Validate YAML plans
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Validate test plans
+        shell: pwsh
+        run: .\scripts\validate-test-plans.ps1
+
+      - name: Upload validation artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-test-plan-validation
+          path: artifacts/test-plans
+          if-no-files-found: error

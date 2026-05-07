@@ -7,7 +7,7 @@ namespace DesktopAiTestAgent.Core;
 public class AgentAction
 {
     /// <summary>
-    /// The type of action: EnterText, Click, DoubleClick, Scroll, Wait, Done, Explore.
+    /// The type of action: EnterText, Click, DoubleClick, Scroll, Wait, Assert, Done, Explore.
     /// </summary>
     public string? ActionType { get; set; }
 

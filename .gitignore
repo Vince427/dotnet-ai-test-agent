@@ -24,8 +24,10 @@ packages/
 runs/
 screenshots/
 coverage/
+docs/symphony.html
 .env
 .env.*
+!.env.template
 secrets.json
 .DS_Store
 Thumbs.db

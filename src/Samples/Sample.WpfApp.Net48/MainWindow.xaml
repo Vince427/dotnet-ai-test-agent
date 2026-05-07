@@ -5,27 +5,36 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Sample.WpfApp.Net48"
         mc:Ignorable="d"
-        Title="WPF AI Test Target (.NET 4.8)" Height="300" Width="400" WindowStartupLocation="CenterScreen">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        
-        <TextBlock Text="Welcome to the WPF 4.8 AI Agent Target" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
+        Title="WPF AI Test Target (.NET 4.8)" Height="520" Width="460" WindowStartupLocation="CenterScreen">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20">
+            <TextBlock Text="Welcome to the WPF 4.8 AI Agent Target" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
 
-        <TextBlock Grid.Row="1" Text="Username:" Margin="0,0,0,5"/>
-        <TextBox Grid.Row="2" x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Margin="0,0,0,15" Padding="5"/>
+            <TextBlock Text="Username:" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Margin="0,0,0,15" Padding="5"/>
 
-        <TextBlock Grid.Row="3" Text="Password:" Margin="0,0,0,5"/>
-        <PasswordBox Grid.Row="4" x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" Margin="0,0,0,20" Padding="5"/>
+            <TextBlock Text="Password:" Margin="0,0,0,5"/>
+            <PasswordBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" Margin="0,0,0,20" Padding="5"/>
 
-        <Button Grid.Row="5" x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnLogin_Click"/>
-        
-        <TextBlock Grid.Row="5" x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Ready" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-    </Grid>
+            <DockPanel Margin="0,0,0,28">
+                <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnLogin_Click"/>
+                <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Ready" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <TextBlock Text="Profile form" FontSize="14" FontWeight="Bold" Margin="0,0,0,14"/>
+
+            <TextBlock Text="Display name:" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtDisplayName" AutomationProperties.AutomationId="txtDisplayName" Margin="0,0,0,15" Padding="5"/>
+
+            <TextBlock Text="Email:" Margin="0,0,0,5"/>
+            <TextBox x:Name="txtEmail" AutomationProperties.AutomationId="txtEmail" Margin="0,0,0,15" Padding="5"/>
+
+            <CheckBox x:Name="chkActive" AutomationProperties.AutomationId="chkActive" Content="Active" Margin="0,0,0,15"/>
+
+            <DockPanel>
+                <Button x:Name="btnSaveProfile" AutomationProperties.AutomationId="btnSaveProfile" Content="Save Profile" Width="120" Height="30" HorizontalAlignment="Left" Click="BtnSaveProfile_Click"/>
+                <TextBlock x:Name="lblProfileStatus" AutomationProperties.AutomationId="lblProfileStatus" Text="Profile waiting" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </DockPanel>
+        </StackPanel>
+    </ScrollViewer>
 </Window>

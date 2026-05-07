@@ -34,4 +34,20 @@ public partial class MainWindow : Window
             lblStatus.Foreground = Brushes.Red;
         }
     }
+
+    private void BtnSaveProfile_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(txtDisplayName.Text) &&
+            txtEmail.Text.Contains('@') &&
+            chkActive.IsChecked == true)
+        {
+            lblProfileStatus.Text = "Profile saved";
+            lblProfileStatus.Foreground = Brushes.Green;
+        }
+        else
+        {
+            lblProfileStatus.Text = "Profile validation failed";
+            lblProfileStatus.Foreground = Brushes.Red;
+        }
+    }
 }

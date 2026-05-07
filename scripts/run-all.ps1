@@ -1,5 +1,5 @@
 # run-all.ps1
-# Runs the AgentRunner against all 5 target frameworks sequentially.
+# Runs the AgentRunner against the available sample target frameworks sequentially.
 
 $ErrorActionPreference = "Stop"
 
@@ -29,7 +29,10 @@ foreach ($target in $Targets) {
     Start-Sleep -Seconds 2
 
     Write-Host "Launching Agent against '$($target.Title)'..."
-    $agentProcess = Start-Process -FilePath "src\AgentRunner\bin\Debug\net8.0-windows\AgentRunner.exe" -ArgumentList "`"$($target.Title)`"" -NoNewWindow -Wait
+    $agentProcess = Start-Process -FilePath "src\AgentRunner\bin\Debug\net8.0-windows\AgentRunner.exe" -ArgumentList "`"$($target.Title)`"" -NoNewWindow -Wait -PassThru
+    if ($agentProcess.ExitCode -ne 0) {
+        throw "Agent failed for $($target.Name) with exit code $($agentProcess.ExitCode)."
+    }
 
     Write-Host "Killing $($target.Name)..."
     Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue

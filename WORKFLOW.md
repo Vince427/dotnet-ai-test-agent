@@ -20,17 +20,25 @@ goals:
   default:
     description: "Log in to the application using username 'admin' and password 'password123'."
     success_condition: "Login successful"
+    category: "Scenario"
     max_steps: 30
     identifier: "login"
   
-  explore:
-    description: "Explore the application by clicking all available buttons and entering test data in all fields. Report what you find."
+  audit:
+    description: "Audit the application for accessibility. Identify all interactive elements that do not have a proper AutomationId or Name."
+    category: "Audit"
+    max_steps: 20
+    identifier: "a11y_audit"
+
+  monkey:
+    description: "Perform random actions on the UI to try and trigger unhandled exceptions or crashes."
+    category: "Monkey"
     max_steps: 50
-    identifier: "explore"
+    identifier: "monkey_test"
 
   smoke:
-    description: "Perform a basic smoke test: verify the app starts, all UI elements are visible and enabled, and the login flow works end to end."
-    success_condition: "Login successful"
+    description: "Perform a basic smoke test: verify the app starts, all UI elements are visible and enabled, and use 'Assert' to check their text."
+    category: "Smoke"
     max_steps: 20
     identifier: "smoke"
 

@@ -1,0 +1,309 @@
+suite: testzoo
+
+tests:
+  TZ-WINFORMS-NET8-LOGIN-SUCCESS:
+    title: "WinForms .NET 8 login succeeds"
+    priority: "P0"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net8", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-LOGIN-FAILURE:
+    title: "WinForms .NET 8 login rejects invalid credentials"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Enter username 'admin' and password 'wrong-password', submit the form, and verify that the visible status reports a failed login."
+    success_condition: "Login failed"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net8", "login", "negative"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET48-LOGIN-SUCCESS:
+    title: "WinForms .NET Framework 4.8 login succeeds"
+    priority: "P0"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET Framework 4.8)"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net48", "login", "legacy"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-LOGIN-SUCCESS:
+    title: "WPF .NET 8 login succeeds"
+    priority: "P0"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "wpf", "net8", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-PROFILE-SAVE:
+    title: "WinForms .NET 8 profile form saves valid data"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Create a profile by entering display name 'Ada Lovelace', email 'ada@example.com', checking Active, saving the profile, and verifying the visible profile status."
+    success_condition: "Profile saved"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net8", "profile", "form", "checkbox"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-PROFILE-SAVE:
+    title: "WPF .NET 8 profile form saves valid data"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Create a profile by entering display name 'Ada Lovelace', email 'ada@example.com', checking Active, saving the profile, and verifying the visible profile status."
+    success_condition: "Profile saved"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "wpf", "net8", "profile", "form", "checkbox"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET48-PROFILE-SAVE:
+    title: "WinForms .NET Framework 4.8 profile form saves valid data"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET Framework 4.8)"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Create a profile by entering display name 'Ada Lovelace', email 'ada@example.com', checking Active, saving the profile, and verifying the visible profile status."
+    success_condition: "Profile saved"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net48", "profile", "form", "checkbox", "legacy"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET48-PROFILE-SAVE:
+    title: "WPF .NET Framework 4.8 profile form saves valid data"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target (.NET 4.8)"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Create a profile by entering display name 'Ada Lovelace', email 'ada@example.com', checking Active, saving the profile, and verifying the visible profile status."
+    success_condition: "Profile saved"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "wpf", "net48", "profile", "form", "checkbox", "legacy"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-MAUI-WINDOWS-PROFILE-SAVE:
+    title: ".NET MAUI Windows profile form saves valid data"
+    priority: "P1"
+    framework: "maui"
+    target_window: "Sample.MauiApp"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Create a profile by entering display name 'Ada Lovelace', email 'ada@example.com', checking Active, saving the profile, and verifying the visible profile status."
+    success_condition: "Profile saved"
+    max_steps: 14
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "maui", "windows", "profile", "form", "checkbox"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "MAUI app package is not installed or not launched"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-PROFILE-VALIDATION-FAILS:
+    title: "WinForms .NET 8 profile form rejects invalid email"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Enter display name 'Ada Lovelace', email 'not-an-email', check Active, save the profile, and verify that the visible profile status reports a validation failure."
+    success_condition: "Profile validation failed"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net8", "profile", "form", "negative"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-PROFILE-VALIDATION-FAILS:
+    title: "WPF .NET 8 profile form rejects invalid email"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Enter display name 'Ada Lovelace', email 'not-an-email', check Active, save the profile, and verify that the visible profile status reports a validation failure."
+    success_condition: "Profile validation failed"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "wpf", "net8", "profile", "form", "negative"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-MAUI-WINDOWS-PROFILE-VALIDATION-FAILS:
+    title: ".NET MAUI Windows profile form rejects invalid email"
+    priority: "P1"
+    framework: "maui"
+    target_window: "Sample.MauiApp"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Enter display name 'Ada Lovelace', email 'not-an-email', check Active, save the profile, and verify that the visible profile status reports a validation failure."
+    success_condition: "Profile validation failed"
+    max_steps: 14
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "maui", "windows", "profile", "form", "negative"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "MAUI app package is not installed or not launched"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET48-LOGIN-SUCCESS:
+    title: "WPF .NET Framework 4.8 login succeeds"
+    priority: "P0"
+    framework: "wpf"
+    target_window: "WPF AI Test Target (.NET 4.8)"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "wpf", "net48", "login", "legacy"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-MAUI-WINDOWS-LOGIN-SUCCESS:
+    title: ".NET MAUI Windows login succeeds"
+    priority: "P1"
+    framework: "maui"
+    target_window: "Sample.MauiApp"
+    authoring_agent: "manual"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 10
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "maui", "windows", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "MAUI app package is not installed or not launched"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-A11Y-AUDIT:
+    title: "WinForms .NET 8 exposes usable automation metadata"
+    priority: "P2"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Audit"
+    goal: "Audit the visible login UI and identify controls missing stable AutomationId or Name metadata."
+    success_condition: ""
+    max_steps: 6
+    allowed_actions: ["Explore", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "winforms", "net8", "accessibility", "uia"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "UI automation tree is empty"
+
+  TZ-WPF-NET8-A11Y-AUDIT:
+    title: "WPF .NET 8 exposes usable automation metadata"
+    priority: "P2"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Audit"
+    goal: "Audit the visible login UI and identify controls missing stable AutomationId or Name metadata."
+    success_condition: ""
+    max_steps: 6
+    allowed_actions: ["Explore", "Assert", "Done", "Wait"]
+    tags: ["testzoo", "wpf", "net8", "accessibility", "uia"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "UI automation tree is empty"

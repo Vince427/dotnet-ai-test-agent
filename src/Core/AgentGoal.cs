@@ -1,5 +1,15 @@
 namespace DesktopAiTestAgent.Core;
 
+using System.Collections.Generic;
+
+public enum TestCategory
+{
+    Smoke,
+    Monkey,
+    Audit,
+    Scenario
+}
+
 /// <summary>
 /// Defines a test objective for the agent, inspired by Symphony's per-issue prompt model.
 /// </summary>
@@ -25,6 +35,12 @@ public sealed class AgentGoal
 
     /// <summary>Short identifier for logging and artifact naming.</summary>
     public string? Identifier { get; set; }
+
+    /// <summary>The category of the test, dictating the agent's priority behavior.</summary>
+    public TestCategory Category { get; set; } = TestCategory.Smoke;
+
+    /// <summary>Optional action allow-list for bounded test definitions.</summary>
+    public List<string> AllowedActions { get; set; } = [];
 
     public override string ToString() => $"[{Identifier ?? "goal"}] {Description}";
 }

@@ -10,8 +10,14 @@ namespace DesktopAiTestAgent.AgentRunner;
 public class RunArtifact
 {
     public string RunId { get; set; } = Guid.NewGuid().ToString("N")[..8];
+    public EvidenceLevel EvidenceLevel { get; set; } = EvidenceLevel.Standard;
     public string? GoalDescription { get; set; }
     public string? GoalIdentifier { get; set; }
+    public string? TestId { get; set; }
+    public string? TestTitle { get; set; }
+    public string? TestPriority { get; set; }
+    public string? Framework { get; set; }
+    public string? Suite { get; set; }
     public string? TargetWindow { get; set; }
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? EndedAt { get; set; }
@@ -34,7 +40,18 @@ public class RunStep
     public string? ActionValue { get; set; }
     public string? Reasoning { get; set; }
     public string? Outcome { get; set; } // Succeeded, Failed, LoopDetected
+    public string? GuardStatus { get; set; }
+    public string? GuardCode { get; set; }
+    public string? GuardMessage { get; set; }
     public int ScoreDelta { get; set; }
     public int CumulativeScore { get; set; }
     public string? ScreenshotPath { get; set; }
+    public string? UiTreePath { get; set; }
+}
+
+public enum EvidenceLevel
+{
+    Minimal,
+    Standard,
+    Full
 }

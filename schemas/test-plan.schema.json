@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desktop-ai-test-agent.local/schemas/test-plan.schema.json",
+  "title": "Desktop AI Test Agent Test Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tests"],
+  "properties": {
+    "suite": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tests": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/testDefinition"
+      }
+    }
+  },
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "testDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "framework": {
+          "type": "string",
+          "enum": ["winforms", "wpf", "maui", "avalonia"]
+        },
+        "target_window": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_issue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_pr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authoring_agent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "risk": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"]
+        },
+        "ci_profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Scenario", "Smoke", "Audit", "Monkey"]
+        },
+        "goal": {
+          "type": "string",
+          "minLength": 1
+        },
+        "success_condition": {
+          "type": "string"
+        },
+        "max_steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "allowed_actions": {
+          "$ref": "#/$defs/stringList"
+        },
+        "tags": {
+          "$ref": "#/$defs/stringList"
+        },
+        "blocked_if": {
+          "$ref": "#/$defs/stringList"
+        },
+        "existing_tests": {
+          "$ref": "#/$defs/stringList"
+        }
+      }
+    }
+  }
+}

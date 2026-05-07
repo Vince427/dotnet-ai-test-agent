@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using DesktopAiTestAgent.Core;
 
 namespace DesktopAiTestAgent.AgentRunner;
 
@@ -35,6 +37,19 @@ public class ArtifactWriter(string? baseDir = null)
     }
 
     /// <summary>
+    /// Saves the observed UI tree for a specific step.
+    /// </summary>
+    public string SaveUiTreeSnapshot(string runId, int stepNumber, UiSnapshot snapshot)
+    {
+        var dir = Path.Combine(GetRunDir(runId), "ui-tree");
+        Directory.CreateDirectory(dir);
+
+        var path = Path.Combine(dir, $"step_{stepNumber:D3}.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(snapshot, CreateJsonOptions()));
+        return path;
+    }
+
+    /// <summary>
     /// Writes the final JSON report for the run.
     /// </summary>
     public void WriteReport(RunArtifact artifact)
@@ -42,11 +57,7 @@ public class ArtifactWriter(string? baseDir = null)
         var dir = GetRunDir(artifact.RunId);
         Directory.CreateDirectory(dir);
 
-        var json = JsonSerializer.Serialize(artifact, new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var json = JsonSerializer.Serialize(artifact, CreateJsonOptions());
 
         File.WriteAllText(Path.Combine(dir, "report.json"), json);
     }
@@ -63,7 +74,14 @@ public class ArtifactWriter(string? baseDir = null)
         sb.AppendLine($"# Run {artifact.RunId}");
         sb.AppendLine();
         sb.AppendLine($"- **Goal**: {artifact.GoalDescription}");
+        if (!string.IsNullOrEmpty(artifact.TestId))
+            sb.AppendLine($"- **Test**: {artifact.TestId} - {artifact.TestTitle ?? artifact.GoalIdentifier}");
+        if (!string.IsNullOrEmpty(artifact.Suite))
+            sb.AppendLine($"- **Suite**: {artifact.Suite}");
+        if (!string.IsNullOrEmpty(artifact.Framework))
+            sb.AppendLine($"- **Framework**: {artifact.Framework}");
         sb.AppendLine($"- **Target**: {artifact.TargetWindow}");
+        sb.AppendLine($"- **Evidence level**: {artifact.EvidenceLevel}");
         sb.AppendLine($"- **Result**: {artifact.Result}");
         sb.AppendLine($"- **Score**: {artifact.FinalScore}");
         sb.AppendLine($"- **Started**: {artifact.StartedAt:yyyy-MM-dd HH:mm:ss} UTC");
@@ -78,14 +96,40 @@ public class ArtifactWriter(string? baseDir = null)
 
         sb.AppendLine("## Steps");
         sb.AppendLine();
-        sb.AppendLine("| # | Action | Target | Outcome | Score |");
-        sb.AppendLine("|---|--------|--------|---------|-------|");
+        sb.AppendLine("| # | Action | Target | Outcome | Guard | Score | Evidence |");
+        sb.AppendLine("|---|--------|--------|---------|-------|-------|----------|");
 
         foreach (var step in artifact.Steps)
         {
-            sb.AppendLine($"| {step.StepNumber} | {step.ActionType} | {step.ActionTarget ?? "-"} | {step.Outcome} | {step.CumulativeScore} |");
+            var guard = !string.IsNullOrEmpty(step.GuardStatus)
+                ? $"{step.GuardStatus}:{step.GuardCode}"
+                : "-";
+            var evidence = BuildEvidenceList(step);
+            sb.AppendLine($"| {step.StepNumber} | {step.ActionType} | {step.ActionTarget ?? "-"} | {step.Outcome} | {guard} | {step.CumulativeScore} | {evidence} |");
         }
 
         File.WriteAllText(Path.Combine(dir, "summary.md"), sb.ToString());
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        options.Converters.Add(new JsonStringEnumConverter());
+        return options;
+    }
+
+    private static string BuildEvidenceList(RunStep step)
+    {
+        var values = new System.Collections.Generic.List<string>();
+        if (!string.IsNullOrWhiteSpace(step.ScreenshotPath))
+            values.Add("screenshot");
+        if (!string.IsNullOrWhiteSpace(step.UiTreePath))
+            values.Add("ui-tree");
+
+        return values.Count == 0 ? "-" : string.Join(", ", values);
     }
 }

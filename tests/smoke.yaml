@@ -1,0 +1,21 @@
+suite: smoke
+
+tests:
+  LOGIN-001:
+    title: "Login succeeds with valid credentials"
+    priority: "P0"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "manual"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in to the application using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["smoke", "login", "net8"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint returns rate limit errors"

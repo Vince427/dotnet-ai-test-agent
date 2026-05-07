@@ -11,6 +11,10 @@ namespace DesktopAiTestAgent.AgentRunner;
 /// </summary>
 public class WorkflowConfig
 {
+    public const string DefaultLlmEndpoint = "http://localhost:4000";
+    public const string DefaultLlmApiKey = "dummy-key";
+    public const string DefaultLlmModel = "gpt-4o-mini";
+
     // Agent settings
     public int MaxConcurrentAgents { get; set; } = 1;
     public int MaxTurns { get; set; } = 30;
@@ -24,6 +28,8 @@ public class WorkflowConfig
 
     // Workspace
     public string WorkspaceRoot { get; set; } = "./runs";
+    public string? WorkflowPath { get; set; }
+    public string? WorkflowDirectory { get; set; }
 
     // LLM
     public string? LlmEndpoint { get; set; }
@@ -40,20 +46,29 @@ public class WorkflowConfig
     /// Loads config from a WORKFLOW.md file path.
     /// Simplified parser: reads YAML between --- markers, rest is prompt.
     /// </summary>
-    public static WorkflowConfig Load(string? workflowPath = null)
+    public static WorkflowConfig Load(string? workflowPath = null, bool loadDotEnv = true, bool logConfig = true)
     {
-        LoadDotEnv();
+        if (loadDotEnv)
+            LoadDotEnv(logConfig);
+
         workflowPath ??= FindWorkflowFile();
         var cwd = Directory.GetCurrentDirectory();
-        Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_cwd=\"{cwd}\" config_path=\"{workflowPath}\"");
+        if (logConfig)
+            Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_cwd=\"{cwd}\" config_path=\"{workflowPath}\"");
         if (workflowPath == null || !File.Exists(workflowPath))
         {
-            Console.WriteLine("[WorkflowConfig] No WORKFLOW.md found, using defaults.");
+            if (logConfig)
+                Console.WriteLine("[WorkflowConfig] No WORKFLOW.md found, using defaults.");
             return CreateDefaults();
         }
 
         var content = File.ReadAllText(workflowPath);
-        var config = new WorkflowConfig();
+        var fullWorkflowPath = Path.GetFullPath(workflowPath);
+        var config = new WorkflowConfig
+        {
+            WorkflowPath = fullWorkflowPath,
+            WorkflowDirectory = Path.GetDirectoryName(fullWorkflowPath)
+        };
 
         // Split front matter from prompt body
         if (content.StartsWith("---"))
@@ -76,9 +91,10 @@ public class WorkflowConfig
         var envApiKey = Environment.GetEnvironmentVariable("LLM_API_KEY");
         var envModel = Environment.GetEnvironmentVariable("LLM_MODEL");
 
-        config.LlmEndpoint = ResolveEnvVar(config.LlmEndpoint) ?? envEndpoint;
-        config.LlmApiKey = ResolveEnvVar(config.LlmApiKey) ?? envApiKey;
-        config.LlmModel = ResolveEnvVar(config.LlmModel) ?? envModel;
+        config.LlmEndpoint = ResolveEnvVar(config.LlmEndpoint) ?? envEndpoint ?? DefaultLlmEndpoint;
+        config.LlmApiKey = ResolveEnvVar(config.LlmApiKey) ?? envApiKey ?? DefaultLlmApiKey;
+        config.LlmModel = ResolveEnvVar(config.LlmModel) ?? envModel ?? DefaultLlmModel;
+        config.ResolveWorkspaceRoot();
 
         return config;
     }
@@ -88,10 +104,16 @@ public class WorkflowConfig
     /// </summary>
     public AgentGoal GetGoal(string? name = null)
     {
-        if (!string.IsNullOrEmpty(name) && Goals.TryGetValue(name, out var namedGoal))
-            return namedGoal;
+        if (!string.IsNullOrEmpty(name))
+        {
+            var key = name!;
+            if (Goals.TryGetValue(key, out var namedGoal))
+                return namedGoal;
+        }
+
         if (Goals.TryGetValue("default", out var defaultGoal))
             return defaultGoal;
+
         return new AgentGoal();
     }
 
@@ -99,10 +121,12 @@ public class WorkflowConfig
     {
         var config = new WorkflowConfig
         {
-            LlmEndpoint = Environment.GetEnvironmentVariable("LLM_ENDPOINT") ?? "http://localhost:4000",
-            LlmApiKey = Environment.GetEnvironmentVariable("LLM_API_KEY") ?? "dummy-key",
-            LlmModel = Environment.GetEnvironmentVariable("LLM_MODEL") ?? "gpt-4o-mini"
+            LlmEndpoint = Environment.GetEnvironmentVariable("LLM_ENDPOINT") ?? DefaultLlmEndpoint,
+            LlmApiKey = Environment.GetEnvironmentVariable("LLM_API_KEY") ?? DefaultLlmApiKey,
+            LlmModel = Environment.GetEnvironmentVariable("LLM_MODEL") ?? DefaultLlmModel,
+            WorkflowDirectory = Directory.GetCurrentDirectory()
         };
+        config.ResolveWorkspaceRoot();
 
         config.Goals["default"] = new AgentGoal
         {
@@ -130,7 +154,7 @@ public class WorkflowConfig
         return null;
     }
 
-    private static void LoadDotEnv()
+    private static void LoadDotEnv(bool logConfig)
     {
         var startDirs = new[] { Directory.GetCurrentDirectory(), AppDomain.CurrentDomain.BaseDirectory };
         foreach (var startDir in startDirs)
@@ -141,7 +165,8 @@ public class WorkflowConfig
                 var path = Path.Combine(dir, ".env");
                 if (File.Exists(path))
                 {
-                    Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_dotenv_found=\"{path}\"");
+                    if (logConfig)
+                        Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_dotenv_found=\"{path}\"");
                     foreach (var line in File.ReadAllLines(path))
                     {
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
@@ -150,7 +175,8 @@ public class WorkflowConfig
                         var key = parts[0].Trim();
                         var val = parts[1].Trim();
                         Environment.SetEnvironmentVariable(key, val);
-                        Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_env_set=\"{key}\"");
+                        if (logConfig)
+                            Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_env_set=\"{key}\"");
                     }
                     return;
                 }
@@ -164,13 +190,25 @@ public class WorkflowConfig
     private static string? ResolveEnvVar(string? value)
     {
         if (string.IsNullOrEmpty(value)) return null;
-        if (value.StartsWith("$"))
+        if (value![0] == '$')
         {
             var varName = value[1..];
             var resolved = Environment.GetEnvironmentVariable(varName);
             return string.IsNullOrEmpty(resolved) ? null : resolved;
         }
         return value;
+    }
+
+    private void ResolveWorkspaceRoot()
+    {
+        if (Path.IsPathRooted(WorkspaceRoot))
+        {
+            WorkspaceRoot = Path.GetFullPath(WorkspaceRoot);
+            return;
+        }
+
+        var baseDir = WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        WorkspaceRoot = Path.GetFullPath(Path.Combine(baseDir, WorkspaceRoot));
     }
 
     /// <summary>
@@ -226,6 +264,7 @@ public class WorkflowConfig
                     case "max_steps": if (int.TryParse(val, out var ms)) currentGoal.MaxSteps = ms; break;
                     case "identifier": currentGoal.Identifier = val; break;
                     case "max_retries": if (int.TryParse(val, out var mr)) currentGoal.MaxRetries = mr; break;
+                    case "category": if (Enum.TryParse<TestCategory>(val, true, out var cat)) currentGoal.Category = cat; break;
                 }
             }
             else

@@ -1,0 +1,55 @@
+name: Desktop runtime test request
+description: Request a YAML-driven desktop runtime test without changing app code.
+title: "[test] "
+labels:
+  - desktop-test
+body:
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Target framework
+      options:
+        - WinForms
+        - WPF
+        - .NET MAUI Windows
+        - Avalonia Windows
+        - Unknown
+    validations:
+      required: true
+  - type: input
+    id: target_window
+    attributes:
+      label: Target window title
+      placeholder: Sample Login App (.NET 8)
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Scenario
+      description: Describe the user journey or bug to validate at runtime.
+      placeholder: Log in with valid credentials and verify the success message.
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Expected visible success condition
+      placeholder: Login successful
+    validations:
+      required: true
+  - type: textarea
+    id: existing_tests
+    attributes:
+      label: Existing tests or CI checks
+      description: Link related unit tests, integration tests, TRX/JUnit names, or CI jobs if they exist.
+      placeholder: MyApp.Tests.Auth.LoginSucceeds
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk
+      options:
+        - low
+        - medium
+        - high
+        - critical
+    validations:
+      required: true

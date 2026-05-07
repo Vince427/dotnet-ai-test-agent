@@ -20,5 +20,20 @@ public partial class MainPage : ContentPage
 			lblStatus.TextColor = Colors.Red;
 		}
 	}
-}
 
+	private void OnSaveProfileClicked(object sender, EventArgs e)
+	{
+		if (!string.IsNullOrWhiteSpace(txtDisplayName.Text) &&
+			txtEmail.Text.Contains('@') &&
+			chkActive.IsChecked)
+		{
+			lblProfileStatus.Text = "Profile saved";
+			lblProfileStatus.TextColor = Colors.Green;
+		}
+		else
+		{
+			lblProfileStatus.Text = "Profile validation failed";
+			lblProfileStatus.TextColor = Colors.Red;
+		}
+	}
+}

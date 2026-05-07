@@ -4,7 +4,7 @@
              x:Class="Sample.MauiApp.MainPage">
 
     <ScrollView>
-        <VerticalStackLayout Padding="30,50" Spacing="25" VerticalOptions="Start" HorizontalOptions="Center" WidthRequest="400">
+        <VerticalStackLayout Padding="30,50" Spacing="22" VerticalOptions="Start" HorizontalOptions="Center" WidthRequest="400">
             <Label Text="Welcome to the MAUI AI Agent Target" FontSize="18" FontAttributes="Bold" HorizontalOptions="Center" />
 
             <Label Text="Username:" />
@@ -16,6 +16,21 @@
             <Button x:Name="btnLogin" AutomationId="btnLogin" Text="Login" Clicked="OnLoginClicked" HorizontalOptions="Start" WidthRequest="100" />
 
             <Label x:Name="lblStatus" AutomationId="lblStatus" Text="Ready" TextColor="Gray" HorizontalOptions="End" />
+
+            <Label Text="Profile form" FontSize="16" FontAttributes="Bold" Margin="0,12,0,0" />
+
+            <Label Text="Display name:" />
+            <Entry x:Name="txtDisplayName" AutomationId="txtDisplayName" Placeholder="Enter display name" />
+
+            <Label Text="Email:" />
+            <Entry x:Name="txtEmail" AutomationId="txtEmail" Keyboard="Email" Placeholder="Enter email" />
+
+            <CheckBox x:Name="chkActive" AutomationId="chkActive" />
+            <Label Text="Active" />
+
+            <Button x:Name="btnSaveProfile" AutomationId="btnSaveProfile" Text="Save Profile" Clicked="OnSaveProfileClicked" HorizontalOptions="Start" WidthRequest="140" />
+
+            <Label x:Name="lblProfileStatus" AutomationId="lblProfileStatus" Text="Profile waiting" TextColor="Gray" HorizontalOptions="End" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

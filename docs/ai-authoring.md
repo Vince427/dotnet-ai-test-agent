@@ -2,6 +2,10 @@
 
 This project can be used manually or with Codex, Claude Code, Copilot, MCP wrappers, GitHub Actions, and Azure Pipelines.
 
+The same portable contract applies everywhere: edit YAML, call CLI commands,
+read artifacts. Plugins and MCP wrappers are convenience layers over that
+contract.
+
 ## Ground Rules
 
 - Edit YAML test plans under `tests/` or an external test pack.
@@ -33,6 +37,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\validate-test-plans.ps1
 ```
 
 GitHub Actions and Azure Pipelines examples are provided in `.github/workflows/` and `.azure/pipelines/`.
+
+GitHub Copilot and GitHub-native coding agents should also read
+`.github/copilot-instructions.md`, which is a short repo-local entry point for
+the same rules.
 
 ## YAML Metadata
 

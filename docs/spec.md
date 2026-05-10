@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build a local-first AI UI testing agent for existing .NET applications.
+Build a portable-first AI UI testing runner for existing .NET applications.
 
 The agent must support:
 
@@ -12,6 +12,19 @@ The agent must support:
 - Avalonia Windows Desktop
 
 Later phases may support MAUI Android, iOS, and Mac through Appium.
+
+## Portable-First Contract
+
+The stable product contract is:
+
+- YAML test definitions;
+- CLI commands;
+- readable artifacts;
+- the static Symphony Workbench.
+
+Local users, CI jobs, MCP/plugins, and AI agents must use these same surfaces.
+No critical capability should exist only inside a plugin, an MCP server, a
+dashboard, or an LLM prompt.
 
 ## Non-Intrusive Requirement
 

@@ -33,3 +33,6 @@ secrets.json
 Thumbs.db
 AppPackages/
 WORKFLOW.local.md
+.claude/worktrees/
+.claude/local/
+.claude/*.local.md

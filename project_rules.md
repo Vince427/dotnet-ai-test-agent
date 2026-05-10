@@ -4,7 +4,7 @@ This document consolidates the architecture and workflow rules for Desktop AI Te
 
 ## 1. Mission And Core Priorities
 
-- **Mission**: Build a local-first AI desktop testing agent for existing .NET applications.
+- **Mission**: Build a portable-first desktop test runner for existing .NET applications, usable locally, in CI, and through AI agents.
 - **Absolute priorities**:
   1. Runnable code
   2. Clarity
@@ -15,10 +15,10 @@ This document consolidates the architecture and workflow rules for Desktop AI Te
 
 ## 2. Constraints And Exclusions
 
-- **Hard constraints**: C#, .NET 8, .NET Framework 4.8 legacy support, local-first, simple readable code, few dependencies, no over-engineering.
+- **Hard constraints**: C#, .NET 8, .NET Framework 4.8 legacy support, CLI-first, portable artifacts, simple readable code, few dependencies, no over-engineering.
 - **Non-intrusive rule**: The agent must test existing apps from the outside. Do not require app teams to add agent-specific classes, packages, source changes, or production code paths.
 - **Framework scope**: Support WinForms, WPF, .NET MAUI Windows, and Avalonia Windows Desktop first. Use Appium later for non-Windows MAUI targets.
-- **Source of truth**: YAML tests and run artifacts are the source of truth. The mini UI reads them and helps users choose, filter, and validate; it must not hide or replace them.
+- **Source of truth**: YAML tests, CLI behavior, and run artifacts are the source of truth. The mini UI, CI, MCP, plugins, and AI agents read or call those same surfaces; they must not hide or replace them.
 - **Manual-first rule**: Every critical capability must work manually through editable YAML, CLI commands, readable artifacts, and short documentation. IA assistance must remain optional.
 - **V1 exclusions**: Do not add microservices, Kubernetes, Temporal, Azure, complex auth, complex databases, distributed multi-agent architectures, enterprise dashboards, or advanced cloud infrastructure without an explicit reason.
 
@@ -64,7 +64,7 @@ This document consolidates the architecture and workflow rules for Desktop AI Te
 - Link YAML tests to existing test names or CI checks when useful.
 - Export standard results later: JUnit, TRX, JSON, Markdown, screenshots.
 - Preserve existing pipelines and secrets handling.
-- Codex, Claude Code, Copilot, MCP, and plugins may call the runner, but they must use the same manual CLI/YAML/artifact surfaces that humans can use.
+- Codex, Claude Code, Copilot, MCP, and plugins may call the runner, but they must use the same CLI/YAML/artifact surfaces that humans and CI can use.
 
 ## 8. UX Guidelines
 

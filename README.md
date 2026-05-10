@@ -2,6 +2,10 @@
 
 AI-powered UI testing for existing .NET desktop apps with FlaUI, YAML test backlogs, quality guards, and an OpenAI Symphony-style architecture.
 
+The product contract is **portable-first and CLI-first**: local users, CI jobs,
+Symphony Workbench, MCP/plugins, and AI agents all work through the same YAML,
+CLI commands, and readable artifacts.
+
 ## V1.3 — Generic Robo Agent (Symphony Foundation)
 
 This version transforms the agent from a hardcoded login-only tester into a **generic UI automation agent** capable of testing existing .NET desktop applications from the outside.
@@ -71,6 +75,19 @@ Every critical capability must work without Codex, Claude Code, Copilot, MCP, pl
 - The Symphony Workbench is a local viewer/debugger over YAML and artifacts.
 - Future MCP/plugins should call the same CLI commands instead of replacing the runner.
 - Agent authoring rules live in `docs/ai-authoring.md`; the YAML schema lives in `schemas/test-plan.schema.json`.
+
+## Multi-agent workflow
+
+Parallel coding agents should start from `AGENTS.md` or `CLAUDE.md`.
+
+- `CLAUDE.md` maps repo paths to focused domain contracts under `.claude/context/`.
+- `.claude/DISCOVERY_LOG.md` is the escape hatch for important cross-domain discoveries.
+- `.claude/commands/suite.md` defines the portable `/suite` procedure for "fais la suite", "continue le plan", or "next step".
+- `.claude/plans/current.md` tracks the near-term executable backlog while `docs/roadmap.md` remains the product roadmap.
+
+The goal is to let Codex, Claude Code, Copilot, or another agent work in parallel without losing the portable-first, manual-first product rules.
+
+The smallest product path is documented in `docs/mvp.md`.
 
 ## Default credentials
 

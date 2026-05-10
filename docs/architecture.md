@@ -22,7 +22,17 @@ The target application is treated as a black box.
 6. **Guard Layer**: deterministic checks that can force reject or abort LLM actions.
 7. **Observability Layer**: structured logs, JSON reports, Markdown summaries, screenshots, and the static Symphony Workbench.
 
-Manual surfaces are first-class. YAML validation, test listing, artifact reading, and workbench rendering must run without `.env`, OpenRouter, or an LLM. AI agents and future MCP/plugins should call these same surfaces instead of receiving hidden special capabilities.
+Portable surfaces are first-class. YAML validation, test listing, artifact reading, and workbench rendering must run without `.env`, OpenRouter, or an LLM. Local humans, CI, AI agents, and future MCP/plugins should call these same surfaces instead of receiving hidden special capabilities.
+
+## Portable Product Contract
+
+```text
+YAML specs -> CLI runner -> artifacts -> Symphony Workbench
+```
+
+MCP servers and plugins can expose convenient wrappers such as validate, list,
+run, and open artifacts. They must remain adapters over this contract, not the
+place where product behavior lives.
 
 ## Symphony Loop
 

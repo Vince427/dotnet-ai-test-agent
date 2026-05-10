@@ -1,6 +1,6 @@
 # Roadmap
 
-This roadmap keeps the project local-first, black-box, and Symphony-driven. The agent must test existing applications from the outside, without requiring application teams to add agent-specific classes, packages, or code paths.
+This roadmap keeps the project portable-first, black-box, and Symphony-driven. The agent must test existing applications from the outside, without requiring application teams to add agent-specific classes, packages, or code paths.
 
 ## V1.3 - Generic Robo Agent + Symphony Foundation - Done
 

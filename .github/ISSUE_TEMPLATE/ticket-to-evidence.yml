@@ -1,0 +1,110 @@
+name: Ticket to AgentLoop evidence
+description: Track a ticket from isolated agent workspace to YAML, CLI artifacts, and Workbench evidence.
+title: "[evidence] "
+labels:
+  - desktop-test
+  - evidence
+body:
+  - type: input
+    id: ticket_id
+    attributes:
+      label: Ticket id
+      description: Stable issue, work item, or local ticket id.
+      placeholder: TICKET-WINFORMS-LOGIN-001
+    validations:
+      required: true
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      placeholder: WinForms login proof
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Framework
+      options:
+        - winforms
+        - wpf
+        - maui-windows
+        - avalonia-windows
+    validations:
+      required: true
+  - type: input
+    id: plan
+    attributes:
+      label: YAML plan path
+      placeholder: tests/examples/winforms/login.yaml
+    validations:
+      required: true
+  - type: input
+    id: test_id
+    attributes:
+      label: Test id
+      placeholder: EX-WINFORMS-LOGIN-001
+    validations:
+      required: true
+  - type: input
+    id: target_window
+    attributes:
+      label: Target window
+      placeholder: Sample Login App (.NET 8)
+    validations:
+      required: true
+  - type: checkboxes
+    id: launch_sample
+    attributes:
+      label: Runtime setup
+      description: Only use this for built-in WinForms/WPF sample proof tickets.
+      options:
+        - label: Launch the built-in sample app before the runtime proof
+  - type: dropdown
+    id: evidence_level
+    attributes:
+      label: Evidence level
+      options:
+        - standard
+        - minimal
+        - full
+    validations:
+      required: true
+  - type: checkboxes
+    id: expected_artifacts
+    attributes:
+      label: Expected artifacts
+      options:
+        - label: report.json
+          required: true
+        - label: summary.md
+          required: true
+        - label: screenshots
+        - label: ui-tree
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Scenario
+      description: User-visible workflow or proof request.
+      placeholder: Log in with valid credentials and verify the success message.
+    validations:
+      required: true
+  - type: textarea
+    id: agent_scope
+    attributes:
+      label: Agent scope
+      description: Files or domains the agent may edit. Keep this narrow for parallel work.
+      placeholder: YAML only; no target app code changes.
+    validations:
+      required: true
+  - type: textarea
+    id: completion_comment
+    attributes:
+      label: Completion comment checklist
+      description: What the agent should post back to the ticket or PR.
+      value: |
+        - Result:
+        - Plan:
+        - Test id:
+        - Evidence level:
+        - Artifact path or Workbench link:
+        - Blocked conditions or follow-up:

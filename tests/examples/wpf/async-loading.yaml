@@ -1,0 +1,22 @@
+suite: examples-wpf
+
+tests:
+  EX-WPF-ASYNC-001:
+    title: "WPF example: async loading completes"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Click Load Cases in the Test controls section, wait while the status reports Loading cases, and verify that async load completion is visible."
+    success_condition: "Async load complete"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["examples", "wpf", "net8", "async", "loading", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Load Cases button not visible"
+      - "LLM endpoint is not configured for runtime execution"

@@ -40,7 +40,7 @@ public sealed class SymphonyWorkbenchGeneratorTests
             tests,
             runs);
 
-        Assert.Contains("Symphony Workbench", html);
+        Assert.Contains("AgentLoop Workbench", html);
         Assert.Contains("LOGIN-001", html);
         Assert.Contains("Login succeeds", html);
         Assert.Contains("Passed", html);

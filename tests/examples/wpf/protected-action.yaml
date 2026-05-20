@@ -1,0 +1,22 @@
+suite: examples-wpf
+
+tests:
+  EX-WPF-DISABLED-001:
+    title: "WPF example: disabled action becomes enabled"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Verify the Protected Action button starts disabled, click Enable Action, click Protected Action, and verify that the controls status reports completion."
+    success_condition: "Protected action completed"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["examples", "wpf", "net8", "disabled", "enabled", "state"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Protected action button metadata is not visible"
+      - "LLM endpoint is not configured for runtime execution"

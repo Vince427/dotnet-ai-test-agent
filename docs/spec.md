@@ -41,7 +41,9 @@ Allow optional improvements only when teams choose them, such as stable Automati
 
 ## Test Definition
 
-Directed tests live in YAML files, normally under `tests/`.
+Directed tests live in YAML files, normally under `tests/`. The CLI and
+Workbench discover YAML recursively under `tests/`, so focused examples can
+live in subdirectories such as `tests/examples/winforms/login.yaml`.
 
 Prefer small files: one business scenario per YAML file, grouped by suite or
 framework when useful. Large aggregate files are acceptable as a bootstrap
@@ -80,7 +82,12 @@ The sample suite must move beyond login. Add equivalent TestZoo applications for
 - missing or ambiguous automation metadata
 - deliberate crash or failure scenario for guards
 
-The first TestZoo backlog lives in `tests/testzoo.yaml`. Current seed entries cover login, profile save, invalid profile validation, checkboxes, and UI automation metadata audits. The next expansion should prioritize richer WinForms and WPF business/E2E scenarios first, then extend the same patterns to MAUI Windows and Avalonia parity.
+The first TestZoo backlog lives in `tests/testzoo.yaml`. Current seed entries
+cover login, profile save, invalid profile validation, checkboxes, richer
+WinForms/WPF controls, modal, disabled state, async loading, and UI automation
+metadata audits. Focused examples live under `tests/examples/winforms/` and
+`tests/examples/wpf/` for runtime proof before extending the same patterns to
+MAUI Windows and Avalonia parity.
 
 ## Existing CI/CD And Tests
 

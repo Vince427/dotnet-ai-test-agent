@@ -17,6 +17,10 @@ desktop UI patterns.
 - MAUI Windows login.
 - Profile save and invalid email validation workflows.
 - Checkbox usage through profile active state.
+- WinForms and WPF .NET 8 radio, combo, list, grid, modal confirmation,
+  disabled-to-enabled protected action, and async loading workflows.
+- Isolated WinForms/WPF example plans under `tests/examples/**`, one scenario
+  per YAML, for readable runtime demonstrations.
 - UIA metadata audits for WinForms and WPF.
 
 ## Invariants
@@ -28,6 +32,7 @@ desktop UI patterns.
   richer WinForms/WPF workflows are stable.
 - Prefer small YAML files with one business/E2E scenario each for new TestZoo
   work.
+- Use `scripts/run-ui-examples.ps1` for focused WinForms/WPF runtime examples.
 - TestZoo must move beyond login: forms, validation, radio, combo, list, grid,
   CRUD, tabs, menus, modals, async loading, disabled states, visible errors,
   missing automation metadata, and guard failure scenarios.

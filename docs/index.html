@@ -267,6 +267,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\render-ui.ps1</code></pre>
       </article>
 
       <article class="panel wide">
+        <h2>WinForms and WPF Examples</h2>
+        <p>
+          Focused example plans live under <code>tests/examples/winforms/</code>
+          and <code>tests/examples/wpf/</code>. They cover login, profile save,
+          radio/combo/list/grid controls, modal confirmation, disabled states,
+          and async loading before MAUI and Avalonia parity.
+        </p>
+        <pre><code>powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-ui-examples.ps1 -WhatIf
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-ui-examples.ps1 -Framework winforms -Scenario login
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-ui-examples.ps1 -Framework wpf -Scenario controls</code></pre>
+      </article>
+
+      <article class="panel wide">
         <h2>Boundaries</h2>
         <ul>
           <li>AgentLoop tests existing apps from the outside; target apps do not need agent-specific packages or production code.</li>

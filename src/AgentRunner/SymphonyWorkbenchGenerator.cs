@@ -70,7 +70,7 @@ public static class SymphonyWorkbenchGenerator
         sb.AppendLine("<head>");
         sb.AppendLine("  <meta charset=\"utf-8\">");
         sb.AppendLine("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-        sb.AppendLine("  <title>Desktop AI Test Agent - Symphony Workbench</title>");
+        sb.AppendLine("  <title>Desktop AI Test Agent - AgentLoop Workbench</title>");
         sb.AppendLine("  <style>");
         sb.AppendLine("    :root { color-scheme: light; --ink:#17202a; --muted:#667085; --line:#d0d7de; --bg:#f6f8fa; --panel:#ffffff; --accent:#0f766e; --bad:#b42318; --warn:#b54708; --ok:#067647; }");
         sb.AppendLine("    * { box-sizing: border-box; } body { margin:0; font:14px/1.45 Segoe UI, Arial, sans-serif; color:var(--ink); background:var(--bg); }");
@@ -84,7 +84,7 @@ public static class SymphonyWorkbenchGenerator
         sb.AppendLine("</head>");
         sb.AppendLine("<body>");
         sb.AppendLine("  <header>");
-        sb.AppendLine("    <h1>Symphony Workbench</h1>");
+        sb.AppendLine("    <h1>AgentLoop Workbench</h1>");
         sb.AppendLine("    <div class=\"muted\">YAML is the source of truth. This page is a local read-only view over test specs and run artifacts.</div>");
         sb.AppendLine("  </header>");
         sb.AppendLine("  <main>");
@@ -151,11 +151,7 @@ public static class SymphonyWorkbenchGenerator
         if (requestedPlanPaths.Count > 0)
             return requestedPlanPaths.Select(p => Path.GetFullPath(Path.IsPathRooted(p) ? p : Path.Combine(repoRoot, p))).ToList();
 
-        var testsDir = Path.Combine(repoRoot, "tests");
-        if (!Directory.Exists(testsDir))
-            return [];
-
-        return Directory.GetFiles(testsDir, "*.yaml").Concat(Directory.GetFiles(testsDir, "*.yml")).OrderBy(p => p).ToList();
+        return TestPlanLoader.DiscoverPlanPaths(repoRoot);
     }
 
     private static List<TestDefinition> LoadTests(IEnumerable<string> planPaths)

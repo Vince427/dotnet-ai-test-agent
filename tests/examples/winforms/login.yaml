@@ -1,0 +1,21 @@
+suite: examples-winforms
+
+tests:
+  EX-WINFORMS-LOGIN-001:
+    title: "WinForms example: login succeeds"
+    priority: "P0"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "codex"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["examples", "winforms", "net8", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint is not configured for runtime execution"

@@ -1,0 +1,22 @@
+suite: examples-winforms
+
+tests:
+  EX-WINFORMS-MODAL-001:
+    title: "WinForms example: modal confirmation"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "codex"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Open the Test controls confirmation prompt, confirm the sample action, and verify that the controls status reports confirmation."
+    success_condition: "Modal confirmed"
+    max_steps: 10
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["examples", "winforms", "net8", "modal", "confirmation"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Confirmation prompt not visible after opening"
+      - "LLM endpoint is not configured for runtime execution"

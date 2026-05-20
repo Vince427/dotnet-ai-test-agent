@@ -7,6 +7,21 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 public static class TestPlanLoader
 {
+    public static List<string> DiscoverPlanPaths(string repoRoot)
+    {
+        if (string.IsNullOrWhiteSpace(repoRoot))
+            throw new ArgumentException("A repository root is required.", nameof(repoRoot));
+
+        var testsDir = Path.Combine(repoRoot, "tests");
+        if (!Directory.Exists(testsDir))
+            return [];
+
+        return Directory.EnumerateFiles(testsDir, "*.yaml", SearchOption.AllDirectories)
+            .Concat(Directory.EnumerateFiles(testsDir, "*.yml", SearchOption.AllDirectories))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     public static TestPlan Load(string path)
     {
         if (string.IsNullOrWhiteSpace(path))

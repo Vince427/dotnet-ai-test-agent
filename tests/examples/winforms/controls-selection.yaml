@@ -1,0 +1,22 @@
+suite: examples-winforms
+
+tests:
+  EX-WINFORMS-CONTROLS-001:
+    title: "WinForms example: radio, combo, list, and grid"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "In the Test controls section, choose Premium, choose Production from Environment, select Reports from the module list, inspect the case grid, save controls, and verify the controls status."
+    success_condition: "Selection saved"
+    max_steps: 14
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["examples", "winforms", "net8", "radio", "combo", "list", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Test controls section not visible"
+      - "LLM endpoint is not configured for runtime execution"

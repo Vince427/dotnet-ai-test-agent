@@ -22,6 +22,8 @@ parallel work.
   render the AgentLoop Workbench, and run one selected desktop test.
 - [x] MVP-E: Start the AgentLoop naming migration in docs and public language.
   Keep existing `symphony` filenames until the code/file rename is done safely.
+- [x] MVP-F: Prepare GitHub Pages as the first public docs target. Keep it
+  lightweight; defer DocFX until API reference generation is useful.
 - [x] V2-A: Split growing TestZoo work into smaller YAML files, one business
   scenario per file, while keeping current aggregate YAML valid.
 - [x] V2-B: Extend WinForms/WPF TestZoo first with radio, combo, list, grid,
@@ -29,8 +31,6 @@ parallel work.
 
 ## Next Executable Items
 
-- [ ] MVP-F: Prepare GitHub Pages as the first public docs target. Keep it
-  lightweight; defer DocFX until API reference generation is useful.
 - [ ] V2-C: Add guard failure demo scenarios: missing target, crash, empty UI
   tree, and unexpected modal where feasible.
 - [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are

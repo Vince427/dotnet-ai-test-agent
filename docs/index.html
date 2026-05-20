@@ -253,6 +253,11 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- -
 powershell -ExecutionPolicy Bypass -File .\scripts\render-ui.ps1</code></pre>
       </article>
 
+      <article class="panel">
+        <h2>Guard Demos</h2>
+        <pre><code>powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\write-guard-demos.ps1 -OutputRoot .\artifacts\guard-demos</code></pre>
+      </article>
+
       <article class="panel wide">
         <h2>Read Next</h2>
         <ul class="links">
@@ -273,7 +278,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\render-ui.ps1</code></pre>
           Focused example plans live under <code>tests/examples/winforms/</code>
           and <code>tests/examples/wpf/</code>. They cover login, profile save,
           radio/combo/list/grid controls, modal confirmation, disabled states,
-          and async loading before MAUI and Avalonia parity.
+          async loading, and guard evidence before MAUI and Avalonia parity.
         </p>
         <pre><code>powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-ui-examples.ps1 -WhatIf
 

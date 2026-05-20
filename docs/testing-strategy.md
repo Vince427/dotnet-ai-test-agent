@@ -23,6 +23,12 @@ Use these terms consistently:
 In this project, `tests/*.yaml` are business plans first. They become E2E tests
 when executed against a live target app.
 
+Guard failure demos are deterministic integration artifacts. They use the same
+`report.json` and `summary.md` contract as runtime runs, but are generated with
+`--write-guard-demos` so QA can review missing target, crash/closed-window,
+empty UI tree, and unexpected modal evidence without needing `.env`, a live
+LLM, or a desktop session.
+
 ## MVP Focus
 
 The MVP should prove this vertical slice:
@@ -73,7 +79,7 @@ Build richer WinForms and WPF flows first:
 - disabled/enabled state
 - async/loading state
 - CRUD-like form flow
-- guard failure demo where feasible
+- guard failure demo artifacts
 
 After those flows are stable, add MAUI Windows and Avalonia parity.
 

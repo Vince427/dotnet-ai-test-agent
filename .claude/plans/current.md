@@ -28,11 +28,13 @@ parallel work.
   scenario per file, while keeping current aggregate YAML valid.
 - [x] V2-B: Extend WinForms/WPF TestZoo first with radio, combo, list, grid,
   modal, disabled/enabled, async/loading, and CRUD-like sample scenarios.
+- [x] V2-C: Add guard failure demo artifacts for missing target, crash or
+  closed-window capture failure, empty UI tree, and unexpected modal. These are
+  deterministic manual artifacts first; real UI runtime guard E2E waits for
+  injectable runner seams.
 
 ## Next Executable Items
 
-- [ ] V2-C: Add guard failure demo scenarios: missing target, crash, empty UI
-  tree, and unexpected modal where feasible.
 - [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
   stable.
 - [ ] V3-A: Design UIA screenshot overlay artifact contract before adding VLM

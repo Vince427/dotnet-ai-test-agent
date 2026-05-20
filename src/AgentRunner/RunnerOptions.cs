@@ -17,7 +17,9 @@ public sealed class RunnerOptions
     public bool RenderUiOnly { get; set; }
     public bool ValidatePlanOnly { get; set; }
     public bool ListTestsOnly { get; set; }
+    public bool WriteGuardDemosOnly { get; set; }
     public string? UiOutputPath { get; set; }
+    public string? GuardDemoOutputRoot { get; set; }
     public EvidenceLevel EvidenceLevel { get; set; } = EvidenceLevel.Standard;
     public CommandOutputFormat OutputFormat { get; set; } = CommandOutputFormat.Text;
     public AgentGoal Goal { get; set; } = new();
@@ -35,8 +37,10 @@ public sealed class RunnerOptions
         string? suite = null;
         string? testId = null;
         string? uiOutputPath = null;
+        string? guardDemoOutputRoot = null;
         var validatePlanOnly = false;
         var listTestsOnly = false;
+        var writeGuardDemosOnly = false;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -62,6 +66,12 @@ public sealed class RunnerOptions
                 testId = ReadValue(args, ref i, "--test-id");
             else if (arg == "--render-ui")
                 uiOutputPath = ReadValue(args, ref i, "--render-ui");
+            else if (arg == "--write-guard-demos")
+            {
+                writeGuardDemosOnly = true;
+                if (HasOptionalValue(args, i))
+                    guardDemoOutputRoot = ReadValue(args, ref i, "--write-guard-demos");
+            }
             else if (arg == "--validate-plan")
             {
                 validatePlanOnly = true;
@@ -119,8 +129,9 @@ public sealed class RunnerOptions
         if (!string.IsNullOrWhiteSpace(uiOutputPath)) modeCount++;
         if (validatePlanOnly) modeCount++;
         if (listTestsOnly) modeCount++;
+        if (writeGuardDemosOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, or --list-tests.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, or --write-guard-demos.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
 
@@ -188,7 +199,9 @@ public sealed class RunnerOptions
             RenderUiOnly = !string.IsNullOrWhiteSpace(uiOutputPath),
             ValidatePlanOnly = validatePlanOnly,
             ListTestsOnly = listTestsOnly,
+            WriteGuardDemosOnly = writeGuardDemosOnly,
             UiOutputPath = ResolveOutputPath(uiOutputPath, config),
+            GuardDemoOutputRoot = ResolveGuardDemoOutputRoot(guardDemoOutputRoot, config),
             EvidenceLevel = evidenceLevel,
             OutputFormat = outputFormat,
             Goal = goal
@@ -250,6 +263,17 @@ public sealed class RunnerOptions
 
         var baseDir = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
         return Path.GetFullPath(Path.Combine(baseDir, outputPath));
+    }
+
+    private static string ResolveGuardDemoOutputRoot(string? outputRoot, WorkflowConfig config)
+    {
+        if (string.IsNullOrWhiteSpace(outputRoot))
+            return Path.GetFullPath(config.WorkspaceRoot);
+        if (Path.IsPathRooted(outputRoot))
+            return Path.GetFullPath(outputRoot);
+
+        var baseDir = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        return Path.GetFullPath(Path.Combine(baseDir, outputRoot));
     }
 }
 

@@ -76,6 +76,40 @@ public sealed class ArtifactWriterTests
         Assert.DoesNotContain("hunter2", json);
     }
 
+    [Fact]
+    public void WriteSummaryIncludesFailureCodesAndMessages()
+    {
+        var tempDir = CreateTempDirectory();
+        var writer = new ArtifactWriter(tempDir);
+        var artifact = new RunArtifact
+        {
+            RunId = "failure-code-demo",
+            GoalDescription = "Demonstrate a missing target.",
+            TargetWindow = "Sample",
+            Result = "Failed",
+            Steps =
+            [
+                new RunStep
+                {
+                    StepNumber = 1,
+                    ActionType = "Click",
+                    ActionTarget = "btnDoesNotExist",
+                    Outcome = "Failed",
+                    FailureCode = "action_target_not_found",
+                    FailureMessage = "Action target was not present in the latest UI snapshot.",
+                    ScoreDelta = -5,
+                    CumulativeScore = -5
+                }
+            ]
+        };
+
+        writer.WriteSummary(artifact);
+
+        var summary = File.ReadAllText(Path.Combine(tempDir, "failure-code-demo", "summary.md"));
+        Assert.Contains("action_target_not_found", summary);
+        Assert.Contains("Action target was not present", summary);
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-artifacts-" + Guid.NewGuid().ToString("N"));

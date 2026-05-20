@@ -111,6 +111,47 @@ public sealed class RunnerOptionsTests
     }
 
     [Fact]
+    public void ParseSupportsGuardDemoManualModeWithDefaultRunsRoot()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-guard-demos-" + Guid.NewGuid().ToString("N"));
+        var config = new WorkflowConfig
+        {
+            WorkflowDirectory = tempDir,
+            WorkspaceRoot = Path.Combine(tempDir, "runs")
+        };
+
+        var options = RunnerOptions.Parse(["--write-guard-demos"], config);
+
+        Assert.True(options.WriteGuardDemosOnly);
+        Assert.Equal(Path.Combine(tempDir, "runs"), options.GuardDemoOutputRoot);
+    }
+
+    [Fact]
+    public void ParseSupportsGuardDemoManualModeWithCustomOutput()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-guard-demos-" + Guid.NewGuid().ToString("N"));
+        var config = new WorkflowConfig
+        {
+            WorkflowDirectory = tempDir,
+            WorkspaceRoot = Path.Combine(tempDir, "runs")
+        };
+
+        var options = RunnerOptions.Parse(["--write-guard-demos", "artifacts/guard-demos"], config);
+
+        Assert.True(options.WriteGuardDemosOnly);
+        Assert.Equal(Path.Combine(tempDir, "artifacts", "guard-demos"), options.GuardDemoOutputRoot);
+    }
+
+    [Fact]
+    public void ParseRejectsGuardDemoModeCombinedWithAnotherManualMode()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            RunnerOptions.Parse(["--write-guard-demos", "--list-tests"], new WorkflowConfig()));
+
+        Assert.Contains("Use only one", ex.Message);
+    }
+
+    [Fact]
     public void ParseSupportsManualValidationWithoutSelectingRuntimeTest()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-manual-" + Guid.NewGuid().ToString("N"));

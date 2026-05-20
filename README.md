@@ -1,12 +1,12 @@
 # Desktop AI Test Agent
 
-AI-powered UI testing for existing .NET desktop apps with FlaUI, YAML test backlogs, quality guards, and an OpenAI Symphony-style architecture.
+AI-powered UI testing for existing .NET desktop apps with FlaUI, YAML test backlogs, quality guards, and an AgentLoop architecture.
 
 The product contract is **portable-first and CLI-first**: local users, CI jobs,
-Symphony Workbench, MCP/plugins, and AI agents all work through the same YAML,
+AgentLoop Workbench, MCP/plugins, and AI agents all work through the same YAML,
 CLI commands, and readable artifacts.
 
-## V1.3 — Generic Robo Agent (Symphony Foundation)
+## V1.3 - Generic Robo Agent (AgentLoop Foundation)
 
 This version transforms the agent from a hardcoded login-only tester into a **generic UI automation agent** capable of testing existing .NET desktop applications from the outside.
 
@@ -14,17 +14,17 @@ The target app stays clean: no required agent-specific classes, packages, or sou
 
 ### What's new in V1.3
 
-- **Generic UI tree discovery** — walks all UI elements, not just hardcoded IDs
-- **Dynamic goals** — configurable test objectives via CLI or WORKFLOW.md
-- **Symphony-style WORKFLOW.md** — YAML front matter config + prompt template
-- **Loop detection** — sliding window pattern analysis prevents infinite loops
-- **Scoring engine** — cumulative reward/penalty per action with abort threshold
-- **Structured logging** — Symphony-compatible key=value logs with context
-- **Run artifacts** — JSON report + screenshots + Markdown summary per run
-- **Multi-strategy element resolution** — AutomationId → Name fallback
-- **Extended actions** — Click, DoubleClick, EnterText, Scroll, Wait, Done, Explore
+- **Generic UI tree discovery** - walks all UI elements, not just hardcoded IDs
+- **Dynamic goals** - configurable test objectives via CLI or WORKFLOW.md
+- **AgentLoop WORKFLOW.md** - YAML front matter config + prompt template
+- **Loop detection** - sliding window pattern analysis prevents infinite loops
+- **Scoring engine** - cumulative reward/penalty per action with abort threshold
+- **Structured logging** - key=value logs with run context
+- **Run artifacts** - JSON report + screenshots + Markdown summary per run
+- **Multi-strategy element resolution** - AutomationId -> Name fallback
+- **Extended actions** - Click, DoubleClick, EnterText, Scroll, Wait, Done, Explore
 
-### Architecture (Symphony-inspired)
+### Architecture (AgentLoop)
 
 ```
 WORKFLOW.md (policy + config)
@@ -72,7 +72,7 @@ Every critical capability must work without Codex, Claude Code, Copilot, MCP, pl
 - Humans can edit `tests/*.yaml` directly.
 - The CLI can validate and list tests without loading `.env`.
 - The runtime agent can still use OpenRouter for AI-assisted UI execution.
-- The Symphony Workbench is a local viewer/debugger over YAML and artifacts.
+- The AgentLoop Workbench is a local viewer/debugger over YAML and artifacts.
 - Future MCP/plugins should call the same CLI commands instead of replacing the runner.
 - Agent authoring rules live in `docs/ai-authoring.md`; the YAML schema lives in `schemas/test-plan.schema.json`.
 
@@ -113,7 +113,7 @@ LLM_MODEL=anthropic/claude-3.5-sonnet:beta
 
 The real `.env` file is ignored by git.
 
-If no LLM environment variables are configured, the runner falls back to `http://localhost:4000` with a dummy API key. That URL is only an OpenAI-compatible local LLM/proxy endpoint for developers. It is not the Symphony Workbench, not the tested desktop app, and not a dashboard. For OpenRouter usage, keep using the real local `.env`.
+If no LLM environment variables are configured, the runner falls back to `http://localhost:4000` with a dummy API key. That URL is only an OpenAI-compatible local LLM/proxy endpoint for developers. It is not the AgentLoop Workbench, not the tested desktop app, and not a dashboard. For OpenRouter usage, keep using the real local `.env`.
 
 ## Quick Start
 
@@ -138,7 +138,7 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- `
     --max-steps 20
 ```
 
-### Run a directed test from the Symphony backlog
+### Run a directed test from the AgentLoop backlog
 
 ```powershell
 dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- `
@@ -179,7 +179,7 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- -
 dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --list-tests --format json
 ```
 
-### Render the local Symphony Workbench
+### Render the local AgentLoop Workbench
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\render-ui.ps1
@@ -204,7 +204,7 @@ This writes `artifacts/test-plans/plan-validation.json` and `artifacts/test-plan
 | `--plan` | none | YAML test plan path, such as `tests/smoke.yaml` |
 | `--suite` | none | Suite name; resolves to `tests/<suite>.yaml` |
 | `--test-id` | first test in plan | Test id from the YAML backlog |
-| `--render-ui` | none | Generate the local static Symphony Workbench HTML and exit |
+| `--render-ui` | none | Generate the local static AgentLoop Workbench HTML and exit |
 | `--validate-plan` | none | Validate YAML plans and exit without `.env`, LLM, or UI automation |
 | `--list-tests` | none | List YAML tests and exit without `.env`, LLM, or UI automation |
 | `--format` | `text` | Manual command output: `text` or `json` |

@@ -1,6 +1,6 @@
 ---
-# Symphony-style workflow configuration for Desktop AI Test Agent
-# This file follows the WORKFLOW.md convention from OpenAI Symphony spec.
+# AgentLoop workflow configuration for Desktop AI Test Agent
+# This file keeps policy, prompt, and runtime configuration portable.
 
 agent:
   max_concurrent_agents: 1

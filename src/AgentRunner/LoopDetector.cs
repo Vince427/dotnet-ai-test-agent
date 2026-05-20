@@ -5,7 +5,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
 /// Detects when the agent is stuck in a loop by tracking recent actions.
-/// Inspired by Symphony's stall detection mechanism.
+/// Detects repeated AgentLoop actions that indicate stalled progress.
 /// </summary>
 public class LoopDetector(int windowSize = 6, int repeatThreshold = 3)
 {

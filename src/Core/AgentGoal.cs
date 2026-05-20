@@ -11,7 +11,7 @@ public enum TestCategory
 }
 
 /// <summary>
-/// Defines a test objective for the agent, inspired by Symphony's per-issue prompt model.
+/// Defines a test objective for one AgentLoop run.
 /// </summary>
 public sealed class AgentGoal
 {

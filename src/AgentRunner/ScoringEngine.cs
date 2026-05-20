@@ -4,7 +4,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
 /// Scores agent actions to track progress and detect failure.
-/// Inspired by Symphony's run outcome tracking.
+/// Tracks AgentLoop run progress through deterministic action scoring.
 /// </summary>
 public class ScoringEngine
 {

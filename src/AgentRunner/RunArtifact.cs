@@ -5,7 +5,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
 /// Represents a complete agent run, capturing all steps and outcomes.
-/// Inspired by Symphony's Run Attempt entity.
+/// Captures the outcome of one AgentLoop run attempt.
 /// </summary>
 public class RunArtifact
 {

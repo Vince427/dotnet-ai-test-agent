@@ -1,15 +1,16 @@
 # Ticket-To-Evidence CI
 
 This document describes the deterministic CI lane for turning a GitHub issue or
-OpenAI Symphony ticket into reviewable proof artifacts without making AI,
-desktop focus, or hosted runtime automation part of the core product.
+external task such as an OpenAI Symphony ticket into reviewable proof artifacts
+without making AI, desktop focus, or hosted runtime automation part of the core
+product.
 
 ## Goals
 
 - Keep GitHub Actions as a portable proof runner over the same CLI, YAML, and
   artifact contract used locally.
-- Let GitHub issues and Symphony work items point to CI evidence without making
-  either system the source of truth.
+- Let GitHub issues and external orchestrator work items point to CI evidence
+  without making either system the source of truth.
 - Prove ticket readiness with build, tests, plan validation, and a ticket proof
   dry run.
 - Keep real desktop automation off GitHub-hosted runners by default.
@@ -50,25 +51,25 @@ or pass `-LaunchSample`, which starts the sample executable before the AgentLoop
 run and stops it afterward. CI evidence should clearly label these runs as
 runtime evidence, not deterministic dry-run proof.
 
-## GitHub Issues And Symphony
+## GitHub Issues And External Orchestrators
 
-GitHub issues and Symphony tickets should carry planning context, acceptance
-criteria, and links to evidence. They should not replace YAML plans, CLI output,
-or artifact files.
+GitHub issues and external tickets such as OpenAI Symphony tasks should carry
+planning context, acceptance criteria, and links to evidence. They should not
+replace YAML plans, CLI output, or artifact files.
 
 A typical handoff is:
 
-1. A GitHub issue or Symphony task names the business behavior to prove.
+1. A GitHub issue or external task names the business behavior to prove.
 2. A human or coding agent updates the relevant YAML plan and implementation.
 3. The manual proof workflow is dispatched with the ticket reference in the run
    title or issue comment.
 4. GitHub Actions uploads validation and proof artifacts.
-5. The issue or Symphony task links back to the workflow run and summarizes the
+5. The issue or external task links back to the workflow run and summarizes the
    result for reviewers.
 
-Symphony may orchestrate this flow through GitHub APIs or issue comments, but
+An orchestrator may drive this flow through GitHub APIs or issue comments, but
 the product remains manual-first: the same commands can be run from PowerShell
-without Symphony, OpenRouter, or a plugin.
+without OpenAI Symphony, OpenRouter, or a plugin.
 
 ## Evidence Contract
 
@@ -92,8 +93,8 @@ Hosted CI must not:
 - launch WinForms, WPF, MAUI Windows, or Avalonia sample apps for ticket proof;
 - require `.env` or provider secrets;
 - rely on OpenRouter for validation, listing, or proof acceptance;
-- treat Symphony or GitHub issue text as more authoritative than YAML and
-  artifacts.
+- treat an external ticket or GitHub issue body as more authoritative than YAML
+  and artifacts.
 
 Use a self-hosted runner or local machine for real desktop automation. Keep the
 manual GitHub Actions proof lane deterministic until a specific runtime lane is

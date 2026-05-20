@@ -3,7 +3,7 @@ using System;
 namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
-/// Structured logger following Symphony's key=value logging conventions.
+/// Structured logger using key=value entries with run context.
 /// Logs to console with structured context fields.
 /// </summary>
 public class StructuredLogger(string? issueId = null, string? sessionId = null)

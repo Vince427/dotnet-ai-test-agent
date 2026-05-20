@@ -25,6 +25,8 @@ the backlog grows, split new scenarios into smaller files under
 - WinForms and WPF .NET 8 disabled-to-enabled protected action workflows.
 - WinForms and WPF .NET 8 async loading workflows.
 - UI automation metadata audits for WinForms and WPF.
+- Deterministic guard failure demo artifacts for missing action target,
+  crash/closed-window capture failure, empty UIA tree, and unexpected modal.
 
 ## Rules
 
@@ -46,7 +48,8 @@ Add WinForms/WPF sample screens and YAML tests first for:
 - async loading;
 - disabled controls;
 - visible error states;
-- ambiguous or missing automation metadata.
+- ambiguous or missing automation metadata;
+- real runtime guard failures once the runner has injectable E2E seams.
 
 Then port the stable workflows to MAUI Windows and Avalonia.
 
@@ -68,6 +71,12 @@ Preview all commands without running desktop automation:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-ui-examples.ps1 -WhatIf
+```
+
+Generate guard failure artifacts without desktop automation:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\write-guard-demos.ps1 -OutputRoot .\artifacts\guard-demos
 ```
 
 Run one focused example after configuring the runtime LLM provider:

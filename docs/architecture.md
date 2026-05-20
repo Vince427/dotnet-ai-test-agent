@@ -22,7 +22,7 @@ The target application is treated as a black box.
 4. **Execution Layer**: automation drivers such as FlaUI and later Appium.
 5. **Intelligence Layer**: LLM decisions through OpenRouter, OpenAI-compatible APIs, or local proxies.
 6. **Guard Layer**: deterministic checks that can force reject or abort LLM actions.
-7. **Observability Layer**: structured logs, JSON reports, Markdown summaries, screenshots, and the static AgentLoop Workbench.
+7. **Observability Layer**: structured logs, JSON reports, Markdown summaries, screenshots, guard demo artifacts, and the static AgentLoop Workbench.
 
 Portable surfaces are first-class. YAML validation, test listing, artifact reading, and workbench rendering must run without `.env`, OpenRouter, or an LLM. Local humans, CI, AI agents, and future MCP/plugins should call these same surfaces instead of receiving hidden special capabilities.
 
@@ -43,6 +43,8 @@ Observe -> Decide -> Act -> Guard -> Score -> Record
 ```
 
 The LLM proposes actions, but the orchestrator owns safety, constraints, scoring, and final state.
+Manual guard demo generation uses the same artifact shape, so failed safety
+paths can be reviewed without a live UI run.
 
 ## Framework Strategy
 

@@ -56,6 +56,13 @@ Preview focused WinForms/WPF runtime examples without launching desktop apps:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-ui-examples.ps1 -WhatIf
 ```
 
+Generate deterministic guard failure demo artifacts, without `.env`, LLM, or a
+desktop app:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\write-guard-demos.ps1 -OutputRoot .\artifacts\guard-demos
+```
+
 Run one selected test after configuring the runtime LLM provider and preparing a
 desktop session:
 

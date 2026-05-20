@@ -23,7 +23,8 @@ internal static class Program
         var manualOnlyRequested =
             HasArgument(args, "--render-ui") ||
             HasArgument(args, "--validate-plan") ||
-            HasArgument(args, "--list-tests");
+            HasArgument(args, "--list-tests") ||
+            HasArgument(args, "--write-guard-demos");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
@@ -66,6 +67,9 @@ internal static class Program
 
         if (options.ListTestsOnly)
             return ListTests(config, options);
+
+        if (options.WriteGuardDemosOnly)
+            return WriteGuardDemos(options);
 
         // --- Initialize components ---
         var secretRedactor = new SecretRedactor();
@@ -171,6 +175,8 @@ internal static class Program
                         ActionType = "LlmCall",
                         Reasoning = ex.Message,
                         Outcome = "Failed",
+                        FailureCode = "llm_call_failed",
+                        FailureMessage = ex.Message,
                         ScoreDelta = llmScoreDelta,
                         CumulativeScore = scoring.TotalScore
                     });
@@ -228,6 +234,8 @@ internal static class Program
                     {
                         succeeded = false;
                         outcomeDetail = "action_not_allowed";
+                        runStep.FailureCode = outcomeDetail;
+                        runStep.FailureMessage = $"Action '{action.ActionType}' is not listed in allowed_actions.";
                     }
                     else
                     {
@@ -236,6 +244,8 @@ internal static class Program
                         {
                             succeeded = false;
                             outcomeDetail = targetValidation.Code ?? "action_target_invalid";
+                            runStep.FailureCode = outcomeDetail;
+                            runStep.FailureMessage = targetValidation.Message;
                             logger.Warning(targetValidation.Message ?? outcomeDetail);
                         }
                     }
@@ -275,6 +285,8 @@ internal static class Program
                             var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
                             succeeded = false;
                             outcomeDetail = $"assertion_failed on {action.AutomationId}. Expected: '{safeExpected}', Actual: '{safeActual}'";
+                            runStep.FailureCode = "assertion_failed";
+                            runStep.FailureMessage = outcomeDetail;
                         }
                         else
                         {
@@ -295,6 +307,8 @@ internal static class Program
                         {
                             succeeded = false;
                             outcomeDetail = "done_without_success_condition";
+                            runStep.FailureCode = outcomeDetail;
+                            runStep.FailureMessage = "Agent signaled Done before the configured success condition was visible.";
                             logger.Warning($"Agent signaled Done before success condition was visible. status=\"{doneStatusText ?? ""}\"");
                         }
                         else
@@ -322,12 +336,16 @@ internal static class Program
                     {
                         succeeded = false;
                         outcomeDetail = "unsupported_action";
+                        runStep.FailureCode = outcomeDetail;
+                        runStep.FailureMessage = $"Unsupported action '{action.ActionType}'.";
                     }
                 }
                 catch (Exception ex)
                 {
                     succeeded = false;
                     outcomeDetail = secretRedactor.RedactText(ex.Message) ?? ex.Message;
+                    runStep.FailureCode = "action_failed";
+                    runStep.FailureMessage = outcomeDetail;
                     logger.Error($"Action failed: {action.ActionType} on {action.AutomationId}: {outcomeDetail}");
                 }
 
@@ -350,6 +368,8 @@ internal static class Program
                             ? "guard_abort"
                             : "guard_force_reject";
                         outcomeDetail = $"{guardPrefix}:{guardResult.Code}";
+                        runStep.FailureCode = guardResult.Code;
+                        runStep.FailureMessage = guardResult.Message;
                         runStep.GuardStatus = guardResult.Status.ToString();
                         runStep.GuardCode = guardResult.Code;
                         runStep.GuardMessage = guardResult.Message;
@@ -448,6 +468,17 @@ internal static class Program
         }
 
         return false;
+    }
+
+    private static int WriteGuardDemos(RunnerOptions options)
+    {
+        var outputRoot = options.GuardDemoOutputRoot ?? Path.GetFullPath("runs");
+        var result = GuardFailureDemoFactory.WriteAll(outputRoot);
+        Console.WriteLine($"Guard demo artifacts written to {result.OutputRoot} runs={result.Artifacts.Count}");
+        foreach (var artifact in result.Artifacts)
+            Console.WriteLine($"- {artifact.RunId}: {artifact.TestId} result={artifact.Result}");
+
+        return 0;
     }
 
     private static bool HasArgument(string[] args, string name)

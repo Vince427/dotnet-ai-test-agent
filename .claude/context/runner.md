@@ -10,6 +10,7 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/WorkflowConfig.cs`
 - `src/AgentRunner/ArtifactWriter.cs`
 - `src/AgentRunner/RunArtifact.cs`
+- `src/AgentRunner/GuardFailureDemoFactory.cs`
 - `src/AgentRunner/ScoringEngine.cs`
 - `src/AgentRunner/LoopDetector.cs`
 - `src/AgentRunner/QualityGuards.cs`
@@ -19,8 +20,9 @@ Owns the executable orchestration loop and manual CLI surface.
 
 ## Invariants
 
-- Manual modes `--validate-plan`, `--list-tests`, and `--render-ui` must not
-  require `.env`, LLM access, FlaUI, or a target app.
+- Manual modes `--validate-plan`, `--list-tests`, `--render-ui`, and
+  `--write-guard-demos` must not require `.env`, LLM access, FlaUI, or a target
+  app.
 - `--format json` must keep stdout parseable JSON.
 - `Done` is not success unless the configured success condition is visible or
   the test has no success condition by design.
@@ -28,6 +30,8 @@ Owns the executable orchestration loop and manual CLI surface.
   successes.
 - Loop detection records real actions, not synthetic pending markers.
 - Runtime artifacts stay human-readable and machine-readable.
+- Failure steps should expose stable `failureCode` and `failureMessage` values
+  in `report.json` and `summary.md` when the runner can name the failure.
 - Thread sleeps in async runtime paths should use `Task.Delay`.
 
 ## Validation
@@ -43,4 +47,3 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- -
 - CLI flags that select YAML tests also touch `workflow.md`.
 - Artifact shape changes also touch `workbench.md` and docs.
 - Provider config or secret logging changes also touch `security.md`.
-

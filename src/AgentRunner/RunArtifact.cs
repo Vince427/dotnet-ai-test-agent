@@ -40,6 +40,8 @@ public class RunStep
     public string? ActionValue { get; set; }
     public string? Reasoning { get; set; }
     public string? Outcome { get; set; } // Succeeded, Failed, LoopDetected
+    public string? FailureCode { get; set; }
+    public string? FailureMessage { get; set; }
     public string? GuardStatus { get; set; }
     public string? GuardCode { get; set; }
     public string? GuardMessage { get; set; }

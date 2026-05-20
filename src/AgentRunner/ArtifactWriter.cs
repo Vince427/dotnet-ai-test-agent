@@ -97,16 +97,19 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
 
         sb.AppendLine("## Steps");
         sb.AppendLine();
-        sb.AppendLine("| # | Action | Target | Outcome | Guard | Score | Evidence |");
-        sb.AppendLine("|---|--------|--------|---------|-------|-------|----------|");
+        sb.AppendLine("| # | Action | Target | Outcome | Failure | Guard | Score | Evidence |");
+        sb.AppendLine("|---|--------|--------|---------|---------|-------|-------|----------|");
 
         foreach (var step in artifact.Steps)
         {
+            var failure = !string.IsNullOrEmpty(step.FailureCode)
+                ? $"{step.FailureCode}: {step.FailureMessage ?? "-"}"
+                : "-";
             var guard = !string.IsNullOrEmpty(step.GuardStatus)
                 ? $"{step.GuardStatus}:{step.GuardCode}"
                 : "-";
             var evidence = BuildEvidenceList(step);
-            sb.AppendLine($"| {step.StepNumber} | {step.ActionType} | {step.ActionTarget ?? "-"} | {step.Outcome} | {guard} | {step.CumulativeScore} | {evidence} |");
+            sb.AppendLine($"| {step.StepNumber} | {step.ActionType} | {step.ActionTarget ?? "-"} | {step.Outcome} | {failure} | {guard} | {step.CumulativeScore} | {evidence} |");
         }
 
         File.WriteAllText(Path.Combine(dir, "summary.md"), sb.ToString());

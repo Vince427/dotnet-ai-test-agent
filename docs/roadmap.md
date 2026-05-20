@@ -58,6 +58,9 @@ This roadmap keeps the project portable-first, black-box, and AgentLoop-driven. 
 - Prefer one business scenario per YAML file under a suite folder such as `tests/testzoo/`.
 - Current seed covers login, profile save, invalid profile validation, checkboxes, and UIA metadata audits across WinForms, WPF, .NET Framework 4.8, .NET 8, and MAUI Windows where samples exist.
 - Expand WinForms and WPF first with richer controls and business/E2E flows. Add MAUI Windows and Avalonia parity after the WinForms/WPF flows are stable.
+- Add deterministic guard failure demo artifacts for missing targets, crash or
+  closed-window capture failures, empty UI trees, and unexpected modals before
+  wiring those cases into real UI runtime E2E.
 
 ## V2.1 - Public Docs And GitHub Pages
 

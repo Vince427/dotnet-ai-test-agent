@@ -140,6 +140,9 @@ Evidence levels:
 - `full`: standard evidence plus UI tree JSON snapshots per step.
 
 The default is `standard`. CI may use `minimal` for fast checks or `full` for flaky/debug runs.
+Guard failure demos may be generated deterministically with
+`--write-guard-demos`; they use the same artifact fields and are intended for
+QA/docs proof, not as a replacement for real WinForms/WPF E2E runs.
 
 ## Mini UI
 

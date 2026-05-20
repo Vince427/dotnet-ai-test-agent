@@ -11,9 +11,10 @@ namespace DesktopAiTestAgent.AgentRunner;
 /// Writes run artifacts (JSON report + screenshots + markdown summary) to disk.
 /// Inspired by Symphony's workspace + run artifact model.
 /// </summary>
-public class ArtifactWriter(string? baseDir = null)
+public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = null)
 {
     private readonly string _baseDir = baseDir ?? Path.Combine(Directory.GetCurrentDirectory(), "runs");
+    private readonly SecretRedactor _redactor = redactor ?? new SecretRedactor();
 
     /// <summary>
     /// Returns the directory path for a specific run.
@@ -45,7 +46,7 @@ public class ArtifactWriter(string? baseDir = null)
         Directory.CreateDirectory(dir);
 
         var path = Path.Combine(dir, $"step_{stepNumber:D3}.json");
-        File.WriteAllText(path, JsonSerializer.Serialize(snapshot, CreateJsonOptions()));
+        File.WriteAllText(path, JsonSerializer.Serialize(_redactor.RedactSnapshot(snapshot), CreateJsonOptions()));
         return path;
     }
 

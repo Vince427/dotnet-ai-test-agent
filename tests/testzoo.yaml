@@ -270,6 +270,166 @@ tests:
       - "MAUI app package is not installed or not launched"
       - "LLM endpoint returns rate limit errors"
 
+  TZ-WINFORMS-NET8-CONTROLS-SELECTION:
+    title: "WinForms .NET 8 handles radio, combo, list, and grid controls"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "worker-2"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "In the Test controls section, choose Premium, choose Production from Environment, select Reports from the module list, inspect the case grid, save controls, and verify the visible controls status."
+    success_condition: "Selection saved"
+    max_steps: 14
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["testzoo", "winforms", "net8", "radio", "combo", "list", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Test controls section not visible"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-CONTROLS-SELECTION:
+    title: "WPF .NET 8 handles radio, combo, list, and grid controls"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "worker-2"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "In the Test controls section, choose Premium, choose Production from Environment, select Reports from the module list, inspect the case grid, save controls, and verify the visible controls status."
+    success_condition: "Selection saved"
+    max_steps: 14
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["testzoo", "wpf", "net8", "radio", "combo", "list", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Test controls section not visible"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-MODAL-CONFIRM:
+    title: "WinForms .NET 8 confirms an in-window modal prompt"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "worker-2"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Open the Test controls confirmation prompt, confirm the sample action, and verify the visible controls status reports that the modal was confirmed."
+    success_condition: "Modal confirmed"
+    max_steps: 10
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["testzoo", "winforms", "net8", "modal", "confirmation"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Confirmation prompt not visible after opening"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-MODAL-CONFIRM:
+    title: "WPF .NET 8 confirms an in-window modal prompt"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "worker-2"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Open the Test controls confirmation prompt, confirm the sample action, and verify the visible controls status reports that the modal was confirmed."
+    success_condition: "Modal confirmed"
+    max_steps: 10
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["testzoo", "wpf", "net8", "modal", "confirmation"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Confirmation prompt not visible after opening"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-DISABLED-ENABLES:
+    title: "WinForms .NET 8 enables a disabled protected action"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "worker-2"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Verify the Protected Action button starts disabled, click Enable Action, click Protected Action, and verify the visible controls status reports completion."
+    success_condition: "Protected action completed"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["testzoo", "winforms", "net8", "disabled", "enabled", "state"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Protected action button metadata is not visible"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-DISABLED-ENABLES:
+    title: "WPF .NET 8 enables a disabled protected action"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "worker-2"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Verify the Protected Action button starts disabled, click Enable Action, click Protected Action, and verify the visible controls status reports completion."
+    success_condition: "Protected action completed"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["testzoo", "wpf", "net8", "disabled", "enabled", "state"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Protected action button metadata is not visible"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WINFORMS-NET8-ASYNC-LOADING:
+    title: "WinForms .NET 8 shows async loading completion"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "worker-2"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Click Load Cases in the Test controls section, wait while the status reports Loading cases, and verify the visible controls status reports async load completion."
+    success_condition: "Async load complete"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["testzoo", "winforms", "net8", "async", "loading", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Load Cases button not visible"
+      - "LLM endpoint returns rate limit errors"
+
+  TZ-WPF-NET8-ASYNC-LOADING:
+    title: "WPF .NET 8 shows async loading completion"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "worker-2"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Click Load Cases in the Test controls section, wait while the status reports Loading cases, and verify the visible controls status reports async load completion."
+    success_condition: "Async load complete"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["testzoo", "wpf", "net8", "async", "loading", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Load Cases button not visible"
+      - "LLM endpoint returns rate limit errors"
+
   TZ-WINFORMS-NET8-A11Y-AUDIT:
     title: "WinForms .NET 8 exposes usable automation metadata"
     priority: "P2"

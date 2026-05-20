@@ -2,7 +2,7 @@
 
 TestZoo is the shared desktop runtime backlog used to validate common UI patterns across frameworks.
 
-Current seed coverage lives in `tests/testzoo.yaml` with 16 TestZoo cases. As
+Current seed coverage lives in `tests/testzoo.yaml` with 24 TestZoo cases. As
 the backlog grows, split new scenarios into smaller files under
 `tests/testzoo/`, one business/E2E workflow per YAML file.
 
@@ -13,6 +13,10 @@ the backlog grows, split new scenarios into smaller files under
 - .NET MAUI Windows login success.
 - WinForms, WPF, and .NET MAUI profile form save workflows.
 - Profile validation failure workflows for invalid email input.
+- WinForms and WPF .NET 8 radio, combo, list, and grid control workflows.
+- WinForms and WPF .NET 8 in-window modal confirmation workflows.
+- WinForms and WPF .NET 8 disabled-to-enabled protected action workflows.
+- WinForms and WPF .NET 8 async loading workflows.
 - UI automation metadata audits for WinForms and WPF.
 
 ## Rules

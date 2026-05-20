@@ -6,7 +6,7 @@
 
 - [ ] I did not commit a real `.env` or any secret.
 - [ ] I did not add agent-specific classes, packages, hooks, or test-only code paths to a target app.
-- [ ] The change preserves the portable contract: YAML specs -> CLI runner -> artifacts -> Symphony Workbench.
+- [ ] The change preserves the portable contract: YAML specs -> CLI runner -> artifacts -> AgentLoop Workbench.
 - [ ] YAML changes are under `tests/` or an external test pack.
 - [ ] New or changed tests include clear `goal`, `success_condition`, `allowed_actions`, and relevant metadata.
 - [ ] Existing unit/integration/CI checks are linked with `existing_tests` where useful.

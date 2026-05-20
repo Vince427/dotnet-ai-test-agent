@@ -7,7 +7,6 @@ Owns AgentLoop policy, YAML test plans, schema, and agent authoring contracts.
 - `WORKFLOW.md`
 - `tests/*.yaml`
 - `schemas/test-plan.schema.json`
-- `prompts/create-desktop-test.md`
 - `docs/ai-authoring.md`
 - `src/AgentRunner/TestDefinition.cs`
 - `src/AgentRunner/TestPlanLoader.cs`

@@ -12,18 +12,24 @@ public class AgentMemory
     private readonly Queue<string> _history = [];
     private readonly Dictionary<string, string> _facts = [];
     private readonly HashSet<string> _visitedScreens = [];
+    private readonly SecretRedactor _redactor;
     private const int MaxHistory = 15;
+
+    public AgentMemory(SecretRedactor? redactor = null)
+    {
+        _redactor = redactor ?? new SecretRedactor();
+    }
 
     public void AddAction(string actionDescription)
     {
-        _history.Enqueue(actionDescription);
+        _history.Enqueue(_redactor.RedactText(actionDescription) ?? actionDescription);
         while (_history.Count > MaxHistory)
             _history.Dequeue();
     }
 
     public void AddFact(string key, string value)
     {
-        _facts[key] = value;
+        _facts[key] = _redactor.RedactValueForIdentifier(key, value) ?? "";
     }
 
     public void RecordScreen(string screenSignature)

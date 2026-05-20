@@ -5,36 +5,104 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Sample.WpfApp"
         mc:Ignorable="d"
-        Title="WPF AI Test Target" Height="520" Width="460" WindowStartupLocation="CenterScreen">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20">
-            <TextBlock Text="Welcome to the WPF AI Agent Target" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
+        Title="WPF AI Test Target" Height="720" Width="620" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                <TextBlock Text="Welcome to the WPF AI Agent Target" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
 
-            <TextBlock Text="Username:" Margin="0,0,0,5"/>
-            <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Margin="0,0,0,15" Padding="5"/>
+                <TextBlock Text="Username:" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Margin="0,0,0,15" Padding="5"/>
 
-            <TextBlock Text="Password:" Margin="0,0,0,5"/>
-            <PasswordBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" Margin="0,0,0,20" Padding="5"/>
+                <TextBlock Text="Password:" Margin="0,0,0,5"/>
+                <PasswordBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" Margin="0,0,0,20" Padding="5"/>
 
-            <DockPanel Margin="0,0,0,28">
-                <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnLogin_Click"/>
-                <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Ready" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-            </DockPanel>
+                <DockPanel Margin="0,0,0,28">
+                    <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnLogin_Click"/>
+                    <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Ready" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </DockPanel>
 
-            <TextBlock Text="Profile form" FontSize="14" FontWeight="Bold" Margin="0,0,0,14"/>
+                <TextBlock Text="Profile form" FontSize="14" FontWeight="Bold" Margin="0,0,0,14"/>
 
-            <TextBlock Text="Display name:" Margin="0,0,0,5"/>
-            <TextBox x:Name="txtDisplayName" AutomationProperties.AutomationId="txtDisplayName" Margin="0,0,0,15" Padding="5"/>
+                <TextBlock Text="Display name:" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtDisplayName" AutomationProperties.AutomationId="txtDisplayName" Margin="0,0,0,15" Padding="5"/>
 
-            <TextBlock Text="Email:" Margin="0,0,0,5"/>
-            <TextBox x:Name="txtEmail" AutomationProperties.AutomationId="txtEmail" Margin="0,0,0,15" Padding="5"/>
+                <TextBlock Text="Email:" Margin="0,0,0,5"/>
+                <TextBox x:Name="txtEmail" AutomationProperties.AutomationId="txtEmail" Margin="0,0,0,15" Padding="5"/>
 
-            <CheckBox x:Name="chkActive" AutomationProperties.AutomationId="chkActive" Content="Active" Margin="0,0,0,15"/>
+                <CheckBox x:Name="chkActive" AutomationProperties.AutomationId="chkActive" Content="Active" Margin="0,0,0,15"/>
 
-            <DockPanel>
-                <Button x:Name="btnSaveProfile" AutomationProperties.AutomationId="btnSaveProfile" Content="Save Profile" Width="120" Height="30" HorizontalAlignment="Left" Click="BtnSaveProfile_Click"/>
-                <TextBlock x:Name="lblProfileStatus" AutomationProperties.AutomationId="lblProfileStatus" Text="Profile waiting" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-            </DockPanel>
-        </StackPanel>
-    </ScrollViewer>
+                <DockPanel Margin="0,0,0,28">
+                    <Button x:Name="btnSaveProfile" AutomationProperties.AutomationId="btnSaveProfile" Content="Save Profile" Width="120" Height="30" HorizontalAlignment="Left" Click="BtnSaveProfile_Click"/>
+                    <TextBlock x:Name="lblProfileStatus" AutomationProperties.AutomationId="lblProfileStatus" Text="Profile waiting" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <TextBlock Text="Test controls" FontSize="14" FontWeight="Bold" Margin="0,0,0,14"/>
+
+                <TextBlock Text="Mode:" Margin="0,0,0,5"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                    <RadioButton x:Name="rdoStandard" AutomationProperties.AutomationId="rdoStandard" Content="Standard" Width="100" IsChecked="True"/>
+                    <RadioButton x:Name="rdoPremium" AutomationProperties.AutomationId="rdoPremium" Content="Premium" Width="100"/>
+                </StackPanel>
+
+                <TextBlock Text="Environment:" Margin="0,0,0,5"/>
+                <ComboBox x:Name="cmbEnvironment" AutomationProperties.AutomationId="cmbEnvironment" Width="180" HorizontalAlignment="Left" Margin="0,0,0,15">
+                    <ComboBoxItem Content="Dev"/>
+                    <ComboBoxItem Content="Staging"/>
+                    <ComboBoxItem Content="Production"/>
+                </ComboBox>
+
+                <TextBlock Text="Module:" Margin="0,0,0,5"/>
+                <ListBox x:Name="lstModules" AutomationProperties.AutomationId="lstModules" Width="180" Height="78" HorizontalAlignment="Left" Margin="0,0,0,15">
+                    <ListBoxItem Content="Login"/>
+                    <ListBoxItem Content="Billing"/>
+                    <ListBoxItem Content="Reports"/>
+                </ListBox>
+
+                <TextBlock Text="Case grid:" Margin="0,0,0,5"/>
+                <DataGrid x:Name="gridCases"
+                          AutomationProperties.AutomationId="gridCases"
+                          Height="130"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          Margin="0,0,0,15">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Feature" Binding="{Binding Feature}" Width="*"/>
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <WrapPanel Margin="0,0,0,12">
+                    <Button x:Name="btnSaveControls" AutomationProperties.AutomationId="btnSaveControls" Content="Save Controls" Width="120" Height="30" Margin="0,0,10,8" Click="BtnSaveControls_Click"/>
+                    <Button x:Name="btnOpenConfirmation" AutomationProperties.AutomationId="btnOpenConfirmation" Content="Open Confirmation" Width="150" Height="30" Margin="0,0,10,8" Click="BtnOpenConfirmation_Click"/>
+                    <Button x:Name="btnLoadCases" AutomationProperties.AutomationId="btnLoadCases" Content="Load Cases" Width="110" Height="30" Margin="0,0,10,8" Click="BtnLoadCases_Click"/>
+                    <Button x:Name="btnEnableProtectedAction" AutomationProperties.AutomationId="btnEnableProtectedAction" Content="Enable Action" Width="120" Height="30" Margin="0,0,10,8" Click="BtnEnableProtectedAction_Click"/>
+                    <Button x:Name="btnProtectedAction" AutomationProperties.AutomationId="btnProtectedAction" Content="Protected Action" Width="140" Height="30" Margin="0,0,10,8" IsEnabled="False" Click="BtnProtectedAction_Click"/>
+                </WrapPanel>
+
+                <TextBlock x:Name="lblControlsStatus" AutomationProperties.AutomationId="lblControlsStatus" Text="Controls waiting" Foreground="Gray"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border x:Name="confirmationDialog"
+                AutomationProperties.AutomationId="pnlConfirmationDialog"
+                Visibility="Collapsed"
+                Width="280"
+                Padding="16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="#FFFFE0"
+                BorderBrush="#AA8A00"
+                BorderThickness="1"
+                Panel.ZIndex="10">
+            <StackPanel>
+                <TextBlock Text="Confirm sample action?" Margin="0,0,0,12"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="btnConfirmDialog" AutomationProperties.AutomationId="btnConfirmDialog" Content="Confirm" Width="80" Height="28" Margin="0,0,8,0" Click="BtnConfirmDialog_Click"/>
+                    <Button x:Name="btnCancelDialog" AutomationProperties.AutomationId="btnCancelDialog" Content="Cancel" Width="80" Height="28" Click="BtnCancelDialog_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>

@@ -18,9 +18,12 @@ public class LlmService
 {
     private readonly AIAgent _agent;
     private readonly string? _promptTemplate;
+    private readonly SecretRedactor _redactor;
 
-    public LlmService(WorkflowConfig config)
+    public LlmService(WorkflowConfig config, SecretRedactor? redactor = null)
     {
+        _redactor = redactor ?? new SecretRedactor();
+
         // Enforce configuration: fail fast if keys are missing
         var proxyEndpointUrl = config.LlmEndpoint ?? throw new InvalidOperationException("LLM_ENDPOINT is not configured. Check your WORKFLOW.md or .env file.");
         var apiKey = config.LlmApiKey ?? throw new InvalidOperationException("LLM_API_KEY is not configured. Check your WORKFLOW.md or .env file.");
@@ -66,8 +69,12 @@ Rules:
         string memoryContext,
         string? loopWarning = null)
     {
-        var successLine = goal.SuccessCondition != null
-            ? "Success condition: UI shows \"" + goal.SuccessCondition + "\""
+        var safeGoalDescription = _redactor.RedactText(goal.Description) ?? goal.Description;
+        var safeSuccessCondition = _redactor.RedactText(goal.SuccessCondition) ?? goal.SuccessCondition;
+        var safeWorkflowPolicy = _redactor.RedactText(BuildWorkflowPolicy(goal)) ?? "";
+        var safeMemoryContext = _redactor.RedactText(memoryContext) ?? memoryContext;
+        var successLine = safeSuccessCondition != null
+            ? "Success condition: UI shows \"" + safeSuccessCondition + "\""
             : "";
         var allowedActionsLine = goal.AllowedActions.Count > 0
             ? "Allowed actions for this test: " + string.Join(", ", goal.AllowedActions)
@@ -84,23 +91,21 @@ Rules:
             _ => $"CATEGORY: {goal.Category}. Follow the goal description strictly."
         };
 
-        var workflowPolicy = BuildWorkflowPolicy(goal);
-
         var prompt = $@"
 === WORKFLOW POLICY ===
-{workflowPolicy}
+{safeWorkflowPolicy}
 
 === GOAL ===
-{goal.Description}
+{safeGoalDescription}
 {categoryLine}
 {successLine}
 {allowedActionsLine}
 
 === CURRENT UI STATE ===
-{snapshot.ToPromptText()}
+{_redactor.RedactSnapshotForPrompt(snapshot)}
 
 === AGENT CONTEXT ===
-{memoryContext}
+{safeMemoryContext}
 
 {loopLine}
 

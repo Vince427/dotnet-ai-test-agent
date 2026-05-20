@@ -68,13 +68,14 @@ internal static class Program
             return ListTests(config, options);
 
         // --- Initialize components ---
+        var secretRedactor = new SecretRedactor();
         var logger = new StructuredLogger(goal.Identifier, null);
-        var memory = new AgentMemory();
+        var memory = new AgentMemory(secretRedactor);
         var loopDetector = new LoopDetector();
         var scoring = new ScoringEngine { AbortThreshold = config.AbortThreshold };
         var qualityGuards = QualityGuardEngine.CreateDefault();
-        var artifactWriter = new ArtifactWriter(config.WorkspaceRoot);
-        var llmService = new LlmService(config);
+        var artifactWriter = new ArtifactWriter(config.WorkspaceRoot, secretRedactor);
+        var llmService = new LlmService(config, secretRedactor);
 
         var runArtifact = new RunArtifact
         {
@@ -200,8 +201,10 @@ internal static class Program
                 // Update loop detector with actual action
                 var actionKey = $"{action.ActionType}:{action.AutomationId}";
                 bool isLoop = loopDetector.RecordAndCheck(actionKey);
+                var safeActionValue = secretRedactor.RedactActionValue(action);
+                var safeReason = secretRedactor.RedactText(action.Reason);
 
-                logger.Decision($"action={action.ActionType} target={action.AutomationId} value={action.Value} confidence={action.Confidence} reason=\"{action.Reason}\"");
+                logger.Decision($"action={action.ActionType} target={action.AutomationId} value={safeActionValue} confidence={action.Confidence} reason=\"{safeReason}\"");
 
                 // 3. ACT — execute the action
                 bool succeeded = true;
@@ -212,8 +215,8 @@ internal static class Program
                     UiStateSnapshot = $"{snapshot.WindowTitle} ({snapshot.Elements.Count} elements)",
                     ActionType = action.ActionType,
                     ActionTarget = action.AutomationId,
-                    ActionValue = action.Value,
-                    Reasoning = action.Reason
+                    ActionValue = safeActionValue,
+                    Reasoning = safeReason
                 };
 
                 if (options.EvidenceLevel == EvidenceLevel.Full)
@@ -225,6 +228,21 @@ internal static class Program
                     {
                         succeeded = false;
                         outcomeDetail = "action_not_allowed";
+                    }
+                    else
+                    {
+                        var targetValidation = AgentActionValidator.ValidateTargetExists(action, snapshot);
+                        if (!targetValidation.IsValid)
+                        {
+                            succeeded = false;
+                            outcomeDetail = targetValidation.Code ?? "action_target_invalid";
+                            logger.Warning(targetValidation.Message ?? outcomeDetail);
+                        }
+                    }
+
+                    if (!succeeded)
+                    {
+                        // Validation failed before dispatching to the automation driver.
                     }
                     else if (string.Equals(action.ActionType, "EnterText", StringComparison.OrdinalIgnoreCase) &&
                         !string.IsNullOrEmpty(action.AutomationId))
@@ -253,9 +271,16 @@ internal static class Program
                         var actualText = driver.ReadText(action.AutomationId!);
                         if (!string.Equals(actualText, action.Value, StringComparison.OrdinalIgnoreCase))
                         {
-                            throw new Exception($"Assertion failed on {action.AutomationId}. Expected: '{action.Value}', Actual: '{actualText}'");
+                            var safeExpected = secretRedactor.RedactActionValue(action);
+                            var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
+                            succeeded = false;
+                            outcomeDetail = $"assertion_failed on {action.AutomationId}. Expected: '{safeExpected}', Actual: '{safeActual}'";
                         }
-                        logger.Info($"Assertion passed on {action.AutomationId}: '{actualText}'");
+                        else
+                        {
+                            var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
+                            logger.Info($"Assertion passed on {action.AutomationId}: '{safeActual}'");
+                        }
                     }
                     else if (string.Equals(action.ActionType, "Wait", StringComparison.OrdinalIgnoreCase))
                     {
@@ -302,8 +327,8 @@ internal static class Program
                 catch (Exception ex)
                 {
                     succeeded = false;
-                    outcomeDetail = ex.Message;
-                    logger.Error($"Action failed: {action.ActionType} on {action.AutomationId}", ex);
+                    outcomeDetail = secretRedactor.RedactText(ex.Message) ?? ex.Message;
+                    logger.Error($"Action failed: {action.ActionType} on {action.AutomationId}: {outcomeDetail}");
                 }
 
                 QualityGuardResult? guardResult = null;

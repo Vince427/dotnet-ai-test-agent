@@ -30,10 +30,6 @@ docs/
   repo-structure.md
   roadmap.md
 
-prompts/
-  master-agent.md
-  fix-build.md
-
 scripts/
   run-net8.ps1
   run-net48.ps1
@@ -52,6 +48,5 @@ LICENSE
 - `src/AgentRunner`: AgentLoop-inspired orchestrator (observe -> decide -> act -> guard -> score -> record).
 - `src/Samples`: demo target applications.
 - `docs/`: project source-of-truth documents.
-- `prompts/`: reusable prompts for AI dev agents.
 - `scripts/`: local demo and verification scripts.
 - `runs/`: generated per-run artifact directories (gitignored).

@@ -2,10 +2,10 @@
 
 This repository is a portable-first desktop test runner for existing .NET
 applications. Keep the product useful from local terminals, Windows CI,
-Symphony Workbench, and AI agents through the same contract:
+AgentLoop Workbench, and AI agents through the same contract:
 
 ```text
-YAML specs -> CLI runner -> artifacts -> Symphony Workbench
+YAML specs -> CLI runner -> artifacts -> AgentLoop Workbench
 ```
 
 ## Read Before Editing

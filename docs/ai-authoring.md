@@ -42,6 +42,11 @@ GitHub Copilot and GitHub-native coding agents should also read
 `.github/copilot-instructions.md`, which is a short repo-local entry point for
 the same rules.
 
+Detailed private prompts are intentionally not tracked in this public repo.
+Keep reusable public guidance short and product-focused; use local ignored files
+such as `*.prompt.local.md` or `.private-prompts/` for team-specific agent
+prompts.
+
 ## YAML Metadata
 
 - `source_issue`: issue, work item, bug id, or ticket URL.

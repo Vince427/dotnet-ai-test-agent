@@ -20,7 +20,7 @@ For every task:
 | Files touched | Context to read |
 |---|---|
 | `src/AgentRunner/**`, `src/Core/AgentGoal.cs`, runner tests | `.claude/context/runner.md` |
-| `WORKFLOW.md`, `tests/*.yaml`, `schemas/**`, `prompts/**`, `docs/ai-authoring.md` | `.claude/context/workflow.md` |
+| `WORKFLOW.md`, `tests/*.yaml`, `schemas/**`, `docs/ai-authoring.md` | `.claude/context/workflow.md` |
 | `src/UIAutomation/**`, `src/Core/IAutomationDriver.cs`, `src/Core/AgentAction.cs`, `src/Core/Ui*.cs` | `.claude/context/automation.md` |
 | `src/Samples/**`, `tests/testzoo.yaml`, `docs/testzoo.md` | `.claude/context/testzoo.md` |
 | `src/AgentRunner/SymphonyWorkbenchGenerator.cs`, `docs/symphony.html`, `scripts/render-ui.ps1` | `.claude/context/workbench.md` |

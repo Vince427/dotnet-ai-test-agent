@@ -33,6 +33,9 @@ secrets.json
 Thumbs.db
 AppPackages/
 WORKFLOW.local.md
+prompts/
+.private-prompts/
+*.prompt.local.md
 .claude/worktrees/
 .claude/local/
 .claude/*.local.md

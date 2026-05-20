@@ -20,7 +20,7 @@ The stable product contract is:
 - YAML test definitions;
 - CLI commands;
 - readable artifacts;
-- the static Symphony Workbench.
+- the static AgentLoop Workbench.
 
 Local users, CI jobs, MCP/plugins, and AI agents must use these same surfaces.
 No critical capability should exist only inside a plugin, an MCP server, a
@@ -42,6 +42,11 @@ Allow optional improvements only when teams choose them, such as stable Automati
 ## Test Definition
 
 Directed tests live in YAML files, normally under `tests/`.
+
+Prefer small files: one business scenario per YAML file, grouped by suite or
+framework when useful. Large aggregate files are acceptable as a bootstrap
+step, but new TestZoo work should move toward `tests/<suite>/<id>.yaml` so
+agents and reviewers can load one scenario without scanning the whole backlog.
 
 Each test should define:
 
@@ -75,7 +80,7 @@ The sample suite must move beyond login. Add equivalent TestZoo applications for
 - missing or ambiguous automation metadata
 - deliberate crash or failure scenario for guards
 
-The first TestZoo backlog lives in `tests/testzoo.yaml`. Current seed entries cover login, profile save, invalid profile validation, checkboxes, and UI automation metadata audits. The next expansion should add richer controls and Avalonia parity.
+The first TestZoo backlog lives in `tests/testzoo.yaml`. Current seed entries cover login, profile save, invalid profile validation, checkboxes, and UI automation metadata audits. The next expansion should prioritize richer WinForms and WPF business/E2E scenarios first, then extend the same patterns to MAUI Windows and Avalonia parity.
 
 ## Existing CI/CD And Tests
 
@@ -131,7 +136,9 @@ The default is `standard`. CI may use `minimal` for fast checks or `full` for fl
 
 ## Mini UI
 
-The Symphony Workbench is a local static UI over YAML and artifacts.
+The AgentLoop Workbench is a local static UI over YAML and artifacts. Existing
+filenames may still use `symphony` until the rename migration is complete, but
+new product language should use AgentLoop for the orchestrator and workbench.
 
 It should:
 

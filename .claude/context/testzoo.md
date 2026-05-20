@@ -7,6 +7,7 @@ desktop UI patterns.
 
 - `src/Samples/**`
 - `tests/testzoo.yaml`
+- `tests/testzoo/**/*.yaml` when the backlog is split into smaller scenario files
 - `docs/testzoo.md`
 
 ## Current Coverage
@@ -23,6 +24,10 @@ desktop UI patterns.
 - Samples are demo targets, not product code to be shipped to users.
 - Keep equivalent workflows across WinForms, WPF, MAUI Windows, and Avalonia
   when practical.
+- Expand WinForms and WPF first. Add MAUI Windows and Avalonia parity after the
+  richer WinForms/WPF workflows are stable.
+- Prefer small YAML files with one business/E2E scenario each for new TestZoo
+  work.
 - TestZoo must move beyond login: forms, validation, radio, combo, list, grid,
   CRUD, tabs, menus, modals, async loading, disabled states, visible errors,
   missing automation metadata, and guard failure scenarios.
@@ -42,4 +47,3 @@ dotnet test .\DesktopAiTestAgent.sln --no-restore -v minimal
 
 - Adding a sample framework may touch solution files and CI.
 - New UI patterns may require runner/automation action support.
-

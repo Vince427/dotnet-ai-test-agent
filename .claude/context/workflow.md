@@ -1,6 +1,6 @@
 # Context: Workflow And YAML Specs
 
-Owns Symphony policy, YAML test plans, schema, and agent authoring contracts.
+Owns AgentLoop policy, YAML test plans, schema, and agent authoring contracts.
 
 ## Files
 
@@ -18,6 +18,8 @@ Owns Symphony policy, YAML test plans, schema, and agent authoring contracts.
 
 - YAML remains the source of truth for directed tests.
 - Tests must be readable and editable by humans.
+- Prefer one business scenario per YAML file for new or split suites. Existing
+  aggregate files are transitional while the backlog is still small.
 - Any AI-authored YAML field must also make sense manually.
 - Validation must run without `.env` or LLM access.
 - Schema and loader must evolve together.
@@ -38,4 +40,3 @@ dotnet test .\DesktopAiTestAgent.sln --no-restore -v minimal
 - New action types require `automation.md` and runner changes.
 - Workbench fields require `workbench.md`.
 - CI output format changes require `ci.md`.
-

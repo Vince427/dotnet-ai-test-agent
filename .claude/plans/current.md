@@ -22,15 +22,23 @@ parallel work.
 ## Next Executable Items
 
 - [ ] MVP-B: Keep the first user-facing path tiny: validate YAML, list tests,
-  render Symphony Workbench, and run one selected desktop test.
-- [ ] V2-A: Add Avalonia Windows sample project and initial TestZoo YAML entries.
-- [ ] V2-B: Extend TestZoo with radio, combo, list, and grid scenarios across
-  existing WinForms/WPF samples.
-- [ ] V2-C: Add modal dialog and disabled/enabled state sample workflows.
-- [ ] V2-D: Add guard failure demo scenarios: missing target, crash, empty UI
+  render the AgentLoop Workbench, and run one selected desktop test.
+- [ ] MVP-E: Start the AgentLoop naming migration in docs and public language.
+  Keep existing `symphony` filenames until the code/file rename is done safely.
+- [ ] MVP-F: Prepare GitHub Pages as the first public docs target. Keep it
+  lightweight; defer DocFX until API reference generation is useful.
+- [ ] V2-A: Split growing TestZoo work into smaller YAML files, one business
+  scenario per file, while keeping current aggregate YAML valid.
+- [ ] V2-B: Extend WinForms/WPF TestZoo first with radio, combo, list, grid,
+  modal, disabled/enabled, async/loading, and CRUD-like sample scenarios.
+- [ ] V2-C: Add guard failure demo scenarios: missing target, crash, empty UI
   tree, and unexpected modal where feasible.
+- [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
+  stable.
 - [ ] V3-A: Design UIA screenshot overlay artifact contract before adding VLM
   calls.
+- [ ] V3-B: Keep recording mode visible in roadmap/docs, but defer
+  implementation until the action model and TestZoo flows are stable.
 - [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
 - [ ] V6-A: Add standard CI output prototype, starting with JUnit XML or a
   compact JSON summary.

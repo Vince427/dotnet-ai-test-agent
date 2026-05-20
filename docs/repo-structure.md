@@ -3,7 +3,7 @@
 ```text
 src/
   AgentRunner/
-    Program.cs          — Symphony-inspired orchestrator loop
+    Program.cs          — AgentLoop-inspired orchestrator loop
     LlmService.cs       — LLM integration (Microsoft.Agents.AI)
     AgentMemory.cs      — history + facts + visited screens
     LoopDetector.cs     — anti-loop sliding window
@@ -40,7 +40,7 @@ scripts/
   check.ps1
   run-demo.ps1
 
-WORKFLOW.md    — Symphony-style policy + config
+WORKFLOW.md    — AgentLoop-style policy + config
 README.md
 LICENSE
 ```
@@ -49,7 +49,7 @@ LICENSE
 
 - `src/Core`: models, interfaces, and lightweight abstractions.
 - `src/UIAutomation`: FlaUI integration layer with generic tree walking.
-- `src/AgentRunner`: Symphony-inspired orchestrator (observe → decide → act → score → record).
+- `src/AgentRunner`: AgentLoop-inspired orchestrator (observe -> decide -> act -> guard -> score -> record).
 - `src/Samples`: demo target applications.
 - `docs/`: project source-of-truth documents.
 - `prompts/`: reusable prompts for AI dev agents.

@@ -68,7 +68,7 @@ This document consolidates the architecture and workflow rules for Desktop AI Te
 
 ## 8. UX Guidelines
 
-- Keep the Symphony Workbench simple and local.
+- Keep the AgentLoop Workbench simple and local.
 - Offer useful choices: suite, test id, framework, status filter, result filter, and prompt preview.
 - Prefer readable tables, direct links to artifacts, and clear evidence over complex dashboard behavior.
 - Do not introduce auth, storage, or server-side state until there is a concrete need.

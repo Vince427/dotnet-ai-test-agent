@@ -1,0 +1,21 @@
+suite: examples-wpf
+
+tests:
+  EX-WPF-LOGIN-001:
+    title: "WPF example: login succeeds"
+    priority: "P0"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "codex"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["examples", "wpf", "net8", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint is not configured for runtime execution"

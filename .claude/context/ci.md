@@ -7,6 +7,7 @@ Owns repeatable validation commands, CI templates, and contributor workflow.
 - `.github/**`
 - `.azure/**`
 - `scripts/**`
+- `docs/ticket-to-evidence-ci.md`
 - `README.md`
 - `docs/architecture.md`
 - `docs/roadmap.md`
@@ -23,6 +24,10 @@ Owns repeatable validation commands, CI templates, and contributor workflow.
 - Do not hide required provider secrets in scripts.
 - Keep `dotnet build`, `dotnet test`, and plan validation as the core checks.
 - Do not introduce heavy infrastructure before a concrete need.
+- Ticket-to-evidence CI stays `workflow_dispatch` only on hosted runners and
+  uses `run-ticket-proof.ps1 -TicketPath <ticket.md> -SkipRuntime -DryRun`;
+  real desktop automation belongs on local or self-hosted interactive Windows
+  runners.
 
 ## Validation
 
@@ -36,4 +41,3 @@ dotnet test .\DesktopAiTestAgent.sln --no-restore -v minimal
 
 - Adding projects requires solution and CI awareness.
 - Release or packaging work may need a new context file later.
-

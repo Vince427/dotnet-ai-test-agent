@@ -1,0 +1,22 @@
+suite: examples-winforms
+
+tests:
+  EX-WINFORMS-ASYNC-001:
+    title: "WinForms example: async loading completes"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Click Load Cases in the Test controls section, wait while the status reports Loading cases, and verify that async load completion is visible."
+    success_condition: "Async load complete"
+    max_steps: 12
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["examples", "winforms", "net8", "async", "loading", "grid"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Load Cases button not visible"
+      - "LLM endpoint is not configured for runtime execution"

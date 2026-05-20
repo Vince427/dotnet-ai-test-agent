@@ -20,6 +20,9 @@ Owns AgentLoop policy, YAML test plans, schema, and agent authoring contracts.
 - Tests must be readable and editable by humans.
 - Prefer one business scenario per YAML file for new or split suites. Existing
   aggregate files are transitional while the backlog is still small.
+- CLI validation, listing, and Workbench rendering discover YAML files
+  recursively under `tests/`, so scenario files may live in directories such as
+  `tests/examples/winforms/login.yaml`.
 - Any AI-authored YAML field must also make sense manually.
 - Validation must run without `.env` or LLM access.
 - Schema and loader must evolve together.

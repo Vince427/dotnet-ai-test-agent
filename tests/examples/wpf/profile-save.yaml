@@ -1,0 +1,22 @@
+suite: examples-wpf
+
+tests:
+  EX-WPF-PROFILE-001:
+    title: "WPF example: profile form saves"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Fill the profile form with display name 'Ada Lovelace', email 'ada@example.com', enable Active, save the profile, and verify the profile status."
+    success_condition: "Profile saved"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["examples", "wpf", "net8", "profile", "form", "checkbox"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Profile form controls are not visible"
+      - "LLM endpoint is not configured for runtime execution"

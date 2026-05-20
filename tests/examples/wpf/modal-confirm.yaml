@@ -1,0 +1,22 @@
+suite: examples-wpf
+
+tests:
+  EX-WPF-MODAL-001:
+    title: "WPF example: modal confirmation"
+    priority: "P1"
+    framework: "wpf"
+    target_window: "WPF AI Test Target"
+    authoring_agent: "codex"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Open the Test controls confirmation prompt, confirm the sample action, and verify that the controls status reports confirmation."
+    success_condition: "Modal confirmed"
+    max_steps: 10
+    allowed_actions: ["Click", "Assert", "Done", "Wait", "Scroll"]
+    tags: ["examples", "wpf", "net8", "modal", "confirmation"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "Confirmation prompt not visible after opening"
+      - "LLM endpoint is not configured for runtime execution"

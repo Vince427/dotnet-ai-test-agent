@@ -6,6 +6,23 @@ namespace DesktopAiTestAgent.AgentRunner.Tests;
 public sealed class TestPlanLoaderTests
 {
     [Fact]
+    public void DiscoverPlanPathsFindsYamlFilesRecursively()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-plans-" + Guid.NewGuid().ToString("N"));
+        var testsDir = Path.Combine(tempDir, "tests");
+        var examplesDir = Path.Combine(testsDir, "examples", "winforms");
+        Directory.CreateDirectory(examplesDir);
+        File.WriteAllText(Path.Combine(testsDir, "smoke.yaml"), "suite: smoke");
+        File.WriteAllText(Path.Combine(examplesDir, "login.yml"), "suite: examples-winforms");
+
+        var paths = TestPlanLoader.DiscoverPlanPaths(tempDir);
+
+        Assert.Equal(2, paths.Count);
+        Assert.Contains(paths, path => path.EndsWith(Path.Combine("tests", "smoke.yaml"), StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(paths, path => path.EndsWith(Path.Combine("tests", "examples", "winforms", "login.yml"), StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void ParseLoadsVersionedTestDefinitions()
     {
         var plan = TestPlanLoader.Parse("""

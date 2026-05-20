@@ -57,7 +57,7 @@ internal static class Program
                     : new List<string> { options.PlanPath! }
             });
 
-            Console.WriteLine($"Symphony workbench written to {result.OutputPath} tests={result.TestCount} runs={result.RunCount}");
+            Console.WriteLine($"AgentLoop Workbench written to {result.OutputPath} tests={result.TestCount} runs={result.RunCount}");
             return 0;
         }
 
@@ -93,7 +93,7 @@ internal static class Program
         var sessionId = $"{runArtifact.RunId}-{DateTime.UtcNow:HHmmss}";
         logger.SetContext(goal.Identifier, sessionId);
 
-        logger.Info($"Desktop AI Test Agent V1.3 (Symphony Architecture)");
+        logger.Info($"Desktop AI Test Agent V1.3 (AgentLoop Architecture)");
         logger.Info($"goal=\"{goal.Description}\" target=\"{targetWindow}\" max_steps={goal.MaxSteps}");
 
         // --- Attach to window ---
@@ -647,14 +647,7 @@ internal static class Program
             return [options.PlanPath!];
 
         var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
-        var testsDir = Path.Combine(repoRoot, "tests");
-        if (!Directory.Exists(testsDir))
-            return [];
-
-        return Directory.GetFiles(testsDir, "*.yaml")
-            .Concat(Directory.GetFiles(testsDir, "*.yml"))
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return TestPlanLoader.DiscoverPlanPaths(repoRoot);
     }
 
     private static void WriteJson<T>(T value)

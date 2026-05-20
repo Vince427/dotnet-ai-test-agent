@@ -1,0 +1,74 @@
+name: Ticket evidence proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      ticket_ref:
+        description: GitHub issue, Symphony ticket, or trace key for this proof run
+        required: false
+        type: string
+      ticket_path:
+        description: Ticket markdown path to dry-run
+        required: false
+        default: tickets/examples/winforms-login-proof.md
+        type: string
+
+run-name: Ticket evidence proof ${{ inputs.ticket_ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-proof:
+    name: Build, validate, and dry-run proof
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+      TICKET_REF: ${{ inputs.ticket_ref }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore .\DesktopAiTestAgent.sln
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build .\DesktopAiTestAgent.sln --no-restore -v minimal
+
+      - name: Test
+        shell: pwsh
+        run: dotnet test .\DesktopAiTestAgent.sln --no-build -v minimal
+
+      - name: Validate YAML plans
+        shell: pwsh
+        run: .\scripts\validate-test-plans.ps1 -SkipRestore -SkipUnitTests
+
+      - name: Confirm ticket proof script
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath '.\scripts\run-ticket-proof.ps1')) {
+            throw 'scripts/run-ticket-proof.ps1 is required before dispatching this manual proof workflow.'
+          }
+
+      - name: Dry-run ticket proof
+        shell: pwsh
+        run: .\scripts\run-ticket-proof.ps1 -TicketPath '${{ inputs.ticket_path }}' -SkipRuntime -DryRun
+
+      - name: Upload proof artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ticket-evidence-proof
+          path: |
+            artifacts/test-plans
+            artifacts/ticket-proof
+          if-no-files-found: warn

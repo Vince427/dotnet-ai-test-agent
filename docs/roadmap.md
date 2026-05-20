@@ -1,12 +1,12 @@
 # Roadmap
 
-This roadmap keeps the project portable-first, black-box, and Symphony-driven. The agent must test existing applications from the outside, without requiring application teams to add agent-specific classes, packages, or code paths.
+This roadmap keeps the project portable-first, black-box, and AgentLoop-driven. The agent must test existing applications from the outside, without requiring application teams to add agent-specific classes, packages, or code paths.
 
-## V1.3 - Generic Robo Agent + Symphony Foundation - Done
+## V1.3 - Generic Robo Agent + AgentLoop Foundation - Done
 
 - Generic UI tree discovery.
 - Dynamic goals through CLI and `WORKFLOW.md`.
-- Symphony-style loop: observe -> decide -> act -> score -> record.
+- AgentLoop-style loop: observe -> decide -> act -> guard -> score -> record.
 - Loop detection, scoring, structured logs, screenshots, JSON and Markdown run artifacts.
 - OpenRouter/local LLM configuration through `.env`.
 
@@ -17,9 +17,10 @@ This roadmap keeps the project portable-first, black-box, and Symphony-driven. T
 - Test metadata: id, title, priority, framework, target window, goal, success condition, max steps, allowed actions, tags, blocked conditions.
 - YAML remains the source of truth.
 
-## V1.5 - Symphony Mini UI - Done
+## V1.5 - Static AgentLoop Workbench - Done
 
-- Generate a local static `docs/symphony.html` workbench from `tests/*.yaml` and `runs/*/report.json`.
+- Generate a local static workbench from `tests/*.yaml` and `runs/*/report.json`.
+- Existing filenames may still use `symphony` until the rename migration is complete.
 - Keep it read-only first: backlog list, latest runs, status, score, guards, screenshots and summaries.
 - No database, no auth, no server requirement, no SaaS cockpit.
 - UX rule: make the UI simple and obvious, but provide guided choices for suites, test ids, frameworks, result filters, and prompt previews.
@@ -53,8 +54,17 @@ This roadmap keeps the project portable-first, black-box, and Symphony-driven. T
 - Replace the login-only demo with a common TestZoo app set.
 - Add equivalent samples for WinForms, WPF, .NET MAUI Windows, and Avalonia Windows Desktop.
 - Cover common workflows: login, forms, validation, checkbox/radio/combo, lists, grids, CRUD, tabs, menus, modals, async loading, disabled states, error states, and accessibility edge cases.
-- Seed `tests/testzoo.yaml` first, then expand sample apps to match the backlog.
+- Seed `tests/testzoo.yaml` first, then split into smaller YAML files as scenarios stabilize.
+- Prefer one business scenario per YAML file under a suite folder such as `tests/testzoo/`.
 - Current seed covers login, profile save, invalid profile validation, checkboxes, and UIA metadata audits across WinForms, WPF, .NET Framework 4.8, .NET 8, and MAUI Windows where samples exist.
+- Expand WinForms and WPF first with richer controls and business/E2E flows. Add MAUI Windows and Avalonia parity after the WinForms/WPF flows are stable.
+
+## V2.1 - Public Docs And GitHub Pages
+
+- Publish a simple GitHub Pages site for the quickstart, MVP path, TestZoo status, and a static workbench demo.
+- Keep GitHub Pages lightweight first: Markdown docs plus generated static artifacts.
+- Add DocFX later when API reference generation and versioned docs become worth the extra setup.
+- Make recording mode visible in the roadmap as an adoption feature, but keep it out of the MVP implementation.
 
 ## V2.5 - Framework Strategy
 
@@ -113,6 +123,13 @@ This roadmap keeps the project portable-first, black-box, and Symphony-driven. T
 - Improve modal dialog handling, focus recovery, DPI scaling, multi-monitor support, and child windows.
 - Keep each action bounded by YAML `allowed_actions`.
 
+## V9.5 - Recording Mode
+
+- Add `da-test record` after the action model and TestZoo controls are stable.
+- Let users perform a scenario manually and generate a first YAML draft from observed UI events and snapshots.
+- Treat recording as authoring assistance only: generated YAML must remain editable, reviewable, and validated by the normal CLI.
+- Redact sensitive fields before storing or sending recorded values to any LLM.
+
 ## V10 - Test Planning Like Linear
 
 - Add backlog states: `todo`, `ready`, `running`, `passed`, `failed`, `blocked`, `quarantined`.
@@ -129,7 +146,7 @@ This roadmap keeps the project portable-first, black-box, and Symphony-driven. T
 
 - Stable CLI and YAML schema.
 - Samples for WinForms, WPF, Avalonia, and MAUI Windows.
-- Static Symphony Workbench with simple UX and useful choices.
+- Static AgentLoop Workbench with simple UX and useful choices.
 - Standard CI outputs.
 - Strong non-intrusive adoption story for existing applications and existing test suites.
 

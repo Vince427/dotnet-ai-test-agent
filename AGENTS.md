@@ -10,7 +10,7 @@ Portable entry point for Codex and other coding agents.
 
 ## Core Rules
 
-- Portable-first desktop test runner: local, CI, Symphony Workbench, and agents
+- Portable-first desktop test runner: local, CI, AgentLoop Workbench, and agents
   all use the same CLI/YAML/artifact contract.
 - Manual-first: YAML, CLI, artifacts, and docs must work without AI.
 - AI optional: OpenRouter is for runtime assistance, not validation/listing/UI.

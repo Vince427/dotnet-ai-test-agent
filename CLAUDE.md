@@ -32,7 +32,7 @@ single feature across parallel sessions unless ownership is explicit.
 
 ## Fixed Product Rules
 
-- Portable-first. Local runs, CI, the Symphony Workbench, MCP/plugins, and AI
+- Portable-first. Local runs, CI, the AgentLoop Workbench, MCP/plugins, and AI
   agents must all use the same CLI/YAML/artifact contract.
 - No SaaS dashboard or hosted service as product core.
 - Manual-first. Every critical capability needs editable YAML, CLI commands,
@@ -85,7 +85,7 @@ Suggested split:
 - Workflow session: YAML plans, schema, prompt policy, authoring docs.
 - Automation session: FlaUI/UIA driver, action execution, UI snapshots.
 - TestZoo session: samples and multi-framework runtime scenarios.
-- Workbench session: static Symphony UI.
+- Workbench session: static AgentLoop UI.
 - CI session: scripts, GitHub Actions, Azure Pipelines, repo docs.
 - Security session: `.env`, provider config, secret logging.
 

@@ -1,6 +1,9 @@
-# Context: Symphony Workbench
+# Context: AgentLoop Workbench
 
 Owns the local static UI over YAML specs and run artifacts.
+
+Product language is AgentLoop Workbench. Existing source/generated filenames may
+still use `symphony` until the code/file rename is done deliberately.
 
 ## Files
 
@@ -31,4 +34,3 @@ dotnet test .\DesktopAiTestAgent.sln --no-restore -v minimal
 
 - Artifact schema changes touch `runner.md`.
 - YAML field additions touch `workflow.md`.
-

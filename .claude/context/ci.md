@@ -28,6 +28,9 @@ Owns repeatable validation commands, CI templates, and contributor workflow.
   uses `run-ticket-proof.ps1 -TicketPath <ticket.md> -SkipRuntime -DryRun`;
   real desktop automation belongs on local or self-hosted interactive Windows
   runners.
+- GitHub Pages publishes the lightweight `docs/` site. The Pages workflow may
+  render the static AgentLoop Workbench, but it must not require `.env`, LLM
+  credentials, or runtime desktop automation.
 
 ## Validation
 

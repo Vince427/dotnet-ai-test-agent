@@ -7,7 +7,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
 /// Reads and exposes typed configuration from WORKFLOW.md YAML front matter.
-/// Follows Symphony's Config Layer pattern (Section 6).
+/// Loads AgentLoop workflow configuration from WORKFLOW.md and environment variables.
 /// </summary>
 public class WorkflowConfig
 {

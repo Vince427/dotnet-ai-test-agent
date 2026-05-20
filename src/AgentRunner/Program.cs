@@ -11,7 +11,7 @@ using DesktopAiTestAgent.UIAutomation;
 namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
-/// Symphony-inspired agent orchestrator.
+/// AgentLoop agent orchestrator.
 /// Implements: observe → decide → act → score → record loop
 /// with retry, loop detection, scoring, structured logging, and run artifacts.
 /// </summary>

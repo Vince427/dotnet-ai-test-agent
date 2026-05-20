@@ -9,7 +9,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 /// <summary>
 /// Writes run artifacts (JSON report + screenshots + markdown summary) to disk.
-/// Inspired by Symphony's workspace + run artifact model.
+/// Writes portable workspace and run artifacts for AgentLoop runs.
 /// </summary>
 public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = null)
 {

@@ -7,7 +7,7 @@ parallel work.
 ## Done
 
 - [x] V1.4 YAML backlog and directed test selection.
-- [x] V1.5 static Symphony Workbench.
+- [x] V1.5 static AgentLoop Workbench.
 - [x] V1.6 deterministic guards and scoring hardening.
 - [x] V1.7 manual-first evidence contract.
 - [x] V1.8 AI bridge via CLI, schema, CI templates, and authoring docs.
@@ -18,19 +18,19 @@ parallel work.
 - [x] MVP-C: Add a short GitHub PR checklist that points reviewers to plan
   validation, test list output, runtime evidence, and agent context.
 - [x] MVP-D: Document the smallest useful MVP path in `docs/mvp.md`.
+- [x] MVP-B: Keep the first user-facing path tiny: validate YAML, list tests,
+  render the AgentLoop Workbench, and run one selected desktop test.
+- [x] MVP-E: Start the AgentLoop naming migration in docs and public language.
+  Keep existing `symphony` filenames until the code/file rename is done safely.
+- [x] V2-A: Split growing TestZoo work into smaller YAML files, one business
+  scenario per file, while keeping current aggregate YAML valid.
+- [x] V2-B: Extend WinForms/WPF TestZoo first with radio, combo, list, grid,
+  modal, disabled/enabled, async/loading, and CRUD-like sample scenarios.
 
 ## Next Executable Items
 
-- [ ] MVP-B: Keep the first user-facing path tiny: validate YAML, list tests,
-  render the AgentLoop Workbench, and run one selected desktop test.
-- [ ] MVP-E: Start the AgentLoop naming migration in docs and public language.
-  Keep existing `symphony` filenames until the code/file rename is done safely.
 - [ ] MVP-F: Prepare GitHub Pages as the first public docs target. Keep it
   lightweight; defer DocFX until API reference generation is useful.
-- [ ] V2-A: Split growing TestZoo work into smaller YAML files, one business
-  scenario per file, while keeping current aggregate YAML valid.
-- [ ] V2-B: Extend WinForms/WPF TestZoo first with radio, combo, list, grid,
-  modal, disabled/enabled, async/loading, and CRUD-like sample scenarios.
 - [ ] V2-C: Add guard failure demo scenarios: missing target, crash, empty UI
   tree, and unexpected modal where feasible.
 - [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are

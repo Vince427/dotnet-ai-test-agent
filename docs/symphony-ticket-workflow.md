@@ -1,8 +1,8 @@
-# Symphony-Like Ticket To Evidence Workflow
+# Ticket-To-Evidence Workflow
 
 This workflow makes ticket-driven agent work repeatable without making
-Symphony, MCP, a plugin, or an LLM the product core. Symphony can orchestrate
-sessions and hooks, but the local contract stays:
+OpenAI Symphony, MCP, a plugin, or an LLM the product core. External
+orchestrators can coordinate sessions and hooks, but the local contract stays:
 
 ```text
 ticket -> isolated workspace -> YAML/code -> CLI -> artifacts -> AgentLoop Workbench -> ticket or PR comment
@@ -86,8 +86,8 @@ same payload.
 
 ## Hook Shape
 
-The hook names are intentionally generic so Symphony, a GitHub Action, a local
-script, or another agent wrapper can implement them.
+The hook names are intentionally generic so OpenAI Symphony, a GitHub Action,
+a local script, or another agent wrapper can implement them.
 
 ```yaml
 hooks:

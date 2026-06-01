@@ -15,6 +15,7 @@ public sealed class RunnerOptions
     public string? TestId { get; set; }
     public TestDefinition? Test { get; set; }
     public bool RenderUiOnly { get; set; }
+    public bool Watch { get; set; }
     public bool ValidatePlanOnly { get; set; }
     public bool ListTestsOnly { get; set; }
     public bool WriteGuardDemosOnly { get; set; }
@@ -41,6 +42,7 @@ public sealed class RunnerOptions
         var validatePlanOnly = false;
         var listTestsOnly = false;
         var writeGuardDemosOnly = false;
+        var watch = false;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -66,6 +68,8 @@ public sealed class RunnerOptions
                 testId = ReadValue(args, ref i, "--test-id");
             else if (arg == "--render-ui")
                 uiOutputPath = ReadValue(args, ref i, "--render-ui");
+            else if (arg == "--watch")
+                watch = true;
             else if (arg == "--write-guard-demos")
             {
                 writeGuardDemosOnly = true;
@@ -134,6 +138,8 @@ public sealed class RunnerOptions
             throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, or --write-guard-demos.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
+        if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
+            throw new ArgumentException("--watch is only supported with --render-ui.");
 
         TestDefinition? selectedTest = null;
         var runtimeTestSelection = !validatePlanOnly && !listTestsOnly;
@@ -197,6 +203,7 @@ public sealed class RunnerOptions
             TestId = selectedTest?.Id ?? testId,
             Test = selectedTest,
             RenderUiOnly = !string.IsNullOrWhiteSpace(uiOutputPath),
+            Watch = watch,
             ValidatePlanOnly = validatePlanOnly,
             ListTestsOnly = listTestsOnly,
             WriteGuardDemosOnly = writeGuardDemosOnly,

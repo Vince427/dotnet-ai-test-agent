@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DesktopAiTestAgent.AgentRunner;
 
@@ -63,6 +64,11 @@ public static class SymphonyWorkbenchGenerator
         var failed = runs.Count(r => IsResult(r, "Failed"));
         var blocked = runs.Count(r => IsResult(r, "Blocked"));
         var aborted = runs.Count(r => IsResult(r, "Aborted"));
+        var total = runs.Count;
+        var needsAttention = failed + aborted;
+
+        var recentRuns = runs.OrderByDescending(r => r.StartedAt).Take(50).ToList();
+        var dataIsland = BuildDataIsland(repoRoot, outputPath, recentRuns);
 
         var sb = new StringBuilder();
         sb.AppendLine("<!doctype html>");
@@ -80,6 +86,13 @@ public static class SymphonyWorkbenchGenerator
         sb.AppendLine("    table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:6px; overflow:hidden; } th, td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; } th { background:#eef2f6; font-weight:600; } tr:last-child td { border-bottom:0; }");
         sb.AppendLine("    code, .pill { font-family:Consolas, monospace; } .pill { display:inline-block; padding:2px 7px; border-radius:999px; background:#eef2f6; margin:0 4px 4px 0; white-space:nowrap; }");
         sb.AppendLine("    .ok { color:var(--ok); font-weight:600; } .bad { color:var(--bad); font-weight:600; } .warn { color:var(--warn); font-weight:600; } a { color:#175cd3; text-decoration:none; } a:hover { text-decoration:underline; }");
+        // Interactive layer styles
+        sb.AppendLine("    .alert { background:#fef3f2; border:1px solid #fda29b; color:var(--bad); padding:12px 16px; border-radius:6px; margin:16px 0; font-weight:600; }");
+        sb.AppendLine("    .bar { display:flex; height:10px; border-radius:999px; overflow:hidden; background:#eef2f6; margin:10px 0 4px; } .bar > i { display:block; height:100%; } .seg-ok{background:var(--ok);} .seg-bad{background:var(--bad);} .seg-warn{background:var(--warn);}");
+        sb.AppendLine("    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0 12px; } .controls input, .controls select { padding:6px 10px; border:1px solid var(--line); border-radius:6px; font:inherit; }");
+        sb.AppendLine("    tr.run-row { cursor:pointer; } tr.run-row:hover { background:#f0f6ff; } tr.drill > td { background:#f9fafb; }");
+        sb.AppendLine("    table.steps { margin:8px 0; } table.steps th, table.steps td { padding:6px 8px; font-size:13px; } .shots { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; } .shot img { height:96px; border:1px solid var(--line); border-radius:4px; display:block; }");
+        sb.AppendLine("    .hidden { display:none !important; }");
         sb.AppendLine("  </style>");
         sb.AppendLine("</head>");
         sb.AppendLine("<body>");
@@ -89,6 +102,10 @@ public static class SymphonyWorkbenchGenerator
         sb.AppendLine("  </header>");
         sb.AppendLine("  <main>");
         sb.AppendLine($"    <p class=\"muted\">Generated {Html(now)} from <code>{Html(repoRoot)}</code>.</p>");
+
+        if (needsAttention > 0)
+            sb.AppendLine($"    <div class=\"alert\" data-alert=\"1\">&#9888; {needsAttention} run(s) need attention &mdash; {failed} failed, {aborted} aborted.</div>");
+
         sb.AppendLine("    <section class=\"grid\">");
         Metric(sb, "Tests", tests.Count.ToString());
         Metric(sb, "Runs", runs.Count.ToString());
@@ -97,6 +114,16 @@ public static class SymphonyWorkbenchGenerator
         Metric(sb, "Blocked", blocked.ToString(), "warn");
         Metric(sb, "Aborted", aborted.ToString(), "warn");
         sb.AppendLine("    </section>");
+
+        if (total > 0)
+        {
+            sb.AppendLine("    <div class=\"bar\" title=\"Pass rate\">");
+            sb.AppendLine($"      <i class=\"seg-ok\" style=\"width:{Pct(passed, total)}%\"></i>");
+            sb.AppendLine($"      <i class=\"seg-bad\" style=\"width:{Pct(failed, total)}%\"></i>");
+            sb.AppendLine($"      <i class=\"seg-warn\" style=\"width:{Pct(blocked + aborted, total)}%\"></i>");
+            sb.AppendLine("    </div>");
+            sb.AppendLine($"    <p class=\"muted\">Pass rate: {Pct(passed, total)}% ({passed}/{total}).</p>");
+        }
 
         sb.AppendLine("    <h2>Test Backlog</h2>");
         sb.AppendLine("    <table>");
@@ -117,13 +144,25 @@ public static class SymphonyWorkbenchGenerator
         sb.AppendLine("    </table>");
 
         sb.AppendLine("    <h2>Recent Runs</h2>");
-        sb.AppendLine("    <table>");
+        sb.AppendLine("    <div class=\"controls\">");
+        sb.AppendLine("      <input id=\"run-search\" type=\"search\" placeholder=\"Filter runs by text…\" aria-label=\"Filter runs\">");
+        sb.AppendLine("      <select id=\"run-filter\" aria-label=\"Filter by result\">");
+        sb.AppendLine("        <option value=\"\">All results</option>");
+        sb.AppendLine("        <option value=\"Passed\">Passed</option>");
+        sb.AppendLine("        <option value=\"Succeeded\">Succeeded</option>");
+        sb.AppendLine("        <option value=\"Failed\">Failed</option>");
+        sb.AppendLine("        <option value=\"Aborted\">Aborted</option>");
+        sb.AppendLine("        <option value=\"Blocked\">Blocked</option>");
+        sb.AppendLine("      </select>");
+        sb.AppendLine("      <span class=\"muted\">Click a run to expand its steps and screenshots.</span>");
+        sb.AppendLine("    </div>");
+        sb.AppendLine("    <table id=\"runs-table\">");
         sb.AppendLine("      <thead><tr><th>Run</th><th>Test</th><th>Result</th><th>Score</th><th>Started</th><th>Target</th></tr></thead>");
         sb.AppendLine("      <tbody>");
-        foreach (var run in runs.OrderByDescending(r => r.StartedAt).Take(50))
+        foreach (var run in recentRuns)
         {
             var runId = Html(run.RunId);
-            sb.AppendLine("        <tr>");
+            sb.AppendLine($"        <tr class=\"run-row\" data-runid=\"{runId}\" data-result=\"{Html(run.Result)}\">");
             sb.AppendLine($"          <td><code>{runId}</code></td>");
             sb.AppendLine($"          <td>{Html(run.TestId ?? run.GoalIdentifier ?? "-")}</td>");
             sb.AppendLine($"          <td class=\"{ResultClass(run.Result)}\">{Html(run.Result)}</td>");
@@ -141,10 +180,137 @@ public static class SymphonyWorkbenchGenerator
             sb.AppendLine($"      <li><code>{Html(Relative(repoRoot, planPath))}</code></li>");
         sb.AppendLine("    </ul>");
         sb.AppendLine("  </main>");
+
+        // Data island: full per-run detail (steps + screenshots) for client-side drill-down.
+        sb.AppendLine($"  <script id=\"agentloop-data\" type=\"application/json\">{dataIsland}</script>");
+        sb.AppendLine(InteractiveScript());
+
         sb.AppendLine("</body>");
         sb.AppendLine("</html>");
         return sb.ToString();
     }
+
+    private static string BuildDataIsland(string repoRoot, string outputPath, IReadOnlyList<RunArtifact> runs)
+    {
+        var projection = runs.Select(r => new
+        {
+            runId = r.RunId,
+            testId = r.TestId ?? r.GoalIdentifier ?? "-",
+            result = r.Result,
+            score = r.FinalScore,
+            target = r.TargetWindow ?? "-",
+            steps = r.Steps.Select(s => new
+            {
+                n = s.StepNumber,
+                action = s.ActionType ?? "-",
+                target = s.ActionTarget ?? "-",
+                outcome = s.Outcome ?? "-",
+                cumulative = s.CumulativeScore,
+                failureCode = s.FailureCode,
+                failureMessage = s.FailureMessage,
+                guardStatus = s.GuardStatus,
+                guardCode = s.GuardCode,
+                screenshot = ScreenshotHref(outputPath, repoRoot, s.ScreenshotPath)
+            }).ToList()
+        }).ToList();
+
+        var json = JsonSerializer.Serialize(projection, new JsonSerializerOptions { WriteIndented = false });
+        // Neutralize any "</script>" or "<" that could break the inline data island.
+        return json.Replace("<", "\\u003c");
+    }
+
+    private static string? ScreenshotHref(string outputPath, string repoRoot, string? screenshotPath)
+    {
+        if (string.IsNullOrEmpty(screenshotPath))
+            return null;
+
+        try
+        {
+            var abs = Path.IsPathRooted(screenshotPath!)
+                ? screenshotPath!
+                : Path.GetFullPath(Path.Combine(repoRoot, screenshotPath!));
+            var outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath)) ?? repoRoot;
+            return Relative(outputDir, abs).Replace('\\', '/');
+        }
+        catch
+        {
+            return screenshotPath!.Replace('\\', '/');
+        }
+    }
+
+    private static string InteractiveScript()
+    {
+        // Vanilla JS, no external dependencies: filter/search the runs table and
+        // expand a per-run drill-down (steps + screenshots) from the data island.
+        return """
+  <script>
+  (function () {
+    var island = document.getElementById('agentloop-data');
+    if (!island) return;
+    var runs = {};
+    try {
+      JSON.parse(island.textContent).forEach(function (r) { runs[r.runId] = r; });
+    } catch (e) { return; }
+
+    var search = document.getElementById('run-search');
+    var filter = document.getElementById('run-filter');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('tr.run-row'));
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+
+    function applyFilter() {
+      var q = (search && search.value ? search.value : '').toLowerCase();
+      var f = (filter && filter.value) ? filter.value : '';
+      rows.forEach(function (row) {
+        var txt = row.textContent.toLowerCase();
+        var res = row.getAttribute('data-result') || '';
+        var show = (!q || txt.indexOf(q) >= 0) && (!f || res === f);
+        row.classList.toggle('hidden', !show);
+        var d = row.nextElementSibling;
+        if (d && d.classList.contains('drill')) d.classList.toggle('hidden', !show);
+      });
+    }
+    if (search) search.addEventListener('input', applyFilter);
+    if (filter) filter.addEventListener('change', applyFilter);
+
+    function renderDrill(run) {
+      var h = '<table class="steps"><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Outcome</th><th>Failure</th><th>Guard</th><th>Score</th></tr></thead><tbody>';
+      (run.steps || []).forEach(function (s) {
+        var fail = s.failureCode ? esc(s.failureCode) + (s.failureMessage ? ': ' + esc(s.failureMessage) : '') : '-';
+        var guard = s.guardStatus ? esc(s.guardStatus) + (s.guardCode ? ':' + esc(s.guardCode) : '') : '-';
+        h += '<tr><td>' + esc(s.n) + '</td><td>' + esc(s.action) + '</td><td>' + esc(s.target) + '</td><td>' + esc(s.outcome) + '</td><td>' + fail + '</td><td>' + guard + '</td><td>' + esc(s.cumulative) + '</td></tr>';
+      });
+      h += '</tbody></table>';
+      var shots = (run.steps || []).filter(function (s) { return s.screenshot; });
+      if (shots.length) {
+        h += '<div class="shots">';
+        shots.forEach(function (s) {
+          h += '<a class="shot" href="' + esc(s.screenshot) + '" target="_blank" rel="noreferrer"><img src="' + esc(s.screenshot) + '" alt="step ' + esc(s.n) + '" loading="lazy"></a>';
+        });
+        h += '</div>';
+      }
+      if (!(run.steps || []).length) h += '<p class="muted">No recorded steps for this run.</p>';
+      return h;
+    }
+
+    rows.forEach(function (row) {
+      row.addEventListener('click', function () {
+        var next = row.nextElementSibling;
+        if (next && next.classList.contains('drill')) { next.parentNode.removeChild(next); return; }
+        var run = runs[row.getAttribute('data-runid')];
+        if (!run) return;
+        var tr = document.createElement('tr');
+        tr.className = 'drill';
+        tr.innerHTML = '<td colspan="6">' + renderDrill(run) + '</td>';
+        row.parentNode.insertBefore(tr, row.nextSibling);
+      });
+    });
+  })();
+  </script>
+""";
+    }
+
+    private static int Pct(int value, int total) => total <= 0 ? 0 : (int)Math.Round(100.0 * value / total);
 
     private static List<string> ResolvePlanPaths(string repoRoot, List<string> requestedPlanPaths)
     {
@@ -173,7 +339,10 @@ public static class SymphonyWorkbenchGenerator
         if (!Directory.Exists(runsRoot))
             return [];
 
+        // ArtifactWriter serializes enums as strings (JsonStringEnumConverter), so the
+        // reader must use the same converter or every real run fails to deserialize.
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        options.Converters.Add(new JsonStringEnumConverter());
         var runs = new List<RunArtifact>();
         foreach (var reportPath in Directory.GetFiles(runsRoot, "report.json", SearchOption.AllDirectories))
         {

@@ -19,6 +19,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
+		<!-- Opt out of Central Package Management: MAUI package versions are
+		     managed by the maui-windows workload via $(MauiVersion). -->
+		<ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
 		<!-- Display name -->
 		<ApplicationTitle>Sample.MauiApp</ApplicationTitle>
 

@@ -15,6 +15,13 @@ public sealed class SymphonyWorkbenchOptions
     public string OutputPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html");
     public List<string> PlanPaths { get; set; } = [];
     public string RunsRoot { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "runs");
+
+    /// <summary>
+    /// When &gt; 0, the generated HTML embeds a meta-refresh so the browser reloads
+    /// every N seconds. Used by watch mode for hands-free near-real-time updates;
+    /// left at 0 for CI / one-shot renders.
+    /// </summary>
+    public int AutoRefreshSeconds { get; set; }
 }
 
 public sealed class SymphonyWorkbenchResult
@@ -36,7 +43,7 @@ public static class SymphonyWorkbenchGenerator
         var planPaths = ResolvePlanPaths(repoRoot, options.PlanPaths);
         var tests = LoadTests(planPaths);
         var runs = LoadRuns(runsRoot);
-        var html = RenderHtml(repoRoot, outputPath, planPaths, tests, runs);
+        var html = RenderHtml(repoRoot, outputPath, planPaths, tests, runs, options.AutoRefreshSeconds);
 
         var outputDir = Path.GetDirectoryName(outputPath);
         if (!string.IsNullOrEmpty(outputDir))
@@ -57,7 +64,8 @@ public static class SymphonyWorkbenchGenerator
         string outputPath,
         IReadOnlyList<string> planPaths,
         IReadOnlyList<TestDefinition> tests,
-        IReadOnlyList<RunArtifact> runs)
+        IReadOnlyList<RunArtifact> runs,
+        int autoRefreshSeconds = 0)
     {
         var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
         var passed = runs.Count(r => IsResult(r, "Passed", "Succeeded"));
@@ -76,6 +84,8 @@ public static class SymphonyWorkbenchGenerator
         sb.AppendLine("<head>");
         sb.AppendLine("  <meta charset=\"utf-8\">");
         sb.AppendLine("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        if (autoRefreshSeconds > 0)
+            sb.AppendLine($"  <meta http-equiv=\"refresh\" content=\"{autoRefreshSeconds}\">");
         sb.AppendLine("  <title>Desktop AI Test Agent - AgentLoop Workbench</title>");
         sb.AppendLine("  <style>");
         sb.AppendLine("    :root { color-scheme: light; --ink:#17202a; --muted:#667085; --line:#d0d7de; --bg:#f6f8fa; --panel:#ffffff; --accent:#0f766e; --bad:#b42318; --warn:#b54708; --ok:#067647; }");

@@ -48,17 +48,68 @@ internal static class Program
         if (options.RenderUiOnly)
         {
             var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
-            var result = SymphonyWorkbenchGenerator.Generate(new SymphonyWorkbenchOptions
+
+            SymphonyWorkbenchOptions BuildWorkbenchOptions(int autoRefresh) => new()
             {
                 RepoRoot = repoRoot,
                 OutputPath = options.UiOutputPath!,
                 RunsRoot = config.WorkspaceRoot,
+                AutoRefreshSeconds = autoRefresh,
                 PlanPaths = string.IsNullOrWhiteSpace(options.PlanPath)
                     ? []
                     : new List<string> { options.PlanPath! }
-            });
+            };
 
-            Console.WriteLine($"AgentLoop Workbench written to {result.OutputPath} tests={result.TestCount} runs={result.RunCount}");
+            if (!options.Watch)
+            {
+                var result = SymphonyWorkbenchGenerator.Generate(BuildWorkbenchOptions(0));
+                Console.WriteLine($"AgentLoop Workbench written to {result.OutputPath} tests={result.TestCount} runs={result.RunCount}");
+                return 0;
+            }
+
+            // Watch mode: regenerate on any change under the runs root, and embed a
+            // browser auto-refresh so the page updates hands-free. No server, no .env.
+            const int refreshSeconds = 3;
+            var first = SymphonyWorkbenchGenerator.Generate(BuildWorkbenchOptions(refreshSeconds));
+            Console.WriteLine($"AgentLoop Workbench (watch) written to {first.OutputPath} tests={first.TestCount} runs={first.RunCount}");
+            Console.WriteLine($"Watching {config.WorkspaceRoot} for changes. Open the file in a browser; it auto-refreshes every {refreshSeconds}s. Press Ctrl+C to stop.");
+
+            Directory.CreateDirectory(config.WorkspaceRoot);
+            using var watcher = new FileSystemWatcher(config.WorkspaceRoot)
+            {
+                IncludeSubdirectories = true,
+                EnableRaisingEvents = true,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
+            };
+
+            var pending = 1; // render once at startup already done; arm for subsequent changes
+            void Arm(object? _, FileSystemEventArgs __) => System.Threading.Interlocked.Exchange(ref pending, 1);
+            watcher.Created += Arm;
+            watcher.Changed += Arm;
+            watcher.Deleted += Arm;
+            watcher.Renamed += (_, __) => System.Threading.Interlocked.Exchange(ref pending, 1);
+
+            using var stop = new System.Threading.ManualResetEventSlim(false);
+            Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Set(); };
+
+            while (!stop.IsSet)
+            {
+                stop.Wait(500);
+                if (System.Threading.Interlocked.Exchange(ref pending, 0) == 1 && !stop.IsSet)
+                {
+                    try
+                    {
+                        var r = SymphonyWorkbenchGenerator.Generate(BuildWorkbenchOptions(refreshSeconds));
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] workbench regenerated: runs={r.RunCount}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine("Workbench regeneration failed: " + ex.Message);
+                    }
+                }
+            }
+
+            Console.WriteLine("Watch stopped.");
             return 0;
         }
 

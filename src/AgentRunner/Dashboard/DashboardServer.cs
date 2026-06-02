@@ -104,6 +104,10 @@ public sealed class DashboardServer : IDisposable
                     return _api.GetRuns();
                 case "/api/jobs":
                     return _api.GetJobs();
+                case "/api/files":
+                    return _api.GetFiles();
+                case "/api/file":
+                    return _api.GetFile(request.QueryString["path"] ?? "");
                 case "/api/screenshot":
                     return _api.GetScreenshot(
                         request.QueryString["run"] ?? "", request.QueryString["file"] ?? "");

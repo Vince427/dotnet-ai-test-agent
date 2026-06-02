@@ -236,6 +236,75 @@ public sealed class DashboardApi
         return new ApiResponse(200, "image/png", File.ReadAllBytes(full));
     }
 
+    /// <summary>Text/config extensions the dashboard will preview (never executables/binaries).</summary>
+    private static readonly HashSet<string> TextExts = new(StringComparer.OrdinalIgnoreCase)
+        { ".yaml", ".yml", ".md", ".json", ".txt", ".props", ".xml", ".template", ".csv", ".html" };
+
+    /// <summary>
+    /// File tree the dashboard reflects: everything under tests/ and runs/ (the YAML
+    /// source-of-truth and the run artifacts) plus a couple of root config files. Lets a
+    /// user see exactly what to edit by hand — in their editor or a CI script — with no UI.
+    /// </summary>
+    public ApiResponse GetFiles()
+    {
+        const int cap = 2000;
+        var files = new List<object>();
+
+        void Add(string fullPath)
+        {
+            if (files.Count >= cap) return;
+            long size; try { size = new FileInfo(fullPath).Length; } catch { return; }
+            var ext = Path.GetExtension(fullPath).ToLowerInvariant();
+            files.Add(new { path = Relative(fullPath), size, ext, editable = TextExts.Contains(ext) });
+        }
+
+        foreach (var rel in new[] { "tests", "runs" })
+        {
+            var dir = Path.Combine(_repoRoot, rel);
+            if (!Directory.Exists(dir)) continue;
+            IEnumerable<string> paths;
+            try { paths = Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories)
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase); }
+            catch { continue; }
+            foreach (var p in paths) { if (files.Count >= cap) break; Add(p); }
+        }
+
+        foreach (var rootFile in new[] { "WORKFLOW.md", ".env.template" })
+        {
+            var abs = Path.Combine(_repoRoot, rootFile);
+            if (File.Exists(abs)) Add(abs);
+        }
+
+        return ApiResponse.Json(new { count = files.Count, capped = files.Count >= cap, files });
+    }
+
+    /// <summary>
+    /// Preview one text/config file under the repo. Path-traversal guarded, extension
+    /// allow-listed, size-capped, and it explicitly refuses real secrets files (.env).
+    /// </summary>
+    public ApiResponse GetFile(string relPath)
+    {
+        if (string.IsNullOrWhiteSpace(relPath))
+            return ApiResponse.Error(400, "A path is required.");
+
+        var name = Path.GetFileName(relPath);
+        if (name.StartsWith(".env", StringComparison.OrdinalIgnoreCase) &&
+            !name.Equals(".env.template", StringComparison.OrdinalIgnoreCase))
+            return ApiResponse.Error(403, "Refusing to serve a secrets file.");
+
+        if (!TextExts.Contains(Path.GetExtension(relPath)))
+            return ApiResponse.Error(415, "Only text/config files can be previewed.");
+
+        var full = ResolveUnderRoot(_repoRoot, relPath);
+        if (full == null || !File.Exists(full))
+            return ApiResponse.Error(404, "File not found.");
+
+        if (new FileInfo(full).Length > 512 * 1024)
+            return ApiResponse.Error(413, "File too large to preview (512 KB cap).");
+
+        return ApiResponse.Text(File.ReadAllText(full), 200);
+    }
+
     // --- helpers ---
 
     private string Relative(string fullPath)

@@ -18,5 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AgentRunner\AgentRunner.csproj" />
+    <!-- LoginE2ETests drives the real FlaUI driver (gated by RUN_E2E_UI). -->
+    <ProjectReference Include="..\UIAutomation\UIAutomation.csproj" />
   </ItemGroup>
 </Project>

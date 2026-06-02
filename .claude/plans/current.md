@@ -46,6 +46,15 @@ parallel work.
 
 ## Next Executable Items
 
+- [x] E2E-1 (stable end-to-end, no key): deterministic OpenAI-compatible
+  `MockLlmServer` (HttpListener) returns a scripted action sequence (EnterText →
+  EnterText → Click → Done). 3 always-run tests drive the real `LlmService`
+  against it (client → mock → parser, no key, run in any CI). A gated
+  `[InteractiveUiFact]` (`RUN_E2E_UI=1`) launches the real WinForms sample,
+  attaches the real FlaUI driver (with a control-ready settle), runs
+  `RunOrchestrator`, and asserts the app shows "Login successful" + exit 0 +
+  `Result=Succeeded`. Verified green twice on an interactive session; skipped by
+  default (UIA needs a logged-in desktop). main suite = **122 + 2 skipped**.
 - [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
   stable.
 - [ ] V3-A: Design UIA screenshot overlay artifact contract before adding VLM

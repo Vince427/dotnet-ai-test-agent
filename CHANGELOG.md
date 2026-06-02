@@ -7,6 +7,19 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **E2E-1 (key-free end-to-end)**: a deterministic OpenAI-compatible
+  `MockLlmServer` (test infra) that returns a scripted action sequence. Three
+  always-run tests drive the real `LlmService` through it (client → mock →
+  parser, no API key, no egress — runs in any CI). A gated `[InteractiveUiFact]`
+  (`RUN_E2E_UI=1`) launches the real WinForms sample, drives the real FlaUI
+  driver via `RunOrchestrator`, and asserts the app reaches "Login successful" —
+  the permanent full-stack integration test for an interactive Windows runner.
+- **E2E-1 (flat-contract proof)**: a second gated E2E (`DEMO-PROTECTED-001`)
+  drives a deliberately complex flow — a button disabled until another enables
+  it, verified via `Assert` on a separate status region — from a YAML contract
+  as flat as the login. Shows target richness does not leak into the authoring
+  surface. Interactive UI tests share one desktop, so they run in a
+  non-parallel xUnit collection (`InteractiveUiCollection`).
 - **WB-2 (keystone refactor)**: extracted the observe→decide→act→score→record
   loop out of `Program.Main` into an injectable `RunOrchestrator`
   (`IRunOrchestrator`) behind an `IActionDecider` seam (`LlmService` implements
@@ -41,12 +54,16 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
 ### Fixed
+- WinForms sample: the "Case grid" label was clipped to "ase grid" — the Premium
+  radio (Left 240 + Width 100 = 340) overlapped the label at Left 330 and, being
+  higher in z-order, painted over its first letter. Moved the label to Left 350.
 - Workbench dropped every real run: `SymphonyWorkbenchGenerator.LoadRuns`
   deserialized `report.json` without `JsonStringEnumConverter`, but
   `ArtifactWriter` writes enums as strings — so `evidenceLevel` failed to parse
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 119 tests, build clean across net48 + net8.0-windows + MAUI.
+- Test suite: 122 tests + 2 gated UI E2E (skipped unless `RUN_E2E_UI=1`), build
+  clean across net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

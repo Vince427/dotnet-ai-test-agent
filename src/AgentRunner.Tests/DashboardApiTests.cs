@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using DesktopAiTestAgent.AgentRunner.Dashboard;
@@ -140,6 +141,38 @@ public sealed class DashboardApiTests : IDisposable
         // Traversal and absolute-outside escape.
         Assert.Null(DashboardApi.ResolveUnderRoot(root, Path.Combine("..", "outside.yaml")));
         Assert.Null(DashboardApi.ResolveUnderRoot(root, @"C:\Windows\System32\drivers\etc\hosts"));
+    }
+
+    [Fact]
+    public void GetFiles_ListsTestsTree()
+    {
+        var root = ParseBody(_api.GetFiles());
+        Assert.True(root.GetProperty("count").GetInt32() >= 1);
+        var paths = root.GetProperty("files").EnumerateArray()
+            .Select(f => f.GetProperty("path").GetString()).ToList();
+        Assert.Contains("tests/smoke.yaml", paths);
+        var yaml = root.GetProperty("files").EnumerateArray()
+            .First(f => f.GetProperty("path").GetString() == "tests/smoke.yaml");
+        Assert.True(yaml.GetProperty("editable").GetBoolean());
+    }
+
+    [Fact]
+    public void GetFile_ReturnsTextUnderRepo()
+    {
+        var res = _api.GetFile("tests/smoke.yaml");
+        Assert.Equal(200, res.Status);
+        Assert.Contains("SMOKE-001", Encoding.UTF8.GetString(res.Body));
+    }
+
+    [Theory]
+    [InlineData("../../../etc/passwd")]   // traversal
+    [InlineData(".env")]                   // secrets file
+    [InlineData("secrets/.env")]           // secrets file in a subdir
+    [InlineData("AgentRunner.dll")]        // non-text / not allow-listed
+    public void GetFile_RejectsUnsafeOrDisallowed(string path)
+    {
+        var res = _api.GetFile(path);
+        Assert.True(res.Status is 400 or 403 or 404 or 415);
     }
 
     [Theory]

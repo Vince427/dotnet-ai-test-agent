@@ -7,6 +7,15 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Dashboard: Files explorer + mission-control UI**. A new **Files** tab surfaces the
+  on-disk tree the dashboard reflects (`tests/` YAML source-of-truth, `runs/` artifacts,
+  `WORKFLOW.md`, `.env.template`) with copy-path and a read-only text preview, so files
+  can be edited by hand / in CI with no UI (`GET /api/files`, `GET /api/file` — extension
+  allow-listed, size-capped, refuses `.env*` secrets, traversal-guarded). The page was
+  redesigned into a telemetry-console aesthetic (offline-safe monospace, status LEDs,
+  deep-linkable tabs) with clearer form labels + helper text, and a supervision-grade
+  **Live** view: per-run status LED + pulse, ticking elapsed timer, step progress bar,
+  severity-colored streaming logs (autoscroll), and live screenshots.
 - **OBS-2 (local dashboard)**: an all-in-one, **localhost-only** developer dashboard
   (`--dashboard [port]`) — a thin `HttpListener` server + single-page UI that is a
   *view + launcher* over the existing CLI and artifacts (no new data model). Sections:
@@ -89,8 +98,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 140 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 144/144 with it). Build clean across
+- Test suite: 146 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 150/150 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

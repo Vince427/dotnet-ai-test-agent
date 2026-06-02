@@ -7,7 +7,7 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
 
 - `src/AgentRunner/Dashboard/DashboardServer.cs` (HttpListener routing, localhost-only)
 - `src/AgentRunner/Dashboard/DashboardApi.cs` (transport-agnostic handlers: catalog,
-  run history/detail, create-ticket, launch, screenshot serving)
+  run history/detail, create-ticket, launch, screenshot serving, file tree + preview)
 - `src/AgentRunner/Dashboard/RunJobManager.cs` (spawns the CLI per launch, captures
   stdout, correlates `runId` from `session_id=` log markers)
 - `src/AgentRunner/Dashboard/DashboardHtml.cs` (the single-page UI, vanilla JS)
@@ -25,9 +25,14 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
   the CLI, which then needs the user's target app + provider config.
 - Created "tickets" must be **validated YAML** (`TestPlanValidator`) before persisting,
   written under `tests/created/`. YAML stays the source of truth.
+- The **Files** tab is read-only and reinforces "edit on disk": it lists the tree under
+  `tests/` + `runs/` (+ `WORKFLOW.md`, `.env.template`) and previews text/config files.
+  `GetFile` MUST stay locked down: `ResolveUnderRoot` containment, an extension
+  allow-list (`TextExts`), a size cap, and an explicit refusal of real secrets files
+  (anything named `.env*` except `.env.template`). Never add executable/binary serving.
 - Security: every filesystem-serving path must reject traversal — use
-  `DashboardApi.IsSafeSegment` and confirm the resolved path stays under the runs/repo
-  root. Screenshots are served from `runs/` only; logs/text are already redacted by
+  `DashboardApi.IsSafeSegment` / `ResolveUnderRoot` (trailing-separator containment) and
+  confirm the resolved path stays under the runs/repo root. Screenshots are served from `runs/` only; logs/text are already redacted by
   `SecretRedactor` in the artifacts. Screenshot pixel-blur of secret fields is **not**
   implemented yet (deferred): localhost-only + OS-masked password fields are the current
   boundary; respect `EvidenceLevel` (Minimal = none).

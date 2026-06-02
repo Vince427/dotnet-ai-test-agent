@@ -60,9 +60,13 @@ parallel work.
   scope (`~/.claude/skills/setup-verification-loop/SKILL.md`), stack-aware
   (dotnet/node/python/go/rust), ETH-disciplined (lean). Optional follow-ups:
   description-optimization loop, commit a copy into a repo for collaborators.
-- [ ] WB-2 (refactor): extract `Program.Main` (~694 lines) into an injectable
-  `IRunOrchestrator` + phase services. Unlocks deterministic loop tests with a
-  fake LLM/driver, and clean CLI wiring for `--to-junit` and watch.
+- [x] WB-2 (refactor): extracted the observe→decide→act→score→record loop out of
+  `Program.Main` into an injectable `RunOrchestrator` (`IRunOrchestrator`) behind
+  an `IActionDecider` seam (`LlmService` implements it). `Program.Main` is now CLI
+  parse + manual commands + a few lines of runtime wiring. Unlocked 9 deterministic
+  loop tests (fake driver + scripted decider, zero delays). main = build 0/0,
+  **119 tests** green. Manual CLI surface unchanged. Optional follow-up: split the
+  act-dispatch switch into per-action handlers if it grows further.
 - [ ] OBS-1 (Phase 2, observability): emit OpenTelemetry from the runner
   (`ActivitySource` for observe/decide/act/guard/score/record + `Meter` for
   tokens/scores/durations). On net48 use `OtlpExportProtocol.HttpProtobuf` (gRPC

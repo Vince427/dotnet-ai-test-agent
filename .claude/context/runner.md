@@ -8,6 +8,7 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/IRunOrchestrator.cs` + `src/AgentRunner/RunOrchestrator.cs`
   (observe → decide → act → score → record loop; injectable driver + decider)
 - `src/AgentRunner/IActionDecider.cs` (the "decide" seam; `LlmService` implements it)
+- `src/AgentRunner/RunnerTelemetry.cs` (OBS-1: opt-in OpenTelemetry spans + metrics)
 - `src/AgentRunner/RunnerOptions.cs`
 - `src/AgentRunner/LlmService.cs`
 - `src/AgentRunner/WorkflowConfig.cs`
@@ -40,6 +41,11 @@ Owns the executable orchestration loop and manual CLI surface.
   with a fake `IAutomationDriver` + a scripted `IActionDecider` (see
   `RunOrchestratorTests`); pass `interStepDelayMs: 0` to keep tests fast. The
   injected driver is owned by the caller (`Program` disposes the FlaUI one).
+- Telemetry (OBS-1) is opt-in and manual-first: `RunnerTelemetry.TryStartExport`
+  returns null unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and `StartActivity`
+  is a no-op with no listener — runs stay dependency-free by default. Span/metric
+  tags must stay secret-free (use the redacted action value, never raw `Value`).
+  On net48 the OTLP exporter must use `HttpProtobuf` (gRPC unsupported).
 
 ## Validation
 

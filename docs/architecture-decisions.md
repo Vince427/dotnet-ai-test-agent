@@ -73,10 +73,12 @@ These are intentionally not built yet; each note records *why* and the key const
 - **RunDiffer (migration parity)**: run one YAML on V1 (legacy) and V2 (modern), align
   steps, LLM-judge classifies diffs cosmetic/functional/regression → HTML parity report.
   This is the differentiator for a .NET 4.8 → modern migration; nothing else does it.
-- **OpenTelemetry → Aspire dashboard** (observability, opt-in, local): emit spans for
-  observe/decide/act/guard/score/record + token/score metrics; view live in the
-  standalone Aspire dashboard. **Constraint:** on net48, gRPC OTLP is unsupported since
-  exporter 1.12.0 → use `OtlpExportProtocol.HttpProtobuf` (port 4318), never gRPC.
+- **OpenTelemetry → Aspire dashboard** (observability, opt-in, local): 🟡 in progress.
+  Runner emission shipped (OBS-1): `RunnerTelemetry` emits run/step/observe/decide spans
+  + duration/score metrics, opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`, `traceId` in
+  `report.json`. **Constraint honored:** `HttpProtobuf` on both targets (gRPC unsupported
+  on net48 since exporter 1.12.0); pinned 1.15.3. Remaining: workbench trace link (OBS-1b),
+  token metric (LLM usage not captured yet), and the live Aspire dashboard (manual).
 - **Scaling UI tests**: UIA needs an interactive desktop session → 1 test at a time per
   session. Scale = N Windows VMs (Hyper-V linked clones / Azure VM Scale Set), runner
   **interactive** (not a service), VNC not RDP. No real "Windows microVM with desktop"

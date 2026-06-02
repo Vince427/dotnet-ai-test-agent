@@ -126,6 +126,9 @@ internal static class Program
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
         // The driver is IDisposable, so Program owns its lifetime.
+        // OpenTelemetry export is opt-in (OTEL_EXPORTER_OTLP_ENDPOINT); null/no-op
+        // when unset, keeping runs dependency-free. Disposed last so it flushes.
+        using var telemetry = RunnerTelemetry.TryStartExport(config);
         var secretRedactor = new SecretRedactor();
         var llmService = new LlmService(config, secretRedactor);
         using var driver = new FlaUiDesktopDriver();

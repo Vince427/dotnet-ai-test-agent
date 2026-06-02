@@ -93,7 +93,9 @@ telemetry on the .NET Framework target.
 Aspire dashboard via `aspire dashboard run --allow-anonymous` (Aspire 13.3+,
 NativeAOT, no Docker) or the `mcr.microsoft.com/dotnet/aspire-dashboard` image.
 
-**Status**: `OPEN`
+**Status**: `CLOSED - addressed in OBS-1`. `RunnerTelemetry.TryStartExport` forces
+`OtlpExportProtocol.HttpProtobuf` for both targets; exporter pinned to 1.15.3
+(1.12.0 had advisory GHSA-4625-4j76-fww9). Live dashboard view stays a manual step.
 
 ## Archive
 

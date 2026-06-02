@@ -4,7 +4,10 @@ Owns the executable orchestration loop and manual CLI surface.
 
 ## Files
 
-- `src/AgentRunner/Program.cs`
+- `src/AgentRunner/Program.cs` (CLI parse + manual commands; wires the runtime loop)
+- `src/AgentRunner/IRunOrchestrator.cs` + `src/AgentRunner/RunOrchestrator.cs`
+  (observe → decide → act → score → record loop; injectable driver + decider)
+- `src/AgentRunner/IActionDecider.cs` (the "decide" seam; `LlmService` implements it)
 - `src/AgentRunner/RunnerOptions.cs`
 - `src/AgentRunner/LlmService.cs`
 - `src/AgentRunner/WorkflowConfig.cs`
@@ -33,6 +36,10 @@ Owns the executable orchestration loop and manual CLI surface.
 - Failure steps should expose stable `failureCode` and `failureMessage` values
   in `report.json` and `summary.md` when the runner can name the failure.
 - Thread sleeps in async runtime paths should use `Task.Delay`.
+- The runtime loop lives in `RunOrchestrator`, not `Program`. Drive it in tests
+  with a fake `IAutomationDriver` + a scripted `IActionDecider` (see
+  `RunOrchestratorTests`); pass `interStepDelayMs: 0` to keep tests fast. The
+  injected driver is owned by the caller (`Program` disposes the FlaUI one).
 
 ## Validation
 

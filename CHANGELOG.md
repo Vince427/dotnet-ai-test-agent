@@ -7,6 +7,12 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **WB-2 (keystone refactor)**: extracted the observe→decide→act→score→record
+  loop out of `Program.Main` into an injectable `RunOrchestrator`
+  (`IRunOrchestrator`) behind an `IActionDecider` seam (`LlmService` implements
+  it). `Program.Main` is now CLI parse + manual commands + runtime wiring. Added
+  9 deterministic loop tests driven by a fake `IAutomationDriver` + scripted
+  decider — no LLM key, no FlaUI, no target app. CLI behavior unchanged.
 - **Dev loop**: Claude Code hooks (`.claude/settings.json`) — a `Stop` gate that
   runs build + tests before a turn can finish (blocks on failure), and a
   `PreToolUse` Bash guard that blocks `.env` writes, `rm -rf`, force-push, and
@@ -41,6 +47,6 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 104 tests, build clean across net48 + net8.0-windows + MAUI.
+- Test suite: 119 tests, build clean across net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

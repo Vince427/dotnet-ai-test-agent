@@ -58,9 +58,10 @@ Keep net48 **and** net8.0-windows building. **Status:** active.
 
 These are intentionally not built yet; each note records *why* and the key constraint.
 
-- **Program.Main → `IRunOrchestrator`** (WB-2): the loop is ~700 lines in `Main`, so it
-  isn't unit-testable with a fake LLM/driver. Extracting it (behind an injectable
-  decider) unlocks deterministic loop tests and clean CLI wiring. Keystone refactor.
+- **Program.Main → `IRunOrchestrator`** (WB-2): ✅ done. The loop moved out of `Main`
+  into `RunOrchestrator` behind an `IActionDecider` seam (`LlmService` implements it);
+  `Main` is now CLI parse + manual commands + runtime wiring. Driven in tests by a
+  fake `IAutomationDriver` + scripted decider — 9 deterministic loop tests, no LLM/FlaUI.
 - **MCP server**: expose the runner as MCP tools (Claude Desktop/Cursor/Copilot). The
   `shanselman/FlaUI-MCP` "element-by-ref" pattern is the model; no official MS desktop
   MCP exists — a gap to fill.

@@ -20,6 +20,10 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   as flat as the login. Shows target richness does not leak into the authoring
   surface. Interactive UI tests share one desktop, so they run in a
   non-parallel xUnit collection (`InteractiveUiCollection`).
+- **E2E-1 (cross-framework parity)**: both gated E2E are xUnit theories over
+  WinForms **and** WPF samples (identical automation ids, identical status
+  strings, only the window title differs), proving the UIA agent path is
+  framework-agnostic, not WinForms-specific. 4 gated cases total when enabled.
 - **WB-2 (keystone refactor)**: extracted the observe→decide→act→score→record
   loop out of `Program.Main` into an injectable `RunOrchestrator`
   (`IRunOrchestrator`) behind an `IActionDecider` seam (`LlmService` implements
@@ -63,7 +67,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 122 tests + 2 gated UI E2E (skipped unless `RUN_E2E_UI=1`), build
-  clean across net48 + net8.0-windows + MAUI.
+- Test suite: 122 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 126/126 with it). Build clean across
+  net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

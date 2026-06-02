@@ -55,6 +55,10 @@ parallel work.
   `RunOrchestrator`, and asserts the app shows "Login successful" + exit 0 +
   `Result=Succeeded`. Verified green twice on an interactive session; skipped by
   default (UIA needs a logged-in desktop). main suite = **122 + 2 skipped**.
+- [x] E2E-1 cross-framework parity: both gated E2E are now theories over WinForms
+  **and** WPF (same automation ids + status strings, only window title differs) —
+  proves the UIA agent path is framework-agnostic. 4 gated cases; **126/126** with
+  `RUN_E2E_UI=1`. WinForms label clip ("Case grid") fixed + screenshot-verified.
 - [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
   stable.
 - [ ] V3-A: Design UIA screenshot overlay artifact contract before adding VLM

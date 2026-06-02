@@ -33,20 +33,16 @@ parallel work.
   deterministic manual artifacts first; real UI runtime guard E2E waits for
   injectable runner seams.
 
-- [x] 2026-06-01 session (all merged to `main`): Central Package Management;
-  `PromptBuilder` + `LlmResponseParser` seams (key-free LLM tests, +22);
-  `JUnitReportWriter` V6-A prototype (+13); interactive workbench dashboard +
-  run-loading bug fix (+8); `--render-ui --watch` (+4); `run-demo-login.ps1`;
-  `DEMO-LOGIN-001` example. main = build 0/0, **104 tests** green.
-
-## In Progress
-
-- [ ] DEV-LOOP (branch `claude/dev-loop-hooks`): SOTA agentic dev loop — hooks
-  (`.claude/settings.json`: `Stop`=verify build+test gate exit 2, `PreToolUse`=
-  block `.env`/`rm -rf`/force-push), `.claude/scripts/verify.ps1` (conditional,
-  OS-aware, `AGENT_SKIP_VERIFY` escape hatch) + `guard-bash.ps1`, read-only
-  `.claude/agents/code-reviewer.md`, `.editorconfig`, conservative
-  `Directory.Build.props`, `CHANGELOG.md`. See plan Parties 15 / 15-bis / 16.
+- [x] 2026-06-01 session (merged): Central Package Management; `PromptBuilder` +
+  `LlmResponseParser` seams (+22); interactive workbench dashboard + run-loading
+  bug fix (+8); `--render-ui --watch` (+4); `run-demo-login.ps1`; `DEMO-LOGIN-001`.
+- [x] DEV-LOOP (merged): SOTA agentic dev loop — `.claude/settings.json` hooks
+  (`Stop`=build+test gate exit 2, `PreToolUse`=block `.env`/`rm -rf`/force-push),
+  `verify.ps1` (conditional, OS-aware, `AGENT_SKIP_VERIFY`) + `guard-bash.ps1`,
+  read-only `code-reviewer` subagent, `.editorconfig`, conservative
+  `Directory.Build.props`, `CHANGELOG.md`. Plan Parties 15 / 15-bis / 16.
+- [x] V6-A (merged): `JUnitReportWriter` + `--to-junit [path]` CLI (manual-first)
+  + shared `RunArtifactLoader`. main = build 0/0, **110 tests** green.
 
 ## Next Executable Items
 
@@ -57,10 +53,7 @@ parallel work.
 - [ ] V3-B: Keep recording mode visible in roadmap/docs, but defer
   implementation until the action model and TestZoo flows are stable.
 - [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
-- [ ] V6-A: standard CI output. PROTOTYPE DONE (`JUnitReportWriter` on branch
-  `claude/runner-junit-output`). Remaining: wire a `--to-junit` manual command
-  (best after the Program.Main refactor) and emit alongside `report.json`.
-- [x] WB-1: Six session branches merged into `main`; build + test green (104).
+- [x] WB-1: session branches merged into `main`; build + test green.
   (Cleanup: delete the merged remote branches when convenient.)
 - [ ] SKILL-1: After DEV-LOOP is green and used, extract a reusable
   `setup-verification-loop` Skill (stack-aware: detects build/test/lint commands;

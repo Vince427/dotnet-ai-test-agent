@@ -7,6 +7,17 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **OBS-1 (observability, opt-in)**: OpenTelemetry instrumentation of the agent
+  loop via `RunnerTelemetry` — an `ActivitySource` emitting `agentloop.run` /
+  `agentloop.step` / `agentloop.observe` / `agentloop.decide` spans (act/guard/
+  score/record captured as step-span tags) and a `Meter` (step/run duration, step
+  count by outcome, run score). Export is strictly opt-in: a provider is built only
+  when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and `StartActivity` is a no-op with no
+  listener — runs stay dependency-free. OTLP uses `HttpProtobuf` (net48-safe; gRPC
+  dropped in exporter 1.12.0). The run's W3C `traceId` is persisted to `report.json`
+  (new `RunArtifact.TraceId`) so a recorded run links to its live trace. Verified by
+  a listener-based span test + opt-in gating test (no collector needed). Live
+  OTLP → standalone Aspire dashboard remains a manual/human-orchestrated step.
 - **E2E-1 (key-free end-to-end)**: a deterministic OpenAI-compatible
   `MockLlmServer` (test infra) that returns a scripted action sequence. Three
   always-run tests drive the real `LlmService` through it (client → mock →
@@ -67,8 +78,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 122 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 126/126 with it). Build clean across
+- Test suite: 125 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 129/129 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

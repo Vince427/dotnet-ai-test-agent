@@ -80,13 +80,15 @@ parallel work.
   loop tests (fake driver + scripted decider, zero delays). main = build 0/0,
   **119 tests** green. Manual CLI surface unchanged. Optional follow-up: split the
   act-dispatch switch into per-action handlers if it grows further.
-- [ ] OBS-1 (Phase 2, observability): emit OpenTelemetry from the runner
-  (`ActivitySource` for observe/decide/act/guard/score/record + `Meter` for
-  tokens/scores/durations). On net48 use `OtlpExportProtocol.HttpProtobuf` (gRPC
-  is unsupported on .NET Framework since OTLP exporter 1.12.0). View live in the
-  standalone Aspire dashboard (`aspire dashboard run --allow-anonymous`, OTLP
-  HTTP :4318). Store the traceId in `report.json` and link it from the static
-  workbench so results -> live trace is one click.
+- [~] OBS-1 (Phase 2, observability): **runner emission done.** `RunnerTelemetry`
+  emits `agentloop.run/step/observe/decide` spans (act/guard/score/record as
+  step-span tags) + a `Meter` (step/run duration, step count, run score). Opt-in:
+  provider built only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; `HttpProtobuf`
+  (net48-safe). `traceId` persisted to `report.json` (`RunArtifact.TraceId`).
+  Tested via a listener-based span test (no collector). **Remaining (OBS-1b):**
+  surface/link the traceId in the static workbench (needs the Aspire dashboard
+  base URL → clickable "results → live trace"). Token metric deferred (the LLM
+  call does not expose usage today). Live OTLP → Aspire dashboard is a manual step.
 - [ ] OBS-2 (Phase 3, optional): local all-in-one dashboard app (list + launch +
   live screenshots + final report + link to the Aspire trace). Local-only dev
   tool, never in CI; reuses the static workbench rendering + the CLI contract.

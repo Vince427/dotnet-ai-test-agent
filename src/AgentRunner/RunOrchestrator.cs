@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using DesktopAiTestAgent.Core;
 
@@ -32,6 +34,32 @@ public sealed class RunOrchestrator(
 
     public async Task<int> RunAsync(RunnerOptions options)
     {
+        // Root span for the whole run. Null when nobody is listening (telemetry off).
+        using var runActivity = RunnerTelemetry.Source.StartActivity("agentloop.run", ActivityKind.Internal);
+        var runStopwatch = Stopwatch.StartNew();
+        var exitCode = 3;
+        try
+        {
+            exitCode = await RunCoreAsync(options, runActivity);
+            return exitCode;
+        }
+        finally
+        {
+            runStopwatch.Stop();
+            var result = LastArtifact?.Result ?? "Unknown";
+            var resultTag = new KeyValuePair<string, object?>("agentloop.result", result);
+            RunnerTelemetry.RunDuration.Record(runStopwatch.Elapsed.TotalMilliseconds, resultTag);
+            if (LastArtifact != null)
+                RunnerTelemetry.RunScore.Record(LastArtifact.FinalScore, resultTag);
+            runActivity?.SetTag("agentloop.result", result);
+            runActivity?.SetTag("agentloop.exit_code", exitCode);
+            if (exitCode != 0)
+                runActivity?.SetStatus(ActivityStatusCode.Error, LastArtifact?.ErrorMessage);
+        }
+    }
+
+    private async Task<int> RunCoreAsync(RunnerOptions options, Activity? runActivity)
+    {
         var targetWindow = options.TargetWindow;
         var goal = options.Goal;
 
@@ -58,6 +86,14 @@ public sealed class RunOrchestrator(
         };
         LastArtifact = runArtifact;
 
+        // Persist the trace id so a recorded run links to its live trace (OBS-1).
+        runArtifact.TraceId = runActivity?.TraceId.ToString();
+        runActivity?.SetTag("agentloop.run_id", runArtifact.RunId);
+        runActivity?.SetTag("agentloop.goal_id", goal.Identifier);
+        runActivity?.SetTag("agentloop.target_window", targetWindow);
+        runActivity?.SetTag("agentloop.test_id", options.TestId);
+        runActivity?.SetTag("agentloop.max_steps", goal.MaxSteps);
+
         var sessionId = $"{runArtifact.RunId}-{DateTime.UtcNow:HHmmss}";
         logger.SetContext(goal.Identifier, sessionId);
 
@@ -83,16 +119,23 @@ public sealed class RunOrchestrator(
         string? loopWarning = null;
         for (int step = 1; step <= goal.MaxSteps; step++)
         {
+            using var stepActivity = RunnerTelemetry.Source.StartActivity("agentloop.step", ActivityKind.Internal);
+            stepActivity?.SetTag("agentloop.step", step);
+            var stepStopwatch = Stopwatch.StartNew();
+
             // 1. OBSERVE — capture full UI state
             UiSnapshot snapshot;
-            try
+            using (RunnerTelemetry.Source.StartActivity("agentloop.observe"))
             {
-                snapshot = _driver.Capture();
-            }
-            catch (Exception ex)
-            {
-                logger.Error("Failed to capture UI state", ex);
-                continue;
+                try
+                {
+                    snapshot = _driver.Capture();
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("Failed to capture UI state", ex);
+                    continue;
+                }
             }
 
             // Record screen signature for exploration tracking
@@ -121,43 +164,47 @@ public sealed class RunOrchestrator(
             logger.Info($"[Step {step}/{goal.MaxSteps}] Asking agent... elements={snapshot.Elements.Count}");
 
             AgentAction action;
-            try
+            using (var decideActivity = RunnerTelemetry.Source.StartActivity("agentloop.decide", ActivityKind.Client))
             {
-                action = await _decider.DecideActionAsync(
-                    snapshot, goal, memory.GetFullContextString(), loopWarning);
-            }
-            catch (Exception ex)
-            {
-                logger.Error("LLM call failed", ex);
-                var llmScoreDelta = scoring.ScoreAction("LlmCall", false, false, ex.Message);
-                runArtifact.Steps.Add(new RunStep
+                try
                 {
-                    StepNumber = step,
-                    UiStateSnapshot = $"{snapshot.WindowTitle} ({snapshot.Elements.Count} elements)",
-                    ActionType = "LlmCall",
-                    Reasoning = ex.Message,
-                    Outcome = "Failed",
-                    FailureCode = "llm_call_failed",
-                    FailureMessage = ex.Message,
-                    ScoreDelta = llmScoreDelta,
-                    CumulativeScore = scoring.TotalScore
-                });
-                logger.Score(scoring.GetSummary());
-
-                if (scoring.ShouldAbort())
-                {
-                    logger.Warning($"Score below threshold ({scoring.TotalScore}). Aborting.");
-                    runArtifact.Result = "Aborted";
-                    runArtifact.ErrorMessage = $"Score dropped to {scoring.TotalScore} after LLM call failures.";
-                    runArtifact.FinalScore = scoring.TotalScore;
-                    runArtifact.EndedAt = DateTime.UtcNow;
-                    artifactWriter.WriteReport(runArtifact);
-                    artifactWriter.WriteSummary(runArtifact);
-                    return 3;
+                    action = await _decider.DecideActionAsync(
+                        snapshot, goal, memory.GetFullContextString(), loopWarning);
                 }
+                catch (Exception ex)
+                {
+                    decideActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                    logger.Error("LLM call failed", ex);
+                    var llmScoreDelta = scoring.ScoreAction("LlmCall", false, false, ex.Message);
+                    runArtifact.Steps.Add(new RunStep
+                    {
+                        StepNumber = step,
+                        UiStateSnapshot = $"{snapshot.WindowTitle} ({snapshot.Elements.Count} elements)",
+                        ActionType = "LlmCall",
+                        Reasoning = ex.Message,
+                        Outcome = "Failed",
+                        FailureCode = "llm_call_failed",
+                        FailureMessage = ex.Message,
+                        ScoreDelta = llmScoreDelta,
+                        CumulativeScore = scoring.TotalScore
+                    });
+                    logger.Score(scoring.GetSummary());
 
-                await Task.Delay(_config.PollIntervalMs); // Wait before retrying to avoid spamming 429
-                continue;
+                    if (scoring.ShouldAbort())
+                    {
+                        logger.Warning($"Score below threshold ({scoring.TotalScore}). Aborting.");
+                        runArtifact.Result = "Aborted";
+                        runArtifact.ErrorMessage = $"Score dropped to {scoring.TotalScore} after LLM call failures.";
+                        runArtifact.FinalScore = scoring.TotalScore;
+                        runArtifact.EndedAt = DateTime.UtcNow;
+                        artifactWriter.WriteReport(runArtifact);
+                        artifactWriter.WriteSummary(runArtifact);
+                        return 3;
+                    }
+
+                    await Task.Delay(_config.PollIntervalMs); // Wait before retrying to avoid spamming 429
+                    continue;
+                }
             }
 
             if (action == null)
@@ -366,6 +413,28 @@ public sealed class RunOrchestrator(
             memory.AddAction($"[Step {step}] {action.ActionType} on {action.AutomationId} → {outcomeDetail}");
             logger.Action(action.ActionType ?? "Unknown", action.AutomationId ?? "N/A", outcomeDetail);
             logger.Score(scoring.GetSummary());
+
+            // Telemetry: the step span carries the act/guard/score outcome; metrics
+            // aggregate per-step duration and outcome. (Secret-free tags only.)
+            stepStopwatch.Stop();
+            var outcome = succeeded ? "Succeeded" : "Failed";
+            var actionTypeTag = action.ActionType ?? "Unknown";
+            stepActivity?.SetTag("agentloop.action_type", actionTypeTag);
+            stepActivity?.SetTag("agentloop.action_target", action.AutomationId);
+            stepActivity?.SetTag("agentloop.outcome", outcome);
+            stepActivity?.SetTag("agentloop.score_delta", scoreDelta);
+            stepActivity?.SetTag("agentloop.cumulative_score", scoring.TotalScore);
+            if (guardResult is { Status: not QualityGuardStatus.Passed })
+                stepActivity?.SetTag("agentloop.guard", $"{guardResult.Status}:{guardResult.Code}");
+            if (!succeeded)
+                stepActivity?.SetStatus(ActivityStatusCode.Error, outcomeDetail);
+            var stepTags = new TagList
+            {
+                { "agentloop.action_type", actionTypeTag },
+                { "agentloop.outcome", outcome }
+            };
+            RunnerTelemetry.StepCount.Add(1, stepTags);
+            RunnerTelemetry.StepDuration.Record(stepStopwatch.Elapsed.TotalMilliseconds, stepTags);
 
             // 6. CHECK — should we abort?
             if (guardResult?.Status == QualityGuardStatus.Abort)

@@ -128,7 +128,7 @@ print "verify: green"; exit 0
 ```
 read hook JSON from stdin; cmd = .tool_input.command
 if cmd empty or unparseable: exit 0          # fail-open
-for pattern in [ rm -rf, > .env, >> .env, git push --force, -f force-push, --no-verify ]:
+for pattern in [ rm -rf, > .env, >> .env, git push --force (allow --force-with-lease), -f force-push, --no-verify ]:
     if cmd matches pattern: stderr "guard: BLOCKED (<pattern>)"; exit 2
 exit 0
 ```

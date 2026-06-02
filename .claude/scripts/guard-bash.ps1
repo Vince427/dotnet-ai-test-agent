@@ -24,7 +24,7 @@ $patterns = @(
     'rm\s+-rf',                 # recursive force delete
     '>\s*\.env(\s|$)',          # overwrite .env (secrets)
     '>>\s*\.env(\s|$)',         # append to .env
-    'git\s+push\s+.*--force',   # force push
+    'git\s+push\s+.*--force(?!-with-lease)', # force push (allow the safe --force-with-lease)
     'git\s+push\s+.*\s-f(\s|$)',# force push (short flag)
     '--no-verify'               # bypass hooks
 )

@@ -13,6 +13,9 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   `--no-verify`. Scripts in `.claude/scripts/` (`verify.ps1`, `guard-bash.ps1`),
   conditional + OS-aware with an `AGENT_SKIP_VERIFY` escape hatch.
 - **Dev loop**: read-only QA subagent `.claude/agents/code-reviewer.md`.
+- **Reusable skill** `.claude/skills/setup-verification-loop/SKILL.md`: scaffolds
+  this verification-first dev loop (hooks + QA subagent + hygiene) into any repo,
+  stack-aware (dotnet/node/python/go/rust), ETH-disciplined (lean by default).
 - `.editorconfig` (deterministic style) and a conservative `Directory.Build.props`.
 - `CHANGELOG.md`.
 - Central Package Management via `Directory.Packages.props` (MAUI sample opts out).

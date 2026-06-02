@@ -39,7 +39,38 @@ orchestrator.
 
 ## Open Entries
 
-_None yet. Created on 2026-05-10._
+## 2026-06-01 - claude/workbench-interactive - workbench
+
+**Observation**: `SymphonyWorkbenchGenerator.LoadRuns` deserialized `report.json`
+without a `JsonStringEnumConverter`, but `ArtifactWriter` serializes enums as
+strings (`"evidenceLevel": "Standard"`). Every real run threw on deserialize and
+was silently swallowed by the catch -> `runs=0`. The existing test used a
+`report.json` with no `evidenceLevel` field, so it never caught this.
+
+**Why it matters**: the workbench showed zero runs for any real or guard-demo
+run; the dashboard looked empty even when artifacts existed.
+
+**Suggestion**: FIXED on `claude/workbench-interactive` (added the converter +
+regression test). Audit any other `JsonSerializer.Deserialize<RunArtifact>` /
+report-reading sites for the same mismatch.
+
+**Status**: `CLOSED - see branch claude/workbench-interactive`
+
+## 2026-06-01 - claude/session-handoff - ci / observability
+
+**Observation**: For Phase 2 (OpenTelemetry -> Aspire dashboard), the runner
+multi-targets net48. gRPC OTLP is unsupported on .NET Framework since the OTLP
+exporter `1.12.0` (Grpc.Core removed). Must use `OtlpExportProtocol.HttpProtobuf`
+(OTLP HTTP, port 4318), never gRPC (4317), or the net48 build emits nothing.
+
+**Why it matters**: picking the default/gRPC exporter would silently produce no
+telemetry on the .NET Framework target.
+
+**Suggestion**: configure `HttpProtobuf` when instrumenting; run the standalone
+Aspire dashboard via `aspire dashboard run --allow-anonymous` (Aspire 13.3+,
+NativeAOT, no Docker) or the `mcr.microsoft.com/dotnet/aspire-dashboard` image.
+
+**Status**: `OPEN`
 
 ## Archive
 

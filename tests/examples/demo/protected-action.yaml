@@ -1,0 +1,28 @@
+suite: demo
+
+# A deliberately "complex" target flow (a button that is DISABLED until another
+# action enables it, plus a separate status region) expressed with the SAME flat
+# contract as the simple login: a natural-language goal + allowed actions + an
+# Assert to verify. Target richness does not leak into the authoring surface.
+#
+# Verification uses Assert (not success_condition) on purpose: the sample has
+# several "*Status*" labels and the driver's status auto-detection surfaces the
+# first one. Naming the exact label in an Assert is the robust, explicit pattern
+# for multi-region apps. See .claude/DISCOVERY_LOG.md (multi-status heuristic).
+tests:
+  DEMO-PROTECTED-001:
+    title: "Demo: enable then run a gated action on the WinForms sample"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "claude-code"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Enable the protected action, run it, then verify the controls status shows completion."
+    max_steps: 8
+    allowed_actions: ["Click", "Assert", "Done", "Wait"]
+    tags: ["demo", "winforms", "net8", "dynamic-state", "assert"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"

@@ -39,6 +39,29 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-06-02 - claude/runner-orchestrator - automation
+
+**Observation**: `FlaUiDesktopDriver.Capture()` derives `UiSnapshot.StatusText` by
+returning the **first** element whose AutomationId contains "status". The WinForms
+sample has three (`lblStatus`, `lblProfileStatus`, `lblControlsStatus`), so any flow
+whose outcome lands in a non-login status region can never be detected via
+`success_condition` (the login label "Waiting" always wins). Surfaced while adding
+the complex gated-action E2E (`DEMO-PROTECTED-001`), which therefore verifies via an
+explicit `Assert` on `lblControlsStatus` instead of a `success_condition`.
+
+**Why it matters**: as target apps get richer (multiple status/result regions —
+exactly the direction the samples are heading), the "first status label" heuristic
+silently mis-detects success. `success_condition` looks broken for non-login flows
+even though the app is fine.
+
+**Suggestion**: keep `Assert` as the robust explicit pattern for multi-region apps
+(documented in `tests/examples/demo/protected-action.yaml`). Longer term, consider a
+smarter status resolution (e.g. the status nearest the last-acted control, or letting
+YAML name the status element) — an automation-domain change; weigh against keeping the
+heuristic simple. Not urgent; the Assert path already covers it.
+
+**Status**: `OPEN`
+
 ## 2026-06-01 - claude/workbench-interactive - workbench
 
 **Observation**: `SymphonyWorkbenchGenerator.LoadRuns` deserialized `report.json`

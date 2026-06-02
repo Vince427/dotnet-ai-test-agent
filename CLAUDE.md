@@ -15,6 +15,21 @@ For every task:
    behavior or planning.
 3. Read only the matching domain file under `.claude/context/`.
 
+## Resuming Work (Read This First)
+
+A session has no memory of previous sessions. To pick up where work left off
+without losing context:
+
+1. Read `.claude/plans/current.md`. The **In Review** section lists branches that
+   are pushed but not yet merged (with merge order); **Next Executable Items** is
+   the live backlog.
+2. Read `.claude/DISCOVERY_LOG.md` for open issues and gotchas.
+3. Run `git branch -a` and `git log --oneline -15` to see the real branch/commit
+   state, then continue from the next executable item (or follow `/suite`).
+
+Keep `.claude/plans/current.md` updated when you finish or start work so the next
+session resumes cleanly.
+
 ## Domain Context Map
 
 | Files touched | Context to read |

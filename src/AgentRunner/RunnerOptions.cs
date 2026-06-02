@@ -20,6 +20,8 @@ public sealed class RunnerOptions
     public bool ListTestsOnly { get; set; }
     public bool WriteGuardDemosOnly { get; set; }
     public bool ToJUnitOnly { get; set; }
+    public bool DashboardOnly { get; set; }
+    public int DashboardPort { get; set; } = 8090;
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -45,6 +47,8 @@ public sealed class RunnerOptions
         var listTestsOnly = false;
         var writeGuardDemosOnly = false;
         var toJUnitOnly = false;
+        var dashboardOnly = false;
+        var dashboardPort = 8090;
         string? junitOutputPath = null;
         var watch = false;
         var evidenceLevel = EvidenceLevel.Standard;
@@ -85,6 +89,16 @@ public sealed class RunnerOptions
                 toJUnitOnly = true;
                 if (HasOptionalValue(args, i))
                     junitOutputPath = ReadValue(args, ref i, "--to-junit");
+            }
+            else if (arg == "--dashboard")
+            {
+                dashboardOnly = true;
+                if (HasOptionalValue(args, i))
+                {
+                    var raw = ReadValue(args, ref i, "--dashboard");
+                    if (!int.TryParse(raw, out dashboardPort) || dashboardPort is <= 0 or > 65535)
+                        throw new ArgumentException("--dashboard port must be between 1 and 65535.");
+                }
             }
             else if (arg == "--validate-plan")
             {
@@ -145,8 +159,9 @@ public sealed class RunnerOptions
         if (listTestsOnly) modeCount++;
         if (writeGuardDemosOnly) modeCount++;
         if (toJUnitOnly) modeCount++;
+        if (dashboardOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, or --to-junit.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, or --dashboard.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
@@ -219,6 +234,8 @@ public sealed class RunnerOptions
             ListTestsOnly = listTestsOnly,
             WriteGuardDemosOnly = writeGuardDemosOnly,
             ToJUnitOnly = toJUnitOnly,
+            DashboardOnly = dashboardOnly,
+            DashboardPort = dashboardPort,
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

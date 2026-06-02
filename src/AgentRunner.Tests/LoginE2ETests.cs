@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using DesktopAiTestAgent.AgentRunner;
@@ -9,17 +9,21 @@ using DesktopAiTestAgent.UIAutomation;
 namespace DesktopAiTestAgent.AgentRunner.Tests;
 
 /// <summary>
-/// Full-stack, key-free end-to-end: a scripted <see cref="MockLlmServer"/> drives
-/// the real <see cref="LlmService"/> → real <see cref="FlaUiDesktopDriver"/> → real
-/// WinForms sample app, and we assert the app reaches "Login successful". This is
-/// the permanent integration test for an interactive Windows runner.
+/// Full-stack, key-free end-to-end across desktop frameworks: a scripted
+/// <see cref="MockLlmServer"/> drives the real <see cref="LlmService"/> → real
+/// <see cref="FlaUiDesktopDriver"/> → the real sample app, and we assert the app
+/// reaches "Login successful". Runs against BOTH the WinForms and WPF samples from
+/// one body — the agent path is UIA-based and framework-agnostic, and both samples
+/// share the same automation ids, so the same scripted flow proves both.
 ///
-/// Gated by <see cref="InteractiveUiFactAttribute"/> (RUN_E2E_UI=1) because UIA
-/// needs a logged-in desktop session and the sample exe must be built.
+/// Gated by <see cref="InteractiveUiTheoryAttribute"/> (RUN_E2E_UI=1): UIA needs a
+/// logged-in desktop session and the sample exes must be built.
 /// </summary>
 [Collection(InteractiveUiCollection.Name)]
 public sealed class LoginE2ETests : IDisposable
 {
+    public static IEnumerable<object[]> Frameworks() => [["winforms"], ["wpf"]];
+
     private readonly string _workspace =
         Path.Combine(Path.GetTempPath(), "e2e-login-" + Guid.NewGuid().ToString("N"));
 
@@ -29,13 +33,16 @@ public sealed class LoginE2ETests : IDisposable
         catch { /* best-effort temp cleanup */ }
     }
 
-    [InteractiveUiFact]
-    public async Task ScriptedLlm_DrivesRealAppToLoginSuccess()
+    [InteractiveUiTheory]
+    [MemberData(nameof(Frameworks))]
+    public async Task ScriptedLlm_DrivesRealAppToLoginSuccess(string frameworkKey)
     {
+        var target = DesktopE2E.Target(frameworkKey);
+
         using var server = new MockLlmServer(
             LoginScript.EnterUsername, LoginScript.EnterPassword, LoginScript.ClickLogin, LoginScript.Done);
 
-        using var app = DesktopE2E.LaunchWinFormsSample();
+        using var app = DesktopE2E.LaunchSample(target);
         try
         {
             var config = new WorkflowConfig
@@ -50,7 +57,7 @@ public sealed class LoginE2ETests : IDisposable
 
             var llm = new LlmService(config);
             using var driver = new FlaUiDesktopDriver();
-            DesktopE2E.WaitForControlReady(driver, DesktopE2E.WinFormsWindowTitle, "txtUsername", TimeSpan.FromSeconds(20));
+            DesktopE2E.WaitForControlReady(driver, target.WindowTitle, "txtUsername", TimeSpan.FromSeconds(20));
 
             var orchestrator = new RunOrchestrator(driver, llm, config);
 
@@ -65,7 +72,7 @@ public sealed class LoginE2ETests : IDisposable
 
             var options = new RunnerOptions
             {
-                TargetWindow = DesktopE2E.WinFormsWindowTitle,
+                TargetWindow = target.WindowTitle,
                 Goal = goal,
                 EvidenceLevel = EvidenceLevel.Standard // also exercises real screenshot capture
             };

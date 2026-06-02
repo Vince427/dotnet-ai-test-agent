@@ -12,12 +12,31 @@ namespace DesktopAiTestAgent.AgentRunner.Tests;
 /// </summary>
 internal static class DesktopE2E
 {
-    public const string WinFormsWindowTitle = "Sample Login App (.NET 8)";
+    /// <summary>
+    /// A buildable desktop sample target. WinForms and WPF expose the SAME automation
+    /// ids and the same status strings (LoginForm.cs / MainWindow.xaml.cs) — only the
+    /// window title and exe differ — so one scripted flow drives both.
+    /// </summary>
+    public sealed record SampleTarget(string Key, string WindowTitle, string ProjectDir, string ExeName);
+
+    public static readonly SampleTarget WinForms =
+        new("winforms", "Sample Login App (.NET 8)", "Sample.WinFormsApp.Net8", "Sample.WinFormsApp.Net8.exe");
+
+    public static readonly SampleTarget Wpf =
+        new("wpf", "WPF AI Test Target", "Sample.WpfApp", "Sample.WpfApp.exe");
+
+    /// <summary>Resolves a target by its theory key ("winforms" / "wpf").</summary>
+    public static SampleTarget Target(string key) => key switch
+    {
+        "winforms" => WinForms,
+        "wpf" => Wpf,
+        _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unknown sample target.")
+    };
 
     /// <summary>Starts the sample app exe (shell execute, so the window shows).</summary>
-    public static Process LaunchWinFormsSample()
+    public static Process LaunchSample(SampleTarget target)
     {
-        var exePath = ResolveWinFormsSampleExe();
+        var exePath = ResolveSampleExe(target);
         if (!File.Exists(exePath))
             throw new FileNotFoundException(
                 $"Sample app not built at '{exePath}'. Build the solution first (dotnet build).", exePath);
@@ -59,7 +78,7 @@ internal static class DesktopE2E
     /// root (the folder containing the .sln), then into the sample's bin for the same
     /// build configuration (Debug/Release) the tests were built in.
     /// </summary>
-    public static string ResolveWinFormsSampleExe()
+    public static string ResolveSampleExe(SampleTarget target)
     {
         var baseDir = AppContext.BaseDirectory;
         var configuration = baseDir.Contains(
@@ -71,8 +90,7 @@ internal static class DesktopE2E
             ?? throw new InvalidOperationException("Could not locate repo root (DesktopAiTestAgent.sln).");
 
         return Path.Combine(repoRoot,
-            "src", "Samples", "Sample.WinFormsApp.Net8", "bin", configuration, "net8.0-windows",
-            "Sample.WinFormsApp.Net8.exe");
+            "src", "Samples", target.ProjectDir, "bin", configuration, "net8.0-windows", target.ExeName);
     }
 
     /// <summary>Walks up from <paramref name="startDir"/> to the folder holding the .sln.</summary>

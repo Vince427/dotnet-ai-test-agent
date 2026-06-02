@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,6 +33,8 @@ public sealed class ProtectedActionE2ETests : IDisposable
     private const string Done =
         "{\"actionType\":\"Done\",\"reason\":\"flow complete\",\"confidence\":95}";
 
+    public static IEnumerable<object[]> Frameworks() => [["winforms"], ["wpf"]];
+
     private readonly string _workspace =
         Path.Combine(Path.GetTempPath(), "e2e-protected-" + Guid.NewGuid().ToString("N"));
 
@@ -41,16 +44,20 @@ public sealed class ProtectedActionE2ETests : IDisposable
         catch { /* best-effort temp cleanup */ }
     }
 
-    [InteractiveUiFact]
-    public async Task FlatYaml_DrivesComplexGatedActionFlow()
+    [InteractiveUiTheory]
+    [MemberData(nameof(Frameworks))]
+    public async Task FlatYaml_DrivesComplexGatedActionFlow(string frameworkKey)
     {
-        // The flat user-facing contract is the source of the goal under test.
+        var target = DesktopE2E.Target(frameworkKey);
+
+        // The flat user-facing contract is the source of the goal under test. The
+        // goal/allowed-actions are framework-neutral; only the target window varies.
         var goal = LoadGoalFromYaml("DEMO-PROTECTED-001");
         Assert.Null(goal.SuccessCondition);                       // verified by Assert, not a status string
         Assert.Contains("Assert", goal.AllowedActions);
 
         using var server = new MockLlmServer(ClickEnable, ClickProtected, AssertStatus, Done);
-        using var app = DesktopE2E.LaunchWinFormsSample();
+        using var app = DesktopE2E.LaunchSample(target);
         try
         {
             var config = new WorkflowConfig
@@ -66,12 +73,12 @@ public sealed class ProtectedActionE2ETests : IDisposable
             var llm = new LlmService(config);
             using var driver = new FlaUiDesktopDriver();
             DesktopE2E.WaitForControlReady(
-                driver, DesktopE2E.WinFormsWindowTitle, "btnEnableProtectedAction", TimeSpan.FromSeconds(20));
+                driver, target.WindowTitle, "btnEnableProtectedAction", TimeSpan.FromSeconds(20));
 
             var orchestrator = new RunOrchestrator(driver, llm, config);
             var options = new RunnerOptions
             {
-                TargetWindow = DesktopE2E.WinFormsWindowTitle,
+                TargetWindow = target.WindowTitle,
                 Goal = goal,
                 EvidenceLevel = EvidenceLevel.Minimal
             };

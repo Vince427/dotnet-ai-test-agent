@@ -18,4 +18,8 @@
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\UIAutomation\UIAutomation.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Let tests reach internal path/arg helpers for deterministic security coverage. -->
+    <InternalsVisibleTo Include="AgentRunner.Tests" />
+  </ItemGroup>
 </Project>

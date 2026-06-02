@@ -119,7 +119,7 @@ public sealed class RunJobManager(string repoRoot) : IDisposable
     }
 
     /// <summary>Windows command-line quoting for a single argument.</summary>
-    private static string QuoteArg(string arg)
+    internal static string QuoteArg(string arg)
     {
         if (arg.Length > 0 && arg.IndexOfAny([' ', '\t', '"']) < 0)
             return arg;

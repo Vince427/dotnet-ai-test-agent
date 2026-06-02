@@ -123,4 +123,33 @@ public sealed class DashboardApiTests : IDisposable
         var res = _api.LaunchRun("""{"planPath":"/etc/passwd","testId":"x"}""");
         Assert.Equal(400, res.Status);
     }
+
+    [Fact]
+    public void ResolveUnderRoot_AllowsUnderRoot_RejectsEscapesAndSiblingPrefix()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "ru-" + Guid.NewGuid().ToString("N"));
+
+        // Inside the root: allowed.
+        Assert.NotNull(DashboardApi.ResolveUnderRoot(root, "tests/x.yaml"));
+        Assert.NotNull(DashboardApi.ResolveUnderRoot(root, Path.Combine(root, "a", "b.yaml")));
+
+        // Sibling-prefix directory (root + "-evil") must NOT pass containment.
+        var sibling = root + "-evil" + Path.DirectorySeparatorChar + "x.yaml";
+        Assert.Null(DashboardApi.ResolveUnderRoot(root, sibling));
+
+        // Traversal and absolute-outside escape.
+        Assert.Null(DashboardApi.ResolveUnderRoot(root, Path.Combine("..", "outside.yaml")));
+        Assert.Null(DashboardApi.ResolveUnderRoot(root, @"C:\Windows\System32\drivers\etc\hosts"));
+    }
+
+    [Theory]
+    [InlineData("plain", "plain")]
+    [InlineData("has space", "\"has space\"")]
+    [InlineData("a\"b", "\"a\\\"b\"")]
+    [InlineData("ends\\", "ends\\")]
+    [InlineData("path with\\", "\"path with\\\\\"")]
+    public void QuoteArg_QuotesPerWindowsRules(string input, string expected)
+    {
+        Assert.Equal(expected, RunJobManager.QuoteArg(input));
+    }
 }

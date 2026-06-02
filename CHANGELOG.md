@@ -89,8 +89,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 134 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 138/138 with it). Build clean across
+- Test suite: 140 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 144/144 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

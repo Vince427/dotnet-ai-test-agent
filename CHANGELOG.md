@@ -19,8 +19,9 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `PromptBuilder` and `LlmResponseParser` extracted from `LlmService` so prompt
   assembly, response parsing, and the safe `Wait` fallback are unit-testable
   without an LLM key.
-- `JUnitReportWriter` (V6-A prototype): converts `RunArtifact` results to JUnit
-  XML for CI dashboards (CLI wiring still pending).
+- `JUnitReportWriter` (V6-A): converts `RunArtifact` results to JUnit XML for CI
+  dashboards. Wired to the CLI via `--to-junit [path]` (manual-first, no `.env`),
+  backed by a shared `RunArtifactLoader` (uses `JsonStringEnumConverter`).
 - Interactive AgentLoop Workbench: client-side filter/sort, per-run drill-down
   (steps, failureCode/guardCode), screenshot thumbnails, alert banner, pass-rate
   bar — still a single self-contained static HTML.

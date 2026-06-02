@@ -33,32 +33,20 @@ parallel work.
   deterministic manual artifacts first; real UI runtime guard E2E waits for
   injectable runner seams.
 
-## In Review — 2026-06-01 session (branches pushed to origin, NOT merged)
+- [x] 2026-06-01 session (all merged to `main`): Central Package Management;
+  `PromptBuilder` + `LlmResponseParser` seams (key-free LLM tests, +22);
+  `JUnitReportWriter` V6-A prototype (+13); interactive workbench dashboard +
+  run-loading bug fix (+8); `--render-ui --watch` (+4); `run-demo-login.ps1`;
+  `DEMO-LOGIN-001` example. main = build 0/0, **104 tests** green.
 
-Six independent feature branches are on origin; each builds 0 warn/0 err and its
-tests are green. Merge order: 1-4 and 6 are based on `main` (any order); branch 5
-is stacked on 4, so merge 4 first (if 4 is squash-merged, rebase 5 onto `main`).
+## In Progress
 
-- [ ] `claude/ci-central-packages` — Central Package Management
-  (`Directory.Packages.props`); MAUI sample opts out (workload-managed versions).
-- [ ] `claude/runner-llm-seams` — extract `PromptBuilder` + `LlmResponseParser`
-  from `LlmService` so prompt assembly + response parsing + the Wait fallback are
-  unit-testable WITHOUT an LLM key (+22 tests). The only non-deterministic step
-  left is the `_agent.RunAsync` network call.
-- [ ] `claude/runner-junit-output` — `JUnitReportWriter` (V6-A prototype):
-  `RunArtifact` -> JUnit XML (+13 tests). CLI wiring (`--to-junit`) still TODO.
-- [ ] `claude/workbench-interactive` — interactive static dashboard (filter/sort,
-  per-run drill-down with steps + failureCode/guardCode, screenshot thumbnails,
-  alert banner, pass-rate bar) + BUG FIX: the workbench silently dropped every
-  real run (see DISCOVERY_LOG) (+8 tests).
-- [ ] `claude/workbench-watch` — `--render-ui --watch`: regenerate on `runs/`
-  change (FileSystemWatcher, debounced) + browser meta-refresh; near-real-time,
-  no server, no `.env` (+4 tests). STACKED on `claude/workbench-interactive`.
-- [ ] `claude/ci-demo-script` — `scripts/run-demo-login.ps1`: one-command guided
-  demo (build + launch sample + run a test + render + open the Workbench).
-
-Note: untracked file `tests/examples/demo/quick-login-check.yaml` was created to
-demonstrate authoring; keep it as an example or delete it.
+- [ ] DEV-LOOP (branch `claude/dev-loop-hooks`): SOTA agentic dev loop — hooks
+  (`.claude/settings.json`: `Stop`=verify build+test gate exit 2, `PreToolUse`=
+  block `.env`/`rm -rf`/force-push), `.claude/scripts/verify.ps1` (conditional,
+  OS-aware, `AGENT_SKIP_VERIFY` escape hatch) + `guard-bash.ps1`, read-only
+  `.claude/agents/code-reviewer.md`, `.editorconfig`, conservative
+  `Directory.Build.props`, `CHANGELOG.md`. See plan Parties 15 / 15-bis / 16.
 
 ## Next Executable Items
 
@@ -72,8 +60,11 @@ demonstrate authoring; keep it as an example or delete it.
 - [ ] V6-A: standard CI output. PROTOTYPE DONE (`JUnitReportWriter` on branch
   `claude/runner-junit-output`). Remaining: wire a `--to-junit` manual command
   (best after the Program.Main refactor) and emit alongside `report.json`.
-- [ ] WB-1: After merging the six In-Review branches, re-run build + test on
-  `main` to confirm green, then delete the merged branches.
+- [x] WB-1: Six session branches merged into `main`; build + test green (104).
+  (Cleanup: delete the merged remote branches when convenient.)
+- [ ] SKILL-1: After DEV-LOOP is green and used, extract a reusable
+  `setup-verification-loop` Skill (stack-aware: detects build/test/lint commands;
+  keeps the ETH discipline — lean by default). See plan Partie 16.
 - [ ] WB-2 (refactor): extract `Program.Main` (~694 lines) into an injectable
   `IRunOrchestrator` + phase services. Unlocks deterministic loop tests with a
   fake LLM/driver, and clean CLI wiring for `--to-junit` and watch.

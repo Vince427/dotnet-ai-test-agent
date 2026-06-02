@@ -55,9 +55,10 @@ parallel work.
 - [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
 - [x] WB-1: session branches merged into `main`; build + test green.
   (Cleanup: delete the merged remote branches when convenient.)
-- [ ] SKILL-1: After DEV-LOOP is green and used, extract a reusable
-  `setup-verification-loop` Skill (stack-aware: detects build/test/lint commands;
-  keeps the ETH discipline — lean by default). See plan Partie 16.
+- [x] SKILL-1: reusable `setup-verification-loop` Skill extracted to the user
+  scope (`~/.claude/skills/setup-verification-loop/SKILL.md`), stack-aware
+  (dotnet/node/python/go/rust), ETH-disciplined (lean). Optional follow-ups:
+  description-optimization loop, commit a copy into a repo for collaborators.
 - [ ] WB-2 (refactor): extract `Program.Main` (~694 lines) into an injectable
   `IRunOrchestrator` + phase services. Unlocks deterministic loop tests with a
   fake LLM/driver, and clean CLI wiring for `--to-junit` and watch.

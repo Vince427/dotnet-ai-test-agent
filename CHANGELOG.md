@@ -7,6 +7,17 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **OBS-2 (local dashboard)**: an all-in-one, **localhost-only** developer dashboard
+  (`--dashboard [port]`) — a thin `HttpListener` server + single-page UI that is a
+  *view + launcher* over the existing CLI and artifacts (no new data model). Sections:
+  **Catalog** (tests from `tests/`, grouped by suite/framework/priority/tags),
+  **Create** (a form that writes a *validated* YAML ticket under `tests/created/`),
+  **Runs** (history + per-run detail: steps, guard/failure codes, screenshot gallery,
+  OBS-1 trace link), and **Live** (launch runs — spawns the CLI, parallel-friendly —
+  with streamed logs, recovered `runId`, and live screenshots). Security: localhost
+  bind, path-traversal guards on all file serving, redacted logs; never for CI. Screenshot
+  pixel-blur of secret fields is deferred (OS-masked passwords + localhost are the
+  current boundary). Optional trace deep-link via `AGENTLOOP_TRACE_UI_TEMPLATE`.
 - **OBS-1 (observability, opt-in)**: OpenTelemetry instrumentation of the agent
   loop via `RunnerTelemetry` — an `ActivitySource` emitting `agentloop.run` /
   `agentloop.step` / `agentloop.observe` / `agentloop.decide` spans (act/guard/
@@ -78,8 +89,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 125 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 129/129 with it). Build clean across
+- Test suite: 134 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 138/138 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

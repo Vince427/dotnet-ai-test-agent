@@ -89,9 +89,14 @@ parallel work.
   surface/link the traceId in the static workbench (needs the Aspire dashboard
   base URL → clickable "results → live trace"). Token metric deferred (the LLM
   call does not expose usage today). Live OTLP → Aspire dashboard is a manual step.
-- [ ] OBS-2 (Phase 3, optional): local all-in-one dashboard app (list + launch +
-  live screenshots + final report + link to the Aspire trace). Local-only dev
-  tool, never in CI; reuses the static workbench rendering + the CLI contract.
+- [x] OBS-2 (local all-in-one dashboard): `--dashboard [port]` serves a localhost-only
+  `HttpListener` + single-page UI — a view/launcher over the CLI + artifacts (no new
+  data model). Catalog (categorized), Create (form → validated YAML ticket), Runs
+  (history + detail + screenshots + trace link), Live (launch → spawn CLI, parallel,
+  streamed logs + recovered `runId` + live screenshots). Localhost-only, path-traversal
+  guards, never CI. 9 deterministic tests + live smoke-verified. **OBS-1b** (results →
+  trace link) is delivered here via the run-detail trace link. Remaining (deferred):
+  secret-field screenshot pixel-blur; trace link in the *static* workbench too.
 
 ## Human-Orchestrated Items
 

@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using DesktopAiTestAgent.AgentRunner.Dashboard;
 using DesktopAiTestAgent.Core;
 using DesktopAiTestAgent.UIAutomation;
 
@@ -25,7 +27,8 @@ internal static class Program
             HasArgument(args, "--validate-plan") ||
             HasArgument(args, "--list-tests") ||
             HasArgument(args, "--write-guard-demos") ||
-            HasArgument(args, "--to-junit");
+            HasArgument(args, "--to-junit") ||
+            HasArgument(args, "--dashboard");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
@@ -123,6 +126,9 @@ internal static class Program
         if (options.ToJUnitOnly)
             return ToJUnit(config, options);
 
+        if (options.DashboardOnly)
+            return RunDashboard(config, options);
+
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
         // The driver is IDisposable, so Program owns its lifetime.
@@ -135,6 +141,30 @@ internal static class Program
 
         var orchestrator = new RunOrchestrator(driver, llmService, config);
         return await orchestrator.RunAsync(options);
+    }
+
+    // Manual command: serve the local-only all-in-one dashboard (OBS-2). No .env
+    // required to start; launching a run from it spawns the CLI, which then needs
+    // the user's target app + provider config.
+    private static int RunDashboard(WorkflowConfig config, RunnerOptions options)
+    {
+        var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        using var server = new DashboardServer(repoRoot, config.WorkspaceRoot, options.DashboardPort);
+        try
+        {
+            server.Start();
+        }
+        catch (HttpListenerException ex)
+        {
+            Console.Error.WriteLine($"Failed to start dashboard on port {options.DashboardPort}: {ex.Message}");
+            return 1;
+        }
+
+        Console.WriteLine($"AgentLoop Dashboard (local-only, not for CI) at {server.Url}");
+        Console.WriteLine("Serves tests/ + runs/. Launching a run spawns the CLI (needs your target app + .env). Press Ctrl+C to stop.");
+        server.WaitForShutdown();
+        Console.WriteLine("Dashboard stopped.");
+        return 0;
     }
 
     private static int WriteGuardDemos(RunnerOptions options)

@@ -73,6 +73,13 @@ These are intentionally not built yet; each note records *why* and the key const
 - **RunDiffer (migration parity)**: run one YAML on V1 (legacy) and V2 (modern), align
   steps, LLM-judge classifies diffs cosmetic/functional/regression → HTML parity report.
   This is the differentiator for a .NET 4.8 → modern migration; nothing else does it.
+- **Local all-in-one dashboard** (OBS-2): ✅ shipped. `--dashboard` serves a
+  **localhost-only** `HttpListener` + single-page UI that is a *view + launcher* over the
+  CLI + artifacts — catalog, create-ticket (→ validated YAML), run history/detail with
+  screenshots + trace link, and live launch (spawns the CLI, parallel, streamed logs +
+  recovered runId + live screenshots). **Doctrine:** it is a dev tool, NOT the product
+  core — no SaaS, never in CI, no new data model; the CLI/YAML/artifacts stay canonical.
+  Its own domain (`.claude/context/dashboard.md`). Deferred: secret-field screenshot blur.
 - **OpenTelemetry → Aspire dashboard** (observability, opt-in, local): 🟡 in progress.
   Runner emission shipped (OBS-1): `RunnerTelemetry` emits run/step/observe/decide spans
   + duration/score metrics, opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`, `traceId` in

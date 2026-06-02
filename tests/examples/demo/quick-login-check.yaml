@@ -1,0 +1,21 @@
+suite: demo
+
+tests:
+  DEMO-LOGIN-001:
+    title: "Demo: login happy path on the WinForms sample"
+    priority: "P1"
+    framework: "winforms"
+    target_window: "Sample Login App (.NET 8)"
+    authoring_agent: "claude-code"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Enter username 'admin' and password 'password123', click Log In, and confirm the success message appears."
+    success_condition: "Login successful"
+    max_steps: 8
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["demo", "winforms", "net8", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "LLM endpoint is not configured for runtime execution"

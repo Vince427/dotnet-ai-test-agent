@@ -24,7 +24,8 @@ internal static class Program
             HasArgument(args, "--render-ui") ||
             HasArgument(args, "--validate-plan") ||
             HasArgument(args, "--list-tests") ||
-            HasArgument(args, "--write-guard-demos");
+            HasArgument(args, "--write-guard-demos") ||
+            HasArgument(args, "--to-junit");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
@@ -121,6 +122,9 @@ internal static class Program
 
         if (options.WriteGuardDemosOnly)
             return WriteGuardDemos(options);
+
+        if (options.ToJUnitOnly)
+            return ToJUnit(config, options);
 
         // --- Initialize components ---
         var secretRedactor = new SecretRedactor();
@@ -529,6 +533,23 @@ internal static class Program
         foreach (var artifact in result.Artifacts)
             Console.WriteLine($"- {artifact.RunId}: {artifact.TestId} result={artifact.Result}");
 
+        return 0;
+    }
+
+    // Manual command: convert captured run artifacts (runs/<id>/report.json) into a
+    // JUnit XML report for CI dashboards. No .env / LLM / desktop app required.
+    private static int ToJUnit(WorkflowConfig config, RunnerOptions options)
+    {
+        var runs = RunArtifactLoader.LoadFromDirectory(config.WorkspaceRoot);
+        var xml = JUnitReportWriter.Write(runs);
+
+        var outputPath = Path.GetFullPath(options.JUnitOutputPath!);
+        var outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir))
+            Directory.CreateDirectory(outputDir);
+        File.WriteAllText(outputPath, xml);
+
+        Console.WriteLine($"JUnit report written to {outputPath} runs={runs.Count}");
         return 0;
     }
 

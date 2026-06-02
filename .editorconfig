@@ -1,0 +1,44 @@
+# EditorConfig — deterministic style for the repo.
+# Severities are kept at suggestion/warning (never error) so they guide without
+# breaking the build. Tighten per-project later if you adopt TreatWarningsAsErrors.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,csx}]
+indent_size = 4
+# Usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:suggestion
+# Namespaces
+csharp_style_namespace_declarations = file_scoped:suggestion
+# var / expression preferences
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = true:suggestion
+csharp_style_prefer_method_group_conversion = true:suggestion
+# this. qualification
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+# Naming-ish
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+# Unused
+dotnet_diagnostic.IDE0005.severity = suggestion
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.{props,targets,csproj}]
+indent_size = 2
+
+[*.ps1]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false

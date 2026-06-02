@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    Repo-wide MSBuild defaults. Intentionally CONSERVATIVE (QA refinement #4):
+    only universally-safe properties are centralized here. Compilation-behavior
+    props that differ per project (Nullable, ImplicitUsings, LangVersion) are
+    deliberately NOT forced here, to avoid flipping the net48 samples.
+    NuGet versions live in Directory.Packages.props (central package management).
+  -->
+  <PropertyGroup>
+    <!-- Reproducible builds: same inputs -> same binary. Safe everywhere. -->
+    <Deterministic>true</Deterministic>
+    <!-- Normalize stored paths in CI for reproducibility. -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' or '$(TF_BUILD)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

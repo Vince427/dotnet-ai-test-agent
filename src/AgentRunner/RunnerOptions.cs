@@ -19,6 +19,8 @@ public sealed class RunnerOptions
     public bool ValidatePlanOnly { get; set; }
     public bool ListTestsOnly { get; set; }
     public bool WriteGuardDemosOnly { get; set; }
+    public bool ToJUnitOnly { get; set; }
+    public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
     public EvidenceLevel EvidenceLevel { get; set; } = EvidenceLevel.Standard;
@@ -42,6 +44,8 @@ public sealed class RunnerOptions
         var validatePlanOnly = false;
         var listTestsOnly = false;
         var writeGuardDemosOnly = false;
+        var toJUnitOnly = false;
+        string? junitOutputPath = null;
         var watch = false;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
@@ -75,6 +79,12 @@ public sealed class RunnerOptions
                 writeGuardDemosOnly = true;
                 if (HasOptionalValue(args, i))
                     guardDemoOutputRoot = ReadValue(args, ref i, "--write-guard-demos");
+            }
+            else if (arg == "--to-junit")
+            {
+                toJUnitOnly = true;
+                if (HasOptionalValue(args, i))
+                    junitOutputPath = ReadValue(args, ref i, "--to-junit");
             }
             else if (arg == "--validate-plan")
             {
@@ -134,8 +144,9 @@ public sealed class RunnerOptions
         if (validatePlanOnly) modeCount++;
         if (listTestsOnly) modeCount++;
         if (writeGuardDemosOnly) modeCount++;
+        if (toJUnitOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, or --write-guard-demos.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, or --to-junit.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
@@ -207,6 +218,10 @@ public sealed class RunnerOptions
             ValidatePlanOnly = validatePlanOnly,
             ListTestsOnly = listTestsOnly,
             WriteGuardDemosOnly = writeGuardDemosOnly,
+            ToJUnitOnly = toJUnitOnly,
+            JUnitOutputPath = toJUnitOnly
+                ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
+                : null,
             UiOutputPath = ResolveOutputPath(uiOutputPath, config),
             GuardDemoOutputRoot = ResolveGuardDemoOutputRoot(guardDemoOutputRoot, config),
             EvidenceLevel = evidenceLevel,

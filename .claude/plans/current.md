@@ -53,8 +53,9 @@ parallel work.
 - [ ] V3-B: Keep recording mode visible in roadmap/docs, but defer
   implementation until the action model and TestZoo flows are stable.
 - [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
-- [x] WB-1: session branches merged into `main`; build + test green.
-  (Cleanup: delete the merged remote branches when convenient.)
+- [x] WB-1: session branches merged into `main`; build + test green; 10 merged
+  branches deleted (remote + local). Decisions distilled to
+  `docs/architecture-decisions.md` so the rationale travels with a clone.
 - [x] SKILL-1: reusable `setup-verification-loop` Skill extracted to the user
   scope (`~/.claude/skills/setup-verification-loop/SKILL.md`), stack-aware
   (dotnet/node/python/go/rust), ETH-disciplined (lean). Optional follow-ups:

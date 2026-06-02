@@ -20,10 +20,9 @@ For every task:
 A session has no memory of previous sessions. To pick up where work left off
 without losing context:
 
-1. Read `.claude/plans/current.md`. The **In Review** section lists branches that
-   are pushed but not yet merged (with merge order); **Next Executable Items** is
-   the live backlog.
-2. Read `.claude/DISCOVERY_LOG.md` for open issues and gotchas.
+1. Read `.claude/plans/current.md` — the live backlog (**Next Executable Items**).
+2. Read `docs/architecture-decisions.md` for the *why* (load-bearing decisions +
+   deferred roadmap with rationale), and `.claude/DISCOVERY_LOG.md` for open gotchas.
 3. Run `git branch -a` and `git log --oneline -15` to see the real branch/commit
    state, then continue from the next executable item (or follow `/suite`).
 

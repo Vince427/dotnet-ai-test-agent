@@ -240,22 +240,33 @@ public sealed class DashboardApi
 
     private string Relative(string fullPath)
     {
-        var rootFull = Path.GetFullPath(_repoRoot);
+        var prefix = Path.GetFullPath(_repoRoot) + Path.DirectorySeparatorChar;
         var pathFull = Path.GetFullPath(fullPath);
-        return pathFull.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase)
-            ? pathFull[rootFull.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                .Replace(Path.DirectorySeparatorChar, '/')
+        return pathFull.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+            ? pathFull[prefix.Length..].Replace(Path.DirectorySeparatorChar, '/')
             : fullPath;
     }
 
-    private string? ResolveUnderRepo(string relativeOrAbsolute)
+    private string? ResolveUnderRepo(string relativeOrAbsolute) =>
+        ResolveUnderRoot(_repoRoot, relativeOrAbsolute);
+
+    /// <summary>
+    /// Resolves an input path and returns it only if it stays at or under <paramref name="root"/>.
+    /// Uses a trailing-separator containment check so a sibling like <c>&lt;root&gt;-evil</c> is
+    /// rejected (not just a plain prefix match). Returns null when the path escapes the root.
+    /// </summary>
+    internal static string? ResolveUnderRoot(string root, string relativeOrAbsolute)
     {
         var combined = Path.IsPathRooted(relativeOrAbsolute)
             ? relativeOrAbsolute
-            : Path.Combine(_repoRoot, relativeOrAbsolute);
+            : Path.Combine(root, relativeOrAbsolute);
         var full = Path.GetFullPath(combined);
-        var rootFull = Path.GetFullPath(_repoRoot);
-        return full.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase) ? full : null;
+        var rootFull = Path.GetFullPath(root);
+        if (string.Equals(full, rootFull, StringComparison.OrdinalIgnoreCase))
+            return full;
+        return full.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            ? full
+            : null;
     }
 
     /// <summary>One path segment, no separators or traversal.</summary>

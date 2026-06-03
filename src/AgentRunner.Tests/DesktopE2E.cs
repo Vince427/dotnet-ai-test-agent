@@ -17,19 +17,23 @@ internal static class DesktopE2E
     /// ids and the same status strings (LoginForm.cs / MainWindow.xaml.cs) — only the
     /// window title and exe differ — so one scripted flow drives both.
     /// </summary>
-    public sealed record SampleTarget(string Key, string WindowTitle, string ProjectDir, string ExeName);
+    public sealed record SampleTarget(string Key, string WindowTitle, string ProjectDir, string ExeName, string TfmDir);
 
     public static readonly SampleTarget WinForms =
-        new("winforms", "Sample Login App (.NET 8)", "Sample.WinFormsApp.Net8", "Sample.WinFormsApp.Net8.exe");
+        new("winforms", "Sample Login App (.NET 8)", "Sample.WinFormsApp.Net8", "Sample.WinFormsApp.Net8.exe", "net8.0-windows");
 
     public static readonly SampleTarget Wpf =
-        new("wpf", "WPF AI Test Target", "Sample.WpfApp", "Sample.WpfApp.exe");
+        new("wpf", "WPF AI Test Target", "Sample.WpfApp", "Sample.WpfApp.exe", "net8.0-windows");
 
-    /// <summary>Resolves a target by its theory key ("winforms" / "wpf").</summary>
+    public static readonly SampleTarget Avalonia =
+        new("avalonia", "Avalonia AI Test Target", "Sample.AvaloniaApp", "Sample.AvaloniaApp.exe", "net8.0");
+
+    /// <summary>Resolves a target by its theory key ("winforms" / "wpf" / "avalonia").</summary>
     public static SampleTarget Target(string key) => key switch
     {
         "winforms" => WinForms,
         "wpf" => Wpf,
+        "avalonia" => Avalonia,
         _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unknown sample target.")
     };
 
@@ -90,7 +94,7 @@ internal static class DesktopE2E
             ?? throw new InvalidOperationException("Could not locate repo root (DesktopAiTestAgent.sln).");
 
         return Path.Combine(repoRoot,
-            "src", "Samples", target.ProjectDir, "bin", configuration, "net8.0-windows", target.ExeName);
+            "src", "Samples", target.ProjectDir, "bin", configuration, target.TfmDir, target.ExeName);
     }
 
     /// <summary>Walks up from <paramref name="startDir"/> to the folder holding the .sln.</summary>

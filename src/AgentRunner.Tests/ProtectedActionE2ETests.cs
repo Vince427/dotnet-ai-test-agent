@@ -33,7 +33,7 @@ public sealed class ProtectedActionE2ETests : IDisposable
     private const string Done =
         "{\"actionType\":\"Done\",\"reason\":\"flow complete\",\"confidence\":95}";
 
-    public static IEnumerable<object[]> Frameworks() => [["winforms"], ["wpf"]];
+    public static IEnumerable<object[]> Frameworks() => [["winforms"], ["wpf"], ["avalonia"]];
 
     private readonly string _workspace =
         Path.Combine(Path.GetTempPath(), "e2e-protected-" + Guid.NewGuid().ToString("N"));

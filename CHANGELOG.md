@@ -7,6 +7,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V2-D: Avalonia sample (the 4th first-class desktop target)**. New
+  `Sample.AvaloniaApp` (Avalonia 11.3) at login + gated-action parity with the WinForms
+  and WPF samples — same automation ids (`txtUsername`/`txtPassword`/`btnLogin`/`lblStatus`,
+  `btnEnableProtectedAction`/`btnProtectedAction`/`lblControlsStatus`) and status strings.
+  The gated E2E theories now run across **WinForms + WPF + Avalonia** (6 cases, all green
+  on an interactive session — the scripted mock drives the real Avalonia app via UIA).
+  The MAUI sample already has login/profile id-parity; wiring its gated E2E is deferred
+  (MSIX/unpackaged launch differs).
 - **V4-A: existing-test / source links in the CI report**. `--to-junit` now emits
   `<property>` entries on each `<testcase>` — `existing_test` (one per linked TRX/JUnit
   testcase from the YAML `existing_tests`), `source_issue`, `source_pr`, and `trace_id`
@@ -120,8 +128,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 156 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 160/160 with it). Build clean across
-  net48 + net8.0-windows + MAUI.
+- Test suite: 156 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 162/162 with it). Build clean across
+  net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

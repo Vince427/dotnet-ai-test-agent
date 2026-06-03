@@ -209,6 +209,7 @@ public static class SymphonyWorkbenchGenerator
             result = r.Result,
             score = r.FinalScore,
             target = r.TargetWindow ?? "-",
+            traceId = r.TraceId,
             steps = r.Steps.Select(s => new
             {
                 n = s.StepNumber,
@@ -224,7 +225,12 @@ public static class SymphonyWorkbenchGenerator
             }).ToList()
         }).ToList();
 
-        var json = JsonSerializer.Serialize(projection, new JsonSerializerOptions { WriteIndented = false });
+        // Bake the optional trace deep-link template at generation time (the static page
+        // has no env at view time). Links a recorded run to its live OTLP trace (OBS-1b).
+        var traceUiTemplate = Environment.GetEnvironmentVariable("AGENTLOOP_TRACE_UI_TEMPLATE") ?? "";
+        var payload = new { traceUiTemplate, runs = projection };
+
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = false });
         // Neutralize any "</script>" or "<" that could break the inline data island.
         return json.Replace("<", "\\u003c");
     }
@@ -258,8 +264,11 @@ public static class SymphonyWorkbenchGenerator
     var island = document.getElementById('agentloop-data');
     if (!island) return;
     var runs = {};
+    var traceTpl = '';
     try {
-      JSON.parse(island.textContent).forEach(function (r) { runs[r.runId] = r; });
+      var data = JSON.parse(island.textContent);
+      traceTpl = data.traceUiTemplate || '';
+      (data.runs || []).forEach(function (r) { runs[r.runId] = r; });
     } catch (e) { return; }
 
     var search = document.getElementById('run-search');
@@ -284,7 +293,13 @@ public static class SymphonyWorkbenchGenerator
     if (filter) filter.addEventListener('change', applyFilter);
 
     function renderDrill(run) {
-      var h = '<table class="steps"><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Outcome</th><th>Failure</th><th>Guard</th><th>Score</th></tr></thead><tbody>';
+      var h = '';
+      if (run.traceId) {
+        h += traceTpl
+          ? '<p class="muted">Trace: <a href="' + esc(traceTpl.replace('{traceId}', run.traceId)) + '" target="_blank" rel="noreferrer">' + esc(run.traceId) + '</a></p>'
+          : '<p class="muted">Trace: <code>' + esc(run.traceId) + '</code> &mdash; open in your Aspire dashboard &rarr; Traces.</p>';
+      }
+      h += '<table class="steps"><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Outcome</th><th>Failure</th><th>Guard</th><th>Score</th></tr></thead><tbody>';
       (run.steps || []).forEach(function (s) {
         var fail = s.failureCode ? esc(s.failureCode) + (s.failureMessage ? ': ' + esc(s.failureMessage) : '') : '-';
         var guard = s.guardStatus ? esc(s.guardStatus) + (s.guardCode ? ':' + esc(s.guardCode) : '') : '-';

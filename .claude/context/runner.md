@@ -34,6 +34,9 @@ Owns the executable orchestration loop and manual CLI surface.
   successes.
 - Loop detection records real actions, not synthetic pending markers.
 - Runtime artifacts stay human-readable and machine-readable.
+- `RunArtifact` carries the YAML's `ExistingTests`/`SourceIssue`/`SourcePr` so
+  `--to-junit` can emit them (plus `trace_id`) as `<testcase>` `<property>` links.
+  `--to-junit` treats both `Passed` and `Succeeded` as passing (not `<error>`).
 - Failure steps should expose stable `failureCode` and `failureMessage` values
   in `report.json` and `summary.md` when the runner can name the failure.
 - Thread sleeps in async runtime paths should use `Task.Delay`.

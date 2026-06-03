@@ -171,6 +171,7 @@ internal static class DashboardHtml
             const $ = (s,r=document)=>r.querySelector(s);
             const el=(t,p={})=>Object.assign(document.createElement(t),p);
             const esc=s=>(s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+            const escAttr=s=>esc(s).replace(/"/g,"&quot;").replace(/'/g,"&#39;");
             let CONFIG={traceUiTemplate:""};
             const rcls=r=>(r==="Passed"||r==="Succeeded")?"ok":((r==="Aborted"||r==="Failed"||r==="Blocked")?"bad":"run");
             async function api(path,opts){
@@ -312,7 +313,7 @@ internal static class DashboardHtml
               try{
                 const r=await api("/api/runs/"+id);
                 const trace=r.traceId?(CONFIG.traceUiTemplate
-                  ? `<a href="${esc(CONFIG.traceUiTemplate.replace("{traceId}",r.traceId))}" target="_blank">${esc(r.traceId)} ↗</a>`
+                  ? `<a href="${escAttr(CONFIG.traceUiTemplate.replace("{traceId}",r.traceId))}" target="_blank">${esc(r.traceId)} ↗</a>`
                   : `<span class="chip info">trace ${esc(r.traceId)}</span> <span class="dim">open in Aspire → Traces</span>`):"<span class='dim'>no trace</span>";
                 const steps=(r.steps||[]).map(s=>`<tr><td>${s.stepNumber}</td><td>${esc(s.actionType)}</td><td class="mut">${esc(s.actionTarget||"")}</td>
                   <td><span class="chip ${s.outcome==="Succeeded"?"ok":"bad"}">${esc(s.outcome)}</span></td>

@@ -67,7 +67,10 @@ parallel work.
   boxes / labels) before adding VLM calls.
 - [ ] V3-B: Keep recording mode visible in roadmap/docs, but defer
   implementation until the action model and TestZoo flows are stable.
-- [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
+- [x] V4-A: existing-test / source links surface in `--to-junit` as `<testcase>`
+  `<property>` entries (`existing_test`, `source_issue`, `source_pr`, `trace_id`).
+  `RunArtifact` carries them from the YAML; docs/example in `ai-authoring.md`. Also
+  fixed a JUnit bug: `"Passed"` runs were emitted as `<error>` (now a pass).
 - [x] WB-1: session branches merged into `main`; build + test green; 10 merged
   branches deleted (remote + local). Decisions distilled to
   `docs/architecture-decisions.md` so the rationale travels with a clone.

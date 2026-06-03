@@ -164,6 +164,19 @@ public sealed class DashboardApiTests : IDisposable
         Assert.Contains("SMOKE-001", Encoding.UTF8.GetString(res.Body));
     }
 
+    [Fact]
+    public void GetFile_ConfinedToAdvertisedRoots()
+    {
+        // A text file under the repo but OUTSIDE tests/ + runs/ must not be previewable,
+        // matching what GetFiles advertises (tests/, runs/, WORKFLOW.md, .env.template).
+        File.WriteAllText(Path.Combine(_repo, "Directory.Build.props"), "<Project/>");
+        Assert.Equal(403, _api.GetFile("Directory.Build.props").Status);
+
+        // The two named root files ARE allowed when present.
+        File.WriteAllText(Path.Combine(_repo, "WORKFLOW.md"), "# workflow");
+        Assert.Equal(200, _api.GetFile("WORKFLOW.md").Status);
+    }
+
     [Theory]
     [InlineData("../../../etc/passwd")]   // traversal
     [InlineData(".env")]                   // secrets file

@@ -82,7 +82,10 @@ public sealed class RunOrchestrator(
             TestPriority = options.Test?.Priority,
             Framework = options.Test?.Framework,
             Suite = options.Suite,
-            EvidenceLevel = options.EvidenceLevel
+            EvidenceLevel = options.EvidenceLevel,
+            ExistingTests = options.Test?.ExistingTests is { } existingTests ? new List<string>(existingTests) : [],
+            SourceIssue = options.Test?.SourceIssue,
+            SourcePr = options.Test?.SourcePr
         };
         LastArtifact = runArtifact;
 

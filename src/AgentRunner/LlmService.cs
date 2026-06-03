@@ -19,7 +19,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 ///   - response fence-stripping, JSON parsing, and safe fallback -> <see cref="LlmResponseParser"/>
 /// The only non-deterministic step is the network call <c>_agent.RunAsync</c>.
 /// </summary>
-public class LlmService
+public class LlmService : IActionDecider
 {
     private readonly AIAgent _agent;
     private readonly PromptBuilder _promptBuilder;

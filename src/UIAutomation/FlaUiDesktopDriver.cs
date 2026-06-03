@@ -54,7 +54,15 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
             }
         }
 
-        return new UiSnapshot(_window!.Title, elements, statusText);
+        string? windowBounds = null;
+        try
+        {
+            var wr = _window!.BoundingRectangle;
+            windowBounds = $"{wr.X},{wr.Y},{wr.Width},{wr.Height}";
+        }
+        catch { /* bounds unavailable; masking will be skipped */ }
+
+        return new UiSnapshot(_window!.Title, elements, statusText, windowBounds);
     }
 
     /// <summary>

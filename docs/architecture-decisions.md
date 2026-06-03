@@ -58,9 +58,10 @@ Keep net48 **and** net8.0-windows building. **Status:** active.
 
 These are intentionally not built yet; each note records *why* and the key constraint.
 
-- **Program.Main → `IRunOrchestrator`** (WB-2): the loop is ~700 lines in `Main`, so it
-  isn't unit-testable with a fake LLM/driver. Extracting it (behind an injectable
-  decider) unlocks deterministic loop tests and clean CLI wiring. Keystone refactor.
+- **Program.Main → `IRunOrchestrator`** (WB-2): ✅ done. The loop moved out of `Main`
+  into `RunOrchestrator` behind an `IActionDecider` seam (`LlmService` implements it);
+  `Main` is now CLI parse + manual commands + runtime wiring. Driven in tests by a
+  fake `IAutomationDriver` + scripted decider — 9 deterministic loop tests, no LLM/FlaUI.
 - **MCP server**: expose the runner as MCP tools (Claude Desktop/Cursor/Copilot). The
   `shanselman/FlaUI-MCP` "element-by-ref" pattern is the model; no official MS desktop
   MCP exists — a gap to fill.
@@ -72,10 +73,19 @@ These are intentionally not built yet; each note records *why* and the key const
 - **RunDiffer (migration parity)**: run one YAML on V1 (legacy) and V2 (modern), align
   steps, LLM-judge classifies diffs cosmetic/functional/regression → HTML parity report.
   This is the differentiator for a .NET 4.8 → modern migration; nothing else does it.
-- **OpenTelemetry → Aspire dashboard** (observability, opt-in, local): emit spans for
-  observe/decide/act/guard/score/record + token/score metrics; view live in the
-  standalone Aspire dashboard. **Constraint:** on net48, gRPC OTLP is unsupported since
-  exporter 1.12.0 → use `OtlpExportProtocol.HttpProtobuf` (port 4318), never gRPC.
+- **Local all-in-one dashboard** (OBS-2): ✅ shipped. `--dashboard` serves a
+  **localhost-only** `HttpListener` + single-page UI that is a *view + launcher* over the
+  CLI + artifacts — catalog, create-ticket (→ validated YAML), run history/detail with
+  screenshots + trace link, and live launch (spawns the CLI, parallel, streamed logs +
+  recovered runId + live screenshots). **Doctrine:** it is a dev tool, NOT the product
+  core — no SaaS, never in CI, no new data model; the CLI/YAML/artifacts stay canonical.
+  Its own domain (`.claude/context/dashboard.md`). Deferred: secret-field screenshot blur.
+- **OpenTelemetry → Aspire dashboard** (observability, opt-in, local): 🟡 in progress.
+  Runner emission shipped (OBS-1): `RunnerTelemetry` emits run/step/observe/decide spans
+  + duration/score metrics, opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`, `traceId` in
+  `report.json`. **Constraint honored:** `HttpProtobuf` on both targets (gRPC unsupported
+  on net48 since exporter 1.12.0); pinned 1.15.3. Remaining: workbench trace link (OBS-1b),
+  token metric (LLM usage not captured yet), and the live Aspire dashboard (manual).
 - **Scaling UI tests**: UIA needs an interactive desktop session → 1 test at a time per
   session. Scale = N Windows VMs (Hyper-V linked clones / Azure VM Scale Set), runner
   **interactive** (not a service), VNC not RDP. No real "Windows microVM with desktop"

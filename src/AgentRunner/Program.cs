@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using DesktopAiTestAgent.AgentRunner.Dashboard;
 using DesktopAiTestAgent.Core;
 using DesktopAiTestAgent.UIAutomation;
 
@@ -25,7 +27,8 @@ internal static class Program
             HasArgument(args, "--validate-plan") ||
             HasArgument(args, "--list-tests") ||
             HasArgument(args, "--write-guard-demos") ||
-            HasArgument(args, "--to-junit");
+            HasArgument(args, "--to-junit") ||
+            HasArgument(args, "--dashboard");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
@@ -42,9 +45,6 @@ internal static class Program
             Console.Error.WriteLine("Invalid arguments: " + ex.Message);
             return 2;
         }
-
-        var targetWindow = options.TargetWindow;
-        var goal = options.Goal;
 
         if (options.RenderUiOnly)
         {
@@ -126,403 +126,45 @@ internal static class Program
         if (options.ToJUnitOnly)
             return ToJUnit(config, options);
 
-        // --- Initialize components ---
+        if (options.DashboardOnly)
+            return RunDashboard(config, options);
+
+        // --- Runtime agent loop ---
+        // Wire the real driver + LLM decider, then hand off to the orchestrator.
+        // The driver is IDisposable, so Program owns its lifetime.
+        // OpenTelemetry export is opt-in (OTEL_EXPORTER_OTLP_ENDPOINT); null/no-op
+        // when unset, keeping runs dependency-free. Disposed last so it flushes.
+        using var telemetry = RunnerTelemetry.TryStartExport(config);
         var secretRedactor = new SecretRedactor();
-        var logger = new StructuredLogger(goal.Identifier, null);
-        var memory = new AgentMemory(secretRedactor);
-        var loopDetector = new LoopDetector();
-        var scoring = new ScoringEngine { AbortThreshold = config.AbortThreshold };
-        var qualityGuards = QualityGuardEngine.CreateDefault();
-        var artifactWriter = new ArtifactWriter(config.WorkspaceRoot, secretRedactor);
         var llmService = new LlmService(config, secretRedactor);
-
-        var runArtifact = new RunArtifact
-        {
-            GoalDescription = goal.Description,
-            GoalIdentifier = goal.Identifier,
-            TargetWindow = targetWindow,
-            TestId = options.TestId,
-            TestTitle = options.Test?.Title,
-            TestPriority = options.Test?.Priority,
-            Framework = options.Test?.Framework,
-            Suite = options.Suite,
-            EvidenceLevel = options.EvidenceLevel
-        };
-
-        var sessionId = $"{runArtifact.RunId}-{DateTime.UtcNow:HHmmss}";
-        logger.SetContext(goal.Identifier, sessionId);
-
-        logger.Info($"Desktop AI Test Agent V1.3 (AgentLoop Architecture)");
-        logger.Info($"goal=\"{goal.Description}\" target=\"{targetWindow}\" max_steps={goal.MaxSteps}");
-
-        // --- Attach to window ---
         using var driver = new FlaUiDesktopDriver();
-        {
-            logger.Info("Attaching to target window...");
-            if (!driver.AttachToWindow(targetWindow, TimeSpan.FromSeconds(20)))
-            {
-                logger.Error("Could not attach to target window.");
-                runArtifact.Result = options.Test != null ? "Blocked" : "Failed";
-                runArtifact.ErrorMessage = "Window not found: " + targetWindow;
-                runArtifact.EndedAt = DateTime.UtcNow;
-                artifactWriter.WriteReport(runArtifact);
-                artifactWriter.WriteSummary(runArtifact);
-                return options.Test != null ? 4 : 1;
-            }
 
-            logger.Info("Window attached. Starting agent loop...");
-
-            // --- Main observe → decide → act → score loop ---
-            string? loopWarning = null;
-            for (int step = 1; step <= goal.MaxSteps; step++)
-            {
-                // 1. OBSERVE — capture full UI state
-                UiSnapshot snapshot;
-                try
-                {
-                    snapshot = driver.Capture();
-                }
-                catch (Exception ex)
-                {
-                    logger.Error("Failed to capture UI state", ex);
-                    continue;
-                }
-
-                // Record screen signature for exploration tracking
-                var screenSig = $"{snapshot.WindowTitle}|{snapshot.Elements.Count}";
-                memory.RecordScreen(screenSig);
-
-                // Check for goal success condition
-                var statusText = snapshot.FindStatusText();
-                if (!string.IsNullOrEmpty(goal.SuccessCondition) &&
-                    !string.IsNullOrEmpty(statusText) &&
-                    statusText!.IndexOf(goal.SuccessCondition, StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    logger.Info($"SUCCESS: Goal achieved. Status=\"{statusText}\"");
-                    scoring.ScoreAction("Done", true, false, "success");
-
-                    runArtifact.Result = options.Test != null ? "Passed" : "Succeeded";
-                    runArtifact.FinalScore = scoring.TotalScore;
-                    runArtifact.EndedAt = DateTime.UtcNow;
-                    artifactWriter.WriteReport(runArtifact);
-                    artifactWriter.WriteSummary(runArtifact);
-                    logger.Score(scoring.GetSummary());
-                    return 0;
-                }
-
-                // 2. DECIDE — ask LLM for next action
-                logger.Info($"[Step {step}/{goal.MaxSteps}] Asking agent... elements={snapshot.Elements.Count}");
-
-                AgentAction action;
-                try
-                {
-                    action = await llmService.DecideActionAsync(
-                        snapshot, goal, memory.GetFullContextString(), loopWarning);
-                }
-                catch (Exception ex)
-                {
-                    logger.Error("LLM call failed", ex);
-                    var llmScoreDelta = scoring.ScoreAction("LlmCall", false, false, ex.Message);
-                    runArtifact.Steps.Add(new RunStep
-                    {
-                        StepNumber = step,
-                        UiStateSnapshot = $"{snapshot.WindowTitle} ({snapshot.Elements.Count} elements)",
-                        ActionType = "LlmCall",
-                        Reasoning = ex.Message,
-                        Outcome = "Failed",
-                        FailureCode = "llm_call_failed",
-                        FailureMessage = ex.Message,
-                        ScoreDelta = llmScoreDelta,
-                        CumulativeScore = scoring.TotalScore
-                    });
-                    logger.Score(scoring.GetSummary());
-
-                    if (scoring.ShouldAbort())
-                    {
-                        logger.Warning($"Score below threshold ({scoring.TotalScore}). Aborting.");
-                        runArtifact.Result = "Aborted";
-                        runArtifact.ErrorMessage = $"Score dropped to {scoring.TotalScore} after LLM call failures.";
-                        runArtifact.FinalScore = scoring.TotalScore;
-                        runArtifact.EndedAt = DateTime.UtcNow;
-                        artifactWriter.WriteReport(runArtifact);
-                        artifactWriter.WriteSummary(runArtifact);
-                        return 3;
-                    }
-
-                    await Task.Delay(config.PollIntervalMs); // Wait before retrying to avoid spamming 429
-                    continue;
-                }
-
-                if (action == null)
-                {
-                    logger.Warning("Agent returned null action.");
-                    break;
-                }
-
-                // Update loop detector with actual action
-                var actionKey = $"{action.ActionType}:{action.AutomationId}";
-                bool isLoop = loopDetector.RecordAndCheck(actionKey);
-                var safeActionValue = secretRedactor.RedactActionValue(action);
-                var safeReason = secretRedactor.RedactText(action.Reason);
-
-                logger.Decision($"action={action.ActionType} target={action.AutomationId} value={safeActionValue} confidence={action.Confidence} reason=\"{safeReason}\"");
-
-                // 3. ACT — execute the action
-                bool succeeded = true;
-                string outcomeDetail = "ok";
-                var runStep = new RunStep
-                {
-                    StepNumber = step,
-                    UiStateSnapshot = $"{snapshot.WindowTitle} ({snapshot.Elements.Count} elements)",
-                    ActionType = action.ActionType,
-                    ActionTarget = action.AutomationId,
-                    ActionValue = safeActionValue,
-                    Reasoning = safeReason
-                };
-
-                if (options.EvidenceLevel == EvidenceLevel.Full)
-                    runStep.UiTreePath = artifactWriter.SaveUiTreeSnapshot(runArtifact.RunId, step, snapshot);
-
-                try
-                {
-                    if (!IsActionAllowed(goal, action.ActionType))
-                    {
-                        succeeded = false;
-                        outcomeDetail = "action_not_allowed";
-                        runStep.FailureCode = outcomeDetail;
-                        runStep.FailureMessage = $"Action '{action.ActionType}' is not listed in allowed_actions.";
-                    }
-                    else
-                    {
-                        var targetValidation = AgentActionValidator.ValidateTargetExists(action, snapshot);
-                        if (!targetValidation.IsValid)
-                        {
-                            succeeded = false;
-                            outcomeDetail = targetValidation.Code ?? "action_target_invalid";
-                            runStep.FailureCode = outcomeDetail;
-                            runStep.FailureMessage = targetValidation.Message;
-                            logger.Warning(targetValidation.Message ?? outcomeDetail);
-                        }
-                    }
-
-                    if (!succeeded)
-                    {
-                        // Validation failed before dispatching to the automation driver.
-                    }
-                    else if (string.Equals(action.ActionType, "EnterText", StringComparison.OrdinalIgnoreCase) &&
-                        !string.IsNullOrEmpty(action.AutomationId))
-                    {
-                        driver.EnterText(action.AutomationId!, action.Value ?? "");
-                        memory.AddFact($"entered_{action.AutomationId}", action.Value ?? "");
-                    }
-                    else if (string.Equals(action.ActionType, "Click", StringComparison.OrdinalIgnoreCase) &&
-                             !string.IsNullOrEmpty(action.AutomationId))
-                    {
-                        driver.Click(action.AutomationId!);
-                    }
-                    else if (string.Equals(action.ActionType, "DoubleClick", StringComparison.OrdinalIgnoreCase) &&
-                             !string.IsNullOrEmpty(action.AutomationId))
-                    {
-                        driver.DoubleClick(action.AutomationId!);
-                    }
-                    else if (string.Equals(action.ActionType, "Scroll", StringComparison.OrdinalIgnoreCase) &&
-                             !string.IsNullOrEmpty(action.AutomationId))
-                    {
-                        driver.Scroll(action.AutomationId!, action.Value ?? "down");
-                    }
-                    else if (string.Equals(action.ActionType, "Assert", StringComparison.OrdinalIgnoreCase) &&
-                             !string.IsNullOrEmpty(action.AutomationId))
-                    {
-                        var actualText = driver.ReadText(action.AutomationId!);
-                        if (!string.Equals(actualText, action.Value, StringComparison.OrdinalIgnoreCase))
-                        {
-                            var safeExpected = secretRedactor.RedactActionValue(action);
-                            var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
-                            succeeded = false;
-                            outcomeDetail = $"assertion_failed on {action.AutomationId}. Expected: '{safeExpected}', Actual: '{safeActual}'";
-                            runStep.FailureCode = "assertion_failed";
-                            runStep.FailureMessage = outcomeDetail;
-                        }
-                        else
-                        {
-                            var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
-                            logger.Info($"Assertion passed on {action.AutomationId}: '{safeActual}'");
-                        }
-                    }
-                    else if (string.Equals(action.ActionType, "Wait", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await Task.Delay(1000);
-                    }
-                    else if (string.Equals(action.ActionType, "Done", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var doneStatusText = snapshot.FindStatusText();
-                        if (!string.IsNullOrEmpty(goal.SuccessCondition) &&
-                            (string.IsNullOrEmpty(doneStatusText) ||
-                             doneStatusText!.IndexOf(goal.SuccessCondition, StringComparison.OrdinalIgnoreCase) < 0))
-                        {
-                            succeeded = false;
-                            outcomeDetail = "done_without_success_condition";
-                            runStep.FailureCode = outcomeDetail;
-                            runStep.FailureMessage = "Agent signaled Done before the configured success condition was visible.";
-                            logger.Warning($"Agent signaled Done before success condition was visible. status=\"{doneStatusText ?? ""}\"");
-                        }
-                        else
-                        {
-                            logger.Info("Agent signaled Done.");
-                            outcomeDetail = "agent_done";
-                            runStep.Outcome = "Succeeded";
-
-                            runArtifact.Result = options.Test != null ? "Passed" : "Succeeded";
-                            runArtifact.FinalScore = scoring.TotalScore;
-                            runArtifact.EndedAt = DateTime.UtcNow;
-                            runArtifact.Steps.Add(runStep);
-                            artifactWriter.WriteReport(runArtifact);
-                            artifactWriter.WriteSummary(runArtifact);
-                            logger.Score(scoring.GetSummary());
-                            return 0;
-                        }
-                    }
-                    else if (string.Equals(action.ActionType, "Explore", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Explore = just re-capture, no real action
-                        outcomeDetail = "explore";
-                    }
-                    else
-                    {
-                        succeeded = false;
-                        outcomeDetail = "unsupported_action";
-                        runStep.FailureCode = outcomeDetail;
-                        runStep.FailureMessage = $"Unsupported action '{action.ActionType}'.";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    succeeded = false;
-                    outcomeDetail = secretRedactor.RedactText(ex.Message) ?? ex.Message;
-                    runStep.FailureCode = "action_failed";
-                    runStep.FailureMessage = outcomeDetail;
-                    logger.Error($"Action failed: {action.ActionType} on {action.AutomationId}: {outcomeDetail}");
-                }
-
-                QualityGuardResult? guardResult = null;
-                if (succeeded)
-                {
-                    guardResult = qualityGuards.Check(new QualityGuardContext
-                    {
-                        StepNumber = step,
-                        Driver = driver,
-                        SnapshotBefore = snapshot,
-                        Action = action,
-                        Goal = goal
-                    });
-
-                    if (guardResult.Status != QualityGuardStatus.Passed)
-                    {
-                        succeeded = false;
-                        var guardPrefix = guardResult.Status == QualityGuardStatus.Abort
-                            ? "guard_abort"
-                            : "guard_force_reject";
-                        outcomeDetail = $"{guardPrefix}:{guardResult.Code}";
-                        runStep.FailureCode = guardResult.Code;
-                        runStep.FailureMessage = guardResult.Message;
-                        runStep.GuardStatus = guardResult.Status.ToString();
-                        runStep.GuardCode = guardResult.Code;
-                        runStep.GuardMessage = guardResult.Message;
-                        logger.Warning($"Quality guard {guardResult.Status}: {guardResult.Code} - {guardResult.Message}");
-                    }
-                }
-
-                // 4. SCORE
-                int scoreDelta = scoring.ScoreAction(action.ActionType ?? "Wait", succeeded, isLoop, outcomeDetail);
-                runStep.Outcome = succeeded ? "Succeeded" : "Failed";
-                runStep.ScoreDelta = scoreDelta;
-                runStep.CumulativeScore = scoring.TotalScore;
-
-                // Save screenshot
-                if (options.EvidenceLevel != EvidenceLevel.Minimal)
-                {
-                    try
-                    {
-                        var screenshotBytes = driver.CaptureScreenshot();
-                        var screenshotPath = artifactWriter.SaveScreenshot(runArtifact.RunId, step, screenshotBytes);
-                        runStep.ScreenshotPath = screenshotPath;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.Warning($"Screenshot failed: {ex.Message}");
-                    }
-                }
-
-                runArtifact.Steps.Add(runStep);
-
-                // 5. RECORD
-                memory.AddAction($"[Step {step}] {action.ActionType} on {action.AutomationId} → {outcomeDetail}");
-                logger.Action(action.ActionType ?? "Unknown", action.AutomationId ?? "N/A", outcomeDetail);
-                logger.Score(scoring.GetSummary());
-
-                // 6. CHECK — should we abort?
-                if (guardResult?.Status == QualityGuardStatus.Abort)
-                {
-                    logger.Warning($"Quality guard requested abort: {guardResult.Code}");
-                    runArtifact.Result = "Aborted";
-                    runArtifact.ErrorMessage = guardResult.Message;
-                    break;
-                }
-
-                if (scoring.ShouldAbort())
-                {
-                    logger.Warning($"Score below threshold ({scoring.TotalScore}). Aborting.");
-                    runArtifact.Result = "Aborted";
-                    runArtifact.ErrorMessage = $"Score dropped to {scoring.TotalScore}";
-                    break;
-                }
-
-                if (isLoop)
-                {
-                    loopWarning = loopDetector.GetPatternSummary();
-                    logger.Warning($"Loop detected: {loopDetector.GetPatternSummary()}");
-                    // Don't abort on first loop, but the LLM will get a warning next iteration
-                }
-                else
-                {
-                    loopWarning = null;
-                }
-
-                await Task.Delay(500); // Small pause for UI to update
-            }
-
-            // --- Finalize ---
-            if (runArtifact.Result == "Running")
-            {
-                runArtifact.Result = "Failed";
-                runArtifact.ErrorMessage = "Reached max steps without achieving goal.";
-            }
-
-            runArtifact.FinalScore = scoring.TotalScore;
-            runArtifact.EndedAt = DateTime.UtcNow;
-            artifactWriter.WriteReport(runArtifact);
-            artifactWriter.WriteSummary(runArtifact);
-
-            logger.Score(scoring.GetSummary());
-            logger.Error($"FAILURE: {runArtifact.ErrorMessage}");
-            return 3;
-        }
+        var orchestrator = new RunOrchestrator(driver, llmService, config);
+        return await orchestrator.RunAsync(options);
     }
 
-    private static bool IsActionAllowed(AgentGoal goal, string? actionType)
+    // Manual command: serve the local-only all-in-one dashboard (OBS-2). No .env
+    // required to start; launching a run from it spawns the CLI, which then needs
+    // the user's target app + provider config.
+    private static int RunDashboard(WorkflowConfig config, RunnerOptions options)
     {
-        if (goal.AllowedActions.Count == 0)
-            return true;
-        if (string.IsNullOrWhiteSpace(actionType))
-            return false;
-
-        foreach (var allowedAction in goal.AllowedActions)
+        var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        using var server = new DashboardServer(repoRoot, config.WorkspaceRoot, options.DashboardPort);
+        try
         {
-            if (string.Equals(allowedAction, actionType, StringComparison.OrdinalIgnoreCase))
-                return true;
+            server.Start();
+        }
+        catch (HttpListenerException ex)
+        {
+            Console.Error.WriteLine($"Failed to start dashboard on port {options.DashboardPort}: {ex.Message}");
+            return 1;
         }
 
-        return false;
+        Console.WriteLine($"AgentLoop Dashboard (local-only, not for CI) at {server.Url}");
+        Console.WriteLine("Serves tests/ + runs/. Launching a run spawns the CLI (needs your target app + .env). Press Ctrl+C to stop.");
+        server.WaitForShutdown();
+        Console.WriteLine("Dashboard stopped.");
+        return 0;
     }
 
     private static int WriteGuardDemos(RunnerOptions options)

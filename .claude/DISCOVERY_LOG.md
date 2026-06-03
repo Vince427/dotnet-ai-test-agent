@@ -39,6 +39,45 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-06-03 - claude/runner-orchestrator - automation / security
+
+**Observation**: Screenshot secret-masking (V3-A) and the text `SecretRedactor` both key
+off the element's *identifier* (`AutomationId`/`Name` matching password/secret/token/…).
+A field whose secret lives only in `Value`, or a true password box with a non-sensitive
+id, would be left unmasked. QA flagged this as a "false sense of safety" risk (non-blocking;
+mirrors existing text-redaction behavior, documented as best-effort).
+
+**Why it matters**: an edge-case secret could appear unmasked in a screenshot artifact.
+
+**Suggestion**: follow-up — also mask UIA controls reporting `IsPassword`/`ControlType=Edit`
+with the password style, independent of the identifier. Needs a new `UiElement.IsPassword`
+populated by the driver. Small, deferred.
+
+**Status**: `OPEN`
+
+## 2026-06-02 - claude/runner-orchestrator - automation
+
+**Observation**: `FlaUiDesktopDriver.Capture()` derives `UiSnapshot.StatusText` by
+returning the **first** element whose AutomationId contains "status". The WinForms
+sample has three (`lblStatus`, `lblProfileStatus`, `lblControlsStatus`), so any flow
+whose outcome lands in a non-login status region can never be detected via
+`success_condition` (the login label "Waiting" always wins). Surfaced while adding
+the complex gated-action E2E (`DEMO-PROTECTED-001`), which therefore verifies via an
+explicit `Assert` on `lblControlsStatus` instead of a `success_condition`.
+
+**Why it matters**: as target apps get richer (multiple status/result regions —
+exactly the direction the samples are heading), the "first status label" heuristic
+silently mis-detects success. `success_condition` looks broken for non-login flows
+even though the app is fine.
+
+**Suggestion**: keep `Assert` as the robust explicit pattern for multi-region apps
+(documented in `tests/examples/demo/protected-action.yaml`). Longer term, consider a
+smarter status resolution (e.g. the status nearest the last-acted control, or letting
+YAML name the status element) — an automation-domain change; weigh against keeping the
+heuristic simple. Not urgent; the Assert path already covers it.
+
+**Status**: `OPEN`
+
 ## 2026-06-01 - claude/workbench-interactive - workbench
 
 **Observation**: `SymphonyWorkbenchGenerator.LoadRuns` deserialized `report.json`
@@ -70,7 +109,9 @@ telemetry on the .NET Framework target.
 Aspire dashboard via `aspire dashboard run --allow-anonymous` (Aspire 13.3+,
 NativeAOT, no Docker) or the `mcr.microsoft.com/dotnet/aspire-dashboard` image.
 
-**Status**: `OPEN`
+**Status**: `CLOSED - addressed in OBS-1`. `RunnerTelemetry.TryStartExport` forces
+`OtlpExportProtocol.HttpProtobuf` for both targets; exporter pinned to 1.15.3
+(1.12.0 had advisory GHSA-4625-4j76-fww9). Live dashboard view stays a manual step.
 
 ## Archive
 

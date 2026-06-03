@@ -57,6 +57,20 @@ public sealed class SymphonyWorkbenchInteractiveTests
     }
 
     [Fact]
+    public void EmbedsTraceIdAndTemplateInDataIsland()
+    {
+        var html = Render(new List<RunArtifact>
+        {
+            new() { RunId = "r1", Result = "Succeeded", TraceId = "0af7651916cd43dd8448eb211c80319c" }
+        });
+
+        // OBS-1b: the run's trace id and the (baked) trace-UI template field both flow
+        // into the data island, so the client can render a results -> live-trace link.
+        Assert.Contains("0af7651916cd43dd8448eb211c80319c", html);
+        Assert.Contains("traceUiTemplate", html);
+    }
+
+    [Fact]
     public void ShowsAlertBannerWhenFailuresExist()
     {
         var html = Render(new List<RunArtifact>

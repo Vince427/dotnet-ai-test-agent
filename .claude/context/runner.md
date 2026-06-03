@@ -4,7 +4,11 @@ Owns the executable orchestration loop and manual CLI surface.
 
 ## Files
 
-- `src/AgentRunner/Program.cs`
+- `src/AgentRunner/Program.cs` (CLI parse + manual commands; wires the runtime loop)
+- `src/AgentRunner/IRunOrchestrator.cs` + `src/AgentRunner/RunOrchestrator.cs`
+  (observe → decide → act → score → record loop; injectable driver + decider)
+- `src/AgentRunner/IActionDecider.cs` (the "decide" seam; `LlmService` implements it)
+- `src/AgentRunner/RunnerTelemetry.cs` (OBS-1: opt-in OpenTelemetry spans + metrics)
 - `src/AgentRunner/RunnerOptions.cs`
 - `src/AgentRunner/LlmService.cs`
 - `src/AgentRunner/WorkflowConfig.cs`
@@ -30,9 +34,21 @@ Owns the executable orchestration loop and manual CLI surface.
   successes.
 - Loop detection records real actions, not synthetic pending markers.
 - Runtime artifacts stay human-readable and machine-readable.
+- `RunArtifact` carries the YAML's `ExistingTests`/`SourceIssue`/`SourcePr` so
+  `--to-junit` can emit them (plus `trace_id`) as `<testcase>` `<property>` links.
+  `--to-junit` treats both `Passed` and `Succeeded` as passing (not `<error>`).
 - Failure steps should expose stable `failureCode` and `failureMessage` values
   in `report.json` and `summary.md` when the runner can name the failure.
 - Thread sleeps in async runtime paths should use `Task.Delay`.
+- The runtime loop lives in `RunOrchestrator`, not `Program`. Drive it in tests
+  with a fake `IAutomationDriver` + a scripted `IActionDecider` (see
+  `RunOrchestratorTests`); pass `interStepDelayMs: 0` to keep tests fast. The
+  injected driver is owned by the caller (`Program` disposes the FlaUI one).
+- Telemetry (OBS-1) is opt-in and manual-first: `RunnerTelemetry.TryStartExport`
+  returns null unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set, and `StartActivity`
+  is a no-op with no listener — runs stay dependency-free by default. Span/metric
+  tags must stay secret-free (use the redacted action value, never raw `Value`).
+  On net48 the OTLP exporter must use `HttpProtobuf` (gRPC unsupported).
 
 ## Validation
 

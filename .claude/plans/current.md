@@ -46,13 +46,34 @@ parallel work.
 
 ## Next Executable Items
 
-- [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
-  stable.
-- [ ] V3-A: Design UIA screenshot overlay artifact contract before adding VLM
-  calls.
+- [x] E2E-1 (stable end-to-end, no key): deterministic OpenAI-compatible
+  `MockLlmServer` (HttpListener) returns a scripted action sequence (EnterText →
+  EnterText → Click → Done). 3 always-run tests drive the real `LlmService`
+  against it (client → mock → parser, no key, run in any CI). A gated
+  `[InteractiveUiFact]` (`RUN_E2E_UI=1`) launches the real WinForms sample,
+  attaches the real FlaUI driver (with a control-ready settle), runs
+  `RunOrchestrator`, and asserts the app shows "Login successful" + exit 0 +
+  `Result=Succeeded`. Verified green twice on an interactive session; skipped by
+  default (UIA needs a logged-in desktop). main suite = **122 + 2 skipped**.
+- [x] E2E-1 cross-framework parity: both gated E2E are now theories over WinForms
+  **and** WPF (same automation ids + status strings, only window title differs) —
+  proves the UIA agent path is framework-agnostic. 4 gated cases; **126/126** with
+  `RUN_E2E_UI=1`. WinForms label clip ("Case grid") fixed + screenshot-verified.
+- [~] V2-D: **Avalonia done** — `Sample.AvaloniaApp` (Avalonia 11.3) at login +
+  gated-action parity; gated E2E theories now span WinForms + WPF + Avalonia (6 cases,
+  all green live). **MAUI**: sample already has login/profile id-parity; gated E2E wiring
+  deferred (MSIX/unpackaged launch + win10 RID output path differ — needs an exe-locate
+  step and runtime check).
+- [~] V3-A: screenshot overlay started — **secret-field masking shipped** (redact-at-
+  source via `UiSnapshot.WindowBounds` + `ScreenshotMasker` + `ScreenshotRedaction`).
+  Still to design: the general VLM-oriented overlay artifact contract (annotated element
+  boxes / labels) before adding VLM calls.
 - [ ] V3-B: Keep recording mode visible in roadmap/docs, but defer
   implementation until the action model and TestZoo flows are stable.
-- [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
+- [x] V4-A: existing-test / source links surface in `--to-junit` as `<testcase>`
+  `<property>` entries (`existing_test`, `source_issue`, `source_pr`, `trace_id`).
+  `RunArtifact` carries them from the YAML; docs/example in `ai-authoring.md`. Also
+  fixed a JUnit bug: `"Passed"` runs were emitted as `<error>` (now a pass).
 - [x] WB-1: session branches merged into `main`; build + test green; 10 merged
   branches deleted (remote + local). Decisions distilled to
   `docs/architecture-decisions.md` so the rationale travels with a clone.
@@ -60,19 +81,32 @@ parallel work.
   scope (`~/.claude/skills/setup-verification-loop/SKILL.md`), stack-aware
   (dotnet/node/python/go/rust), ETH-disciplined (lean). Optional follow-ups:
   description-optimization loop, commit a copy into a repo for collaborators.
-- [ ] WB-2 (refactor): extract `Program.Main` (~694 lines) into an injectable
-  `IRunOrchestrator` + phase services. Unlocks deterministic loop tests with a
-  fake LLM/driver, and clean CLI wiring for `--to-junit` and watch.
-- [ ] OBS-1 (Phase 2, observability): emit OpenTelemetry from the runner
-  (`ActivitySource` for observe/decide/act/guard/score/record + `Meter` for
-  tokens/scores/durations). On net48 use `OtlpExportProtocol.HttpProtobuf` (gRPC
-  is unsupported on .NET Framework since OTLP exporter 1.12.0). View live in the
-  standalone Aspire dashboard (`aspire dashboard run --allow-anonymous`, OTLP
-  HTTP :4318). Store the traceId in `report.json` and link it from the static
-  workbench so results -> live trace is one click.
-- [ ] OBS-2 (Phase 3, optional): local all-in-one dashboard app (list + launch +
-  live screenshots + final report + link to the Aspire trace). Local-only dev
-  tool, never in CI; reuses the static workbench rendering + the CLI contract.
+- [x] WB-2 (refactor): extracted the observe→decide→act→score→record loop out of
+  `Program.Main` into an injectable `RunOrchestrator` (`IRunOrchestrator`) behind
+  an `IActionDecider` seam (`LlmService` implements it). `Program.Main` is now CLI
+  parse + manual commands + a few lines of runtime wiring. Unlocked 9 deterministic
+  loop tests (fake driver + scripted decider, zero delays). main = build 0/0,
+  **119 tests** green. Manual CLI surface unchanged. Optional follow-up: split the
+  act-dispatch switch into per-action handlers if it grows further.
+- [~] OBS-1 (Phase 2, observability): **runner emission done.** `RunnerTelemetry`
+  emits `agentloop.run/step/observe/decide` spans (act/guard/score/record as
+  step-span tags) + a `Meter` (step/run duration, step count, run score). Opt-in:
+  provider built only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; `HttpProtobuf`
+  (net48-safe). `traceId` persisted to `report.json` (`RunArtifact.TraceId`).
+  Tested via a listener-based span test (no collector). **OBS-1b done:** the run's
+  traceId is linked from both the dashboard (run detail) and the **static workbench**
+  drill-down (baked `AGENTLOOP_TRACE_UI_TEMPLATE` → clickable, else shows the id).
+  Token metric deferred (the LLM call does not expose usage today). Live OTLP →
+  Aspire dashboard is a manual step.
+- [x] OBS-2 (local all-in-one dashboard): `--dashboard [port]` serves a localhost-only
+  `HttpListener` + single-page UI — a view/launcher over the CLI + artifacts (no new
+  data model). Catalog (categorized), Create (form → validated YAML ticket), Runs
+  (history + detail + screenshots + trace link), Live (launch → spawn CLI, parallel,
+  streamed logs + recovered `runId` + live screenshots). Localhost-only, path-traversal
+  guards, never CI. 9 deterministic tests + live smoke-verified. Later: mission-control
+  UI redesign + a **Files** explorer (on-disk tree + secret-safe text preview), and the
+  OBS-1b trace link now also renders in the **static workbench** drill-down.
+  Secret-field screenshot masking (V3-A) now redacts sensitive regions at capture.
 
 ## Human-Orchestrated Items
 

@@ -65,7 +65,8 @@ public sealed class LoginForm : Form
         _moduleListBox = new ListBox { Left = 130, Top = 562, Width = 170, Height = 72, Name = "lstModules" };
         _moduleListBox.Items.AddRange(new object[] { "Login", "Billing", "Reports" });
         _moduleListBox.SelectedIndex = 0;
-        var casesLabel = new Label { Text = "Case grid", Left = 330, Top = 495, Width = 100 };
+        // Start past the Premium radio (Left 240 + Width 100 = 340) so the "C" isn't clipped.
+        var casesLabel = new Label { Text = "Case grid", Left = 350, Top = 495, Width = 100 };
         _casesGrid = new DataGridView
         {
             Left = 330,

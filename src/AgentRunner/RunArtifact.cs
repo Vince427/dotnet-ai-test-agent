@@ -24,6 +24,22 @@ public class RunArtifact
     public string Result { get; set; } = "Running"; // Running, Succeeded, Failed, Aborted, LoopDetected
     public int FinalScore { get; set; }
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// W3C trace id of this run's root span when OpenTelemetry export is active
+    /// (OBS-1). Null when telemetry is off. Links a recorded run to its live trace.
+    /// </summary>
+    public string? TraceId { get; set; }
+
+    /// <summary>
+    /// Links to existing automated tests this run complements (e.g. TRX/JUnit
+    /// testcase ids), plus source issue/PR — surfaced as JUnit testcase properties
+    /// so CI dashboards can cross-link (V4-A). Copied from the YAML test definition.
+    /// </summary>
+    public List<string> ExistingTests { get; set; } = [];
+    public string? SourceIssue { get; set; }
+    public string? SourcePr { get; set; }
+
     public List<RunStep> Steps { get; set; } = [];
 }
 

@@ -2,6 +2,26 @@
 
 This roadmap keeps the project portable-first, black-box, and AgentLoop-driven. The agent must test existing applications from the outside, without requiring application teams to add agent-specific classes, packages, or code paths.
 
+## Status (current)
+
+Shipped beyond V1.x (see `CHANGELOG.md` and `docs/architecture-decisions.md` for detail;
+`/.claude/plans/current.md` is the live backlog):
+
+- **Testability**: the loop is an injectable `RunOrchestrator` behind an `IActionDecider`
+  seam; deterministic loop tests + a key-free `MockLlmServer`; gated full-stack E2E across
+  **WinForms + WPF + Avalonia** (samples at parity).
+- **V3 (partial)**: secret-field screenshot masking at capture (a Tier-2 overlay primitive);
+  full VLM overlay/vision still ahead.
+- **V4-A**: `--to-junit` links runs to existing TRX/JUnit tests + source issue/PR + trace id.
+- **V6 (partial)**: JUnit XML output via `--to-junit`; documented exit codes.
+- **V11 (partial)**: opt-in OpenTelemetry emission (spans + metrics, OTLP/HttpProtobuf),
+  `traceId` in `report.json`, viewable in a standalone Aspire dashboard.
+- **Local dashboard** (a *view + launcher*, not source of truth): `--dashboard` serves a
+  localhost-only UI — catalog, ticket creation, launch, live logs/screenshots, file explorer.
+
+Still open: MAUI E2E wiring, the VLM vision tiers (V3), self-healing (V8), richer
+interaction/recording (V9/V9.5), analytics (V11), and MCP/plugin adapters.
+
 ## V1.3 - Generic Robo Agent + AgentLoop Foundation - Done
 
 - Generic UI tree discovery.
@@ -57,7 +77,7 @@ This roadmap keeps the project portable-first, black-box, and AgentLoop-driven. 
 - Seed `tests/testzoo.yaml` first, then split into smaller YAML files as scenarios stabilize.
 - Prefer one business scenario per YAML file under a suite folder such as `tests/testzoo/`.
 - Current seed covers login, profile save, invalid profile validation, checkboxes, and UIA metadata audits across WinForms, WPF, .NET Framework 4.8, .NET 8, and MAUI Windows where samples exist.
-- Expand WinForms and WPF first with richer controls and business/E2E flows. Add MAUI Windows and Avalonia parity after the WinForms/WPF flows are stable.
+- Expand WinForms and WPF first with richer controls and business/E2E flows. Add MAUI Windows and Avalonia parity after the WinForms/WPF flows are stable. **Status:** WinForms, WPF, and Avalonia samples are at login + gated-action parity and run in the gated E2E theories; MAUI sample has id-parity, E2E wiring pending (MSIX/unpackaged launch).
 - Add deterministic guard failure demo artifacts for missing targets, crash or
   closed-window capture failures, empty UI trees, and unexpected modals before
   wiring those cases into real UI runtime E2E.

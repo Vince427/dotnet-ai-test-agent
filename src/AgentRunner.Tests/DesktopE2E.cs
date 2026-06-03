@@ -7,15 +7,15 @@ namespace DesktopAiTestAgent.AgentRunner.Tests;
 
 /// <summary>
 /// Shared helpers for the gated, interactive desktop E2E tests: locate and launch
-/// the built WinForms sample, and wait for it to be ready before driving it.
+/// a built desktop sample, and wait for it to be ready before driving it.
 /// Kept separate so each scenario test stays focused on its scripted flow.
 /// </summary>
 internal static class DesktopE2E
 {
     /// <summary>
-    /// A buildable desktop sample target. WinForms and WPF expose the SAME automation
-    /// ids and the same status strings (LoginForm.cs / MainWindow.xaml.cs) — only the
-    /// window title and exe differ — so one scripted flow drives both.
+    /// A buildable desktop sample target. WinForms, WPF, and Avalonia expose the SAME
+    /// automation ids and the same status strings (LoginForm.cs / MainWindow.xaml(.axaml).cs)
+    /// — only the window title, exe, and TFM folder differ — so one scripted flow drives all.
     /// </summary>
     public sealed record SampleTarget(string Key, string WindowTitle, string ProjectDir, string ExeName, string TfmDir);
 

@@ -4,11 +4,11 @@ Owns black-box desktop automation and UI tree capture.
 
 ## Files
 
-- `src/UIAutomation/**`
+- `src/UIAutomation/**` (incl. `ScreenshotMasker.cs`)
 - `src/Core/IAutomationDriver.cs`
 - `src/Core/AgentAction.cs`
 - `src/Core/UiElement.cs`
-- `src/Core/UiSnapshot.cs`
+- `src/Core/UiSnapshot.cs` (`WindowBounds` = screenshot origin, same space as `UiElement.BoundingBox`)
 
 ## Invariants
 
@@ -21,6 +21,11 @@ Owns black-box desktop automation and UI tree capture.
 - Avalonia starts with UIA3, with vision fallback later when the tree is flat.
 - Action execution must be bounded by YAML `allowed_actions`.
 - UI tree snapshots must avoid secrets and remain useful for evidence.
+- Screenshots redact secrets at capture: the runner masks regions of fields
+  `SecretRedactor.IsSensitiveIdentifier` flags, mapped via `WindowBounds`. Keep
+  `WindowBounds`/`BoundingBox` in the same screen-coordinate space so the mapping holds.
+  `ScreenshotMasker` is a pure image op (no secret knowledge); it must never throw away
+  a screenshot on failure.
 
 ## Validation
 

@@ -32,10 +32,9 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
   (anything named `.env*` except `.env.template`). Never add executable/binary serving.
 - Security: every filesystem-serving path must reject traversal — use
   `DashboardApi.IsSafeSegment` / `ResolveUnderRoot` (trailing-separator containment) and
-  confirm the resolved path stays under the runs/repo root. Screenshots are served from `runs/` only; logs/text are already redacted by
-  `SecretRedactor` in the artifacts. Screenshot pixel-blur of secret fields is **not**
-  implemented yet (deferred): localhost-only + OS-masked password fields are the current
-  boundary; respect `EvidenceLevel` (Minimal = none).
+  confirm the resolved path stays under the runs/repo root. Screenshots are served from `runs/` only; logs/text are
+  redacted by `SecretRedactor`, and secret-field regions are **masked at capture** (V3-A)
+  so the on-disk PNGs are already redacted. Still respect `EvidenceLevel` (Minimal = none).
 
 ## Validation
 

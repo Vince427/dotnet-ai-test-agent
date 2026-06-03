@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Secret-field screenshot masking (V3-A)**: step screenshots are now redacted
+  **at capture time** — regions of fields whose identifier `SecretRedactor` flags as
+  sensitive (password/secret/token/…) are painted opaque before the PNG is written, so
+  artifacts can't leak rendered secrets (mirrors how text is redacted). `UiSnapshot`
+  gained `WindowBounds` (the screenshot origin) to map element rects into image pixels;
+  masking is a pure `ScreenshotMasker` (UIAutomation) driven by a deterministic
+  `ScreenshotRedaction.SecretRegions` helper. Best-effort + never throws away a shot.
 - **OBS-1b**: the run's OTLP `traceId` now links from the **static workbench**
   drill-down too (not just the dashboard) — baked `AGENTLOOP_TRACE_UI_TEMPLATE`
   renders a clickable "results → live trace", otherwise the id is shown.
@@ -101,8 +108,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 147 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 151/151 with it). Build clean across
+- Test suite: 152 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 156/156 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

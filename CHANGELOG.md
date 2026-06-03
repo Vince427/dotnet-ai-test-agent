@@ -7,6 +7,9 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **OBS-1b**: the run's OTLP `traceId` now links from the **static workbench**
+  drill-down too (not just the dashboard) — baked `AGENTLOOP_TRACE_UI_TEMPLATE`
+  renders a clickable "results → live trace", otherwise the id is shown.
 - **Dashboard: Files explorer + mission-control UI**. A new **Files** tab surfaces the
   on-disk tree the dashboard reflects (`tests/` YAML source-of-truth, `runs/` artifacts,
   `WORKFLOW.md`, `.env.template`) with copy-path and a read-only text preview, so files
@@ -98,8 +101,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 146 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 150/150 with it). Build clean across
+- Test suite: 147 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 151/151 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

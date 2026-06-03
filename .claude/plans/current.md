@@ -85,18 +85,20 @@ parallel work.
   step-span tags) + a `Meter` (step/run duration, step count, run score). Opt-in:
   provider built only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; `HttpProtobuf`
   (net48-safe). `traceId` persisted to `report.json` (`RunArtifact.TraceId`).
-  Tested via a listener-based span test (no collector). **Remaining (OBS-1b):**
-  surface/link the traceId in the static workbench (needs the Aspire dashboard
-  base URL → clickable "results → live trace"). Token metric deferred (the LLM
-  call does not expose usage today). Live OTLP → Aspire dashboard is a manual step.
+  Tested via a listener-based span test (no collector). **OBS-1b done:** the run's
+  traceId is linked from both the dashboard (run detail) and the **static workbench**
+  drill-down (baked `AGENTLOOP_TRACE_UI_TEMPLATE` → clickable, else shows the id).
+  Token metric deferred (the LLM call does not expose usage today). Live OTLP →
+  Aspire dashboard is a manual step.
 - [x] OBS-2 (local all-in-one dashboard): `--dashboard [port]` serves a localhost-only
   `HttpListener` + single-page UI — a view/launcher over the CLI + artifacts (no new
   data model). Catalog (categorized), Create (form → validated YAML ticket), Runs
   (history + detail + screenshots + trace link), Live (launch → spawn CLI, parallel,
   streamed logs + recovered `runId` + live screenshots). Localhost-only, path-traversal
-  guards, never CI. 9 deterministic tests + live smoke-verified. **OBS-1b** (results →
-  trace link) is delivered here via the run-detail trace link. Remaining (deferred):
-  secret-field screenshot pixel-blur; trace link in the *static* workbench too.
+  guards, never CI. 9 deterministic tests + live smoke-verified. Later: mission-control
+  UI redesign + a **Files** explorer (on-disk tree + secret-safe text preview), and the
+  OBS-1b trace link now also renders in the **static workbench** drill-down.
+  Remaining (deferred): secret-field screenshot pixel-blur.
 
 ## Human-Orchestrated Items
 

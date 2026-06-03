@@ -398,6 +398,11 @@ public sealed class RunOrchestrator(
                 try
                 {
                     var screenshotBytes = _driver.CaptureScreenshot();
+                    // Redact-at-source: paint over secret-field regions before the PNG
+                    // ever hits disk, so artifacts can't leak rendered secrets.
+                    var secretRegions = ScreenshotRedaction.SecretRegions(snapshot, secretRedactor);
+                    if (secretRegions.Count > 0)
+                        screenshotBytes = UIAutomation.ScreenshotMasker.MaskRegions(screenshotBytes, secretRegions);
                     var screenshotPath = artifactWriter.SaveScreenshot(runArtifact.RunId, step, screenshotBytes);
                     runStep.ScreenshotPath = screenshotPath;
                 }

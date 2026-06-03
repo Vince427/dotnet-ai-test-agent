@@ -19,6 +19,9 @@ Owns provider configuration safety and secrets hygiene.
 - OpenRouter is configured through the real local `.env`:
   `LLM_ENDPOINT`, `LLM_API_KEY`, `LLM_MODEL`.
 - Logs may mention variable names, not secret values.
+- Secret values are redacted at the source: text via `SecretRedactor`, and **screenshot
+  regions of secret fields are masked before the PNG is written** (V3-A). The dashboard's
+  `GetFile` also refuses to serve `.env*` (except `.env.template`).
 - No hardcoded real API keys, tokens, endpoints with credentials, or personal
   secrets in tracked files.
 - Manual commands must work without provider secrets.

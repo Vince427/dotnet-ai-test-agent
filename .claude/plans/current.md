@@ -61,8 +61,10 @@ parallel work.
   `RUN_E2E_UI=1`. WinForms label clip ("Case grid") fixed + screenshot-verified.
 - [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
   stable.
-- [ ] V3-A: Design UIA screenshot overlay artifact contract before adding VLM
-  calls.
+- [~] V3-A: screenshot overlay started — **secret-field masking shipped** (redact-at-
+  source via `UiSnapshot.WindowBounds` + `ScreenshotMasker` + `ScreenshotRedaction`).
+  Still to design: the general VLM-oriented overlay artifact contract (annotated element
+  boxes / labels) before adding VLM calls.
 - [ ] V3-B: Keep recording mode visible in roadmap/docs, but defer
   implementation until the action model and TestZoo flows are stable.
 - [ ] V4-A: Add existing test integration fields/examples for TRX/JUnit links.
@@ -98,7 +100,7 @@ parallel work.
   guards, never CI. 9 deterministic tests + live smoke-verified. Later: mission-control
   UI redesign + a **Files** explorer (on-disk tree + secret-safe text preview), and the
   OBS-1b trace link now also renders in the **static workbench** drill-down.
-  Remaining (deferred): secret-field screenshot pixel-blur.
+  Secret-field screenshot masking (V3-A) now redacts sensitive regions at capture.
 
 ## Human-Orchestrated Items
 

@@ -7,11 +7,18 @@ using System.Text;
 /// A point-in-time snapshot of the entire UI state, containing all discovered elements.
 /// Replaces the previous hardcoded login-specific snapshot.
 /// </summary>
-public sealed class UiSnapshot(string windowTitle, List<UiElement> elements, string? statusText = null)
+public sealed class UiSnapshot(string windowTitle, List<UiElement> elements, string? statusText = null, string? windowBounds = null)
 {
     public string WindowTitle { get; } = windowTitle;
     public List<UiElement> Elements { get; } = elements;
     public string? StatusText { get; } = statusText;
+
+    /// <summary>
+    /// The target window's screen rectangle as "X,Y,W,H" (same coordinate space as each
+    /// <see cref="UiElement.BoundingBox"/>). Used to map element rects into screenshot
+    /// pixels for secret-field masking. Null when unknown.
+    /// </summary>
+    public string? WindowBounds { get; } = windowBounds;
 
     /// <summary>
     /// Produces a compact text representation of all UI elements for LLM prompts.

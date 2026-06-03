@@ -11,6 +11,8 @@
       <TextBlock Text="Username"/>
       <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Width="260" HorizontalAlignment="Left"/>
       <TextBlock Text="Password"/>
+      <!-- PasswordChar masks the value visually (parallels WinForms UseSystemPasswordChar);
+           secret redaction itself is identifier-based (id contains "password"). -->
       <TextBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" PasswordChar="*" Width="260" HorizontalAlignment="Left"/>
       <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" HorizontalAlignment="Left" Margin="0,6,0,0" Click="OnLoginClicked"/>
       <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Waiting" Foreground="Gray"/>

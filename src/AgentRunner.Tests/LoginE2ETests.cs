@@ -22,7 +22,7 @@ namespace DesktopAiTestAgent.AgentRunner.Tests;
 [Collection(InteractiveUiCollection.Name)]
 public sealed class LoginE2ETests : IDisposable
 {
-    public static IEnumerable<object[]> Frameworks() => [["winforms"], ["wpf"]];
+    public static IEnumerable<object[]> Frameworks() => [["winforms"], ["wpf"], ["avalonia"]];
 
     private readonly string _workspace =
         Path.Combine(Path.GetTempPath(), "e2e-login-" + Guid.NewGuid().ToString("N"));

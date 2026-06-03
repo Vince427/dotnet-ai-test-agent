@@ -15,6 +15,9 @@ desktop UI patterns.
 - WinForms .NET 8 and .NET Framework 4.8 login.
 - WPF .NET 8 and .NET Framework 4.8 login.
 - MAUI Windows login.
+- Avalonia desktop (`Sample.AvaloniaApp`, Avalonia 11.3): login + disabled-to-enabled
+  protected action, same automation ids/status strings as WinForms/WPF — driven by the
+  gated E2E theories (`LoginE2ETests`/`ProtectedActionE2ETests`) across all three.
 - Profile save and invalid email validation workflows.
 - Checkbox usage through profile active state.
 - WinForms and WPF .NET 8 radio, combo, list, grid, modal confirmation,

@@ -59,8 +59,11 @@ parallel work.
   **and** WPF (same automation ids + status strings, only window title differs) —
   proves the UIA agent path is framework-agnostic. 4 gated cases; **126/126** with
   `RUN_E2E_UI=1`. WinForms label clip ("Case grid") fixed + screenshot-verified.
-- [ ] V2-D: Add MAUI Windows and Avalonia parity after WinForms/WPF flows are
-  stable.
+- [~] V2-D: **Avalonia done** — `Sample.AvaloniaApp` (Avalonia 11.3) at login +
+  gated-action parity; gated E2E theories now span WinForms + WPF + Avalonia (6 cases,
+  all green live). **MAUI**: sample already has login/profile id-parity; gated E2E wiring
+  deferred (MSIX/unpackaged launch + win10 RID output path differ — needs an exe-locate
+  step and runtime check).
 - [~] V3-A: screenshot overlay started — **secret-field masking shipped** (redact-at-
   source via `UiSnapshot.WindowBounds` + `ScreenshotMasker` + `ScreenshotRedaction`).
   Still to design: the general VLM-oriented overlay artifact contract (annotated element

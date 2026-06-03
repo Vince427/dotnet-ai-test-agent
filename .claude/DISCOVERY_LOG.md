@@ -39,6 +39,22 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-06-03 - claude/runner-orchestrator - automation / security
+
+**Observation**: Screenshot secret-masking (V3-A) and the text `SecretRedactor` both key
+off the element's *identifier* (`AutomationId`/`Name` matching password/secret/token/…).
+A field whose secret lives only in `Value`, or a true password box with a non-sensitive
+id, would be left unmasked. QA flagged this as a "false sense of safety" risk (non-blocking;
+mirrors existing text-redaction behavior, documented as best-effort).
+
+**Why it matters**: an edge-case secret could appear unmasked in a screenshot artifact.
+
+**Suggestion**: follow-up — also mask UIA controls reporting `IsPassword`/`ControlType=Edit`
+with the password style, independent of the identifier. Needs a new `UiElement.IsPassword`
+populated by the driver. Small, deferred.
+
+**Status**: `OPEN`
+
 ## 2026-06-02 - claude/runner-orchestrator - automation
 
 **Observation**: `FlaUiDesktopDriver.Capture()` derives `UiSnapshot.StatusText` by

@@ -21,6 +21,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 public static class JUnitReportWriter
 {
     private static readonly string[] FailureResults = { "Failed", "Aborted", "LoopDetected" };
+    private static readonly string[] PassResults = { "Passed", "Succeeded" };
 
     /// <summary>
     /// Renders the given runs as a JUnit XML document string (with declaration).
@@ -64,6 +65,10 @@ public static class JUnitReportWriter
             new XAttribute("classname", run.Suite ?? run.Framework ?? "AgentLoop"),
             new XAttribute("time", FormatTime(DurationSeconds(run))));
 
+        var properties = BuildProperties(run);
+        if (properties != null)
+            testcase.Add(properties);
+
         if (IsFailure(run))
         {
             testcase.Add(new XElement("failure",
@@ -79,6 +84,31 @@ public static class JUnitReportWriter
 
         return testcase;
     }
+
+    /// <summary>
+    /// Cross-link properties on the testcase (V4-A): existing TRX/JUnit testcase links
+    /// and the source issue/PR. Returns null when there is nothing to emit.
+    /// </summary>
+    private static XElement? BuildProperties(RunArtifact run)
+    {
+        var props = new List<XElement>();
+        foreach (var existing in run.ExistingTests)
+        {
+            if (!string.IsNullOrWhiteSpace(existing))
+                props.Add(Property("existing_test", existing));
+        }
+        if (!string.IsNullOrWhiteSpace(run.SourceIssue))
+            props.Add(Property("source_issue", run.SourceIssue!));
+        if (!string.IsNullOrWhiteSpace(run.SourcePr))
+            props.Add(Property("source_pr", run.SourcePr!));
+        if (!string.IsNullOrWhiteSpace(run.TraceId))
+            props.Add(Property("trace_id", run.TraceId!));
+
+        return props.Count == 0 ? null : new XElement("properties", props);
+    }
+
+    private static XElement Property(string name, string value) =>
+        new("property", new XAttribute("name", name), new XAttribute("value", value));
 
     private static string FailureMessage(RunArtifact run)
     {
@@ -107,8 +137,12 @@ public static class JUnitReportWriter
     private static bool IsFailure(RunArtifact run) =>
         FailureResults.Contains(run.Result, StringComparer.OrdinalIgnoreCase);
 
-    private static bool IsError(RunArtifact run) =>
-        !IsFailure(run) && !string.Equals(run.Result, "Succeeded", StringComparison.OrdinalIgnoreCase);
+    private static bool IsPass(RunArtifact run) =>
+        PassResults.Contains(run.Result, StringComparer.OrdinalIgnoreCase);
+
+    // Anything that is neither a pass nor a known failure (e.g. "Running", "Blocked")
+    // is an incomplete run -> <error>.
+    private static bool IsError(RunArtifact run) => !IsFailure(run) && !IsPass(run);
 
     private static double DurationSeconds(RunArtifact run)
     {

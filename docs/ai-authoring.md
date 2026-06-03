@@ -49,10 +49,27 @@ prompts.
 
 ## YAML Metadata
 
+- `existing_tests`: ids of existing automated tests this run complements (e.g. a TRX/JUnit
+  testcase name like `MyApp.Tests.LoginTests.HappyPath`). Prefer linking over duplicating.
 - `source_issue`: issue, work item, bug id, or ticket URL.
 - `source_pr`: pull request that introduced or updated the test.
 - `authoring_agent`: `manual`, `codex`, `claude-code`, `copilot`, or team-specific value.
 - `risk`: `low`, `medium`, `high`, or `critical`.
 - `ci_profile`: where the test is expected to run, such as `local-windows`, `github-windows`, or `azure-windows`.
+
+These links surface in the CI report: `--to-junit` emits each as a `<property>` on the
+run's `<testcase>` (`existing_test`, `source_issue`, `source_pr`, `trace_id`), so a CI
+dashboard can cross-link the AgentLoop run to its existing-test counterpart and live trace.
+
+```yaml
+tests:
+  LOGIN-HAPPY-001:
+    title: "Login happy path"
+    goal: "Enter admin / password123, click Login, confirm success."
+    success_condition: "Login successful"
+    existing_tests: ["MyApp.UiTests.LoginTests.HappyPath"]
+    source_issue: "JIRA-1234"
+    source_pr: "https://github.com/acme/app/pull/567"
+```
 
 The schema lives at `schemas/test-plan.schema.json`.

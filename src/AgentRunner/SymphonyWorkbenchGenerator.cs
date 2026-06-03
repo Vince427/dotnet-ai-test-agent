@@ -276,6 +276,7 @@ public static class SymphonyWorkbenchGenerator
     var rows = Array.prototype.slice.call(document.querySelectorAll('tr.run-row'));
 
     function esc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+    function escAttr(s) { return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
     function applyFilter() {
       var q = (search && search.value ? search.value : '').toLowerCase();
@@ -296,7 +297,7 @@ public static class SymphonyWorkbenchGenerator
       var h = '';
       if (run.traceId) {
         h += traceTpl
-          ? '<p class="muted">Trace: <a href="' + esc(traceTpl.replace('{traceId}', run.traceId)) + '" target="_blank" rel="noreferrer">' + esc(run.traceId) + '</a></p>'
+          ? '<p class="muted">Trace: <a href="' + escAttr(traceTpl.replace('{traceId}', run.traceId)) + '" target="_blank" rel="noreferrer">' + esc(run.traceId) + '</a></p>'
           : '<p class="muted">Trace: <code>' + esc(run.traceId) + '</code> &mdash; open in your Aspire dashboard &rarr; Traces.</p>';
       }
       h += '<table class="steps"><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Outcome</th><th>Failure</th><th>Guard</th><th>Score</th></tr></thead><tbody>';

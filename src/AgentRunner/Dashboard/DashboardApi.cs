@@ -299,6 +299,12 @@ public sealed class DashboardApi
         if (full == null || !File.Exists(full))
             return ApiResponse.Error(404, "File not found.");
 
+        // Confine to exactly what GetFiles advertises: the tests/ + runs/ trees, plus the
+        // two named root config files. Prevents previewing unrelated repo files over the API.
+        if (!IsUnderRoot(full, "tests") && !IsUnderRoot(full, "runs") &&
+            !IsNamedRootFile(full, "WORKFLOW.md") && !IsNamedRootFile(full, ".env.template"))
+            return ApiResponse.Error(403, "Only files under tests/ and runs/ (and WORKFLOW.md / .env.template) are previewable.");
+
         if (new FileInfo(full).Length > 512 * 1024)
             return ApiResponse.Error(413, "File too large to preview (512 KB cap).");
 
@@ -337,6 +343,15 @@ public sealed class DashboardApi
             ? full
             : null;
     }
+
+    private bool IsUnderRoot(string fullPath, string relRoot)
+    {
+        var prefix = Path.GetFullPath(Path.Combine(_repoRoot, relRoot)) + Path.DirectorySeparatorChar;
+        return fullPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsNamedRootFile(string fullPath, string fileName) =>
+        string.Equals(fullPath, Path.GetFullPath(Path.Combine(_repoRoot, fileName)), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>One path segment, no separators or traversal.</summary>
     internal static bool IsSafeSegment(string? s) =>

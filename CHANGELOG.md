@@ -7,6 +7,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V4-A: existing-test / source links in the CI report**. `--to-junit` now emits
+  `<property>` entries on each `<testcase>` — `existing_test` (one per linked TRX/JUnit
+  testcase from the YAML `existing_tests`), `source_issue`, `source_pr`, and `trace_id`
+  (OBS-1) — so a CI dashboard can cross-link an AgentLoop run to its existing-test
+  counterpart and live trace. `RunArtifact` carries these from the YAML; docs/example added.
 - **Secret-field screenshot masking (V3-A)**: step screenshots are now redacted
   **at capture time** — regions of fields whose identifier `SecretRedactor` flags as
   sensitive (password/secret/token/…) are painted opaque before the PNG is written, so
@@ -99,6 +104,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
 ### Fixed
+- JUnit report: a `"Passed"` run (test runs report "Passed", not "Succeeded") was
+  wrongly emitted as an `<error>` instead of a pass — `--to-junit` now treats both
+  `Passed` and `Succeeded` as passing. (Found during V4-A; regression test added.)
+- Dashboard hardening (post-QA): `GetFile` is now confined to exactly what the Files
+  tab advertises (`tests/` + `runs/` + `WORKFLOW.md`/`.env.template`) instead of any
+  allow-listed text file under the repo; trace-link hrefs escape quotes in both the
+  dashboard and the static workbench.
 - WinForms sample: the "Case grid" label was clipped to "ase grid" — the Premium
   radio (Left 240 + Width 100 = 340) overlapped the label at Left 330 and, being
   higher in z-order, painted over its first letter. Moved the label to Left 350.
@@ -108,8 +120,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 152 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
-  (skipped unless `RUN_E2E_UI=1`; 156/156 with it). Build clean across
+- Test suite: 156 tests + 2 gated UI E2E theories = 4 cases across WinForms + WPF
+  (skipped unless `RUN_E2E_UI=1`; 160/160 with it). Build clean across
   net48 + net8.0-windows + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

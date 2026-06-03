@@ -31,6 +31,15 @@ public class RunArtifact
     /// </summary>
     public string? TraceId { get; set; }
 
+    /// <summary>
+    /// Links to existing automated tests this run complements (e.g. TRX/JUnit
+    /// testcase ids), plus source issue/PR — surfaced as JUnit testcase properties
+    /// so CI dashboards can cross-link (V4-A). Copied from the YAML test definition.
+    /// </summary>
+    public List<string> ExistingTests { get; set; } = [];
+    public string? SourceIssue { get; set; }
+    public string? SourcePr { get; set; }
+
     public List<RunStep> Steps { get; set; } = [];
 }
 

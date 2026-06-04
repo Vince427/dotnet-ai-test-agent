@@ -248,6 +248,19 @@ public sealed class RunOrchestrator(
             if (execResult.FailureMessage != null)
                 runStep.FailureMessage = execResult.FailureMessage;
 
+            // V8 self-healing (evidence only): if the target drifted (named but not present),
+            // record the closest present element as a suggestion. Never auto-applied — CI stays
+            // deterministic; a human or a later local-only step decides whether to adopt it.
+            if (execResult.FailureCode == "action_target_not_found")
+            {
+                var heal = SelectorHealer.Suggest(action.AutomationId, snapshot);
+                if (heal != null)
+                {
+                    runStep.HealingSuggestion = heal;
+                    logger.Info($"Heal suggestion: {heal.Rationale}");
+                }
+            }
+
             // Done with the success condition satisfied is the only terminal-success path; the
             // loop records the final step and stops here. Every other outcome falls through to
             // the guard / score / record stages below.

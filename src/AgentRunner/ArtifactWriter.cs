@@ -162,6 +162,8 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
             values.Add("ui-tree");
         if (!string.IsNullOrWhiteSpace(step.OverlayPath))
             values.Add("overlay");
+        if (step.HealingSuggestion != null)
+            values.Add($"heal→{step.HealingSuggestion.NewTarget}");
 
         return values.Count == 0 ? "-" : string.Join(", ", values);
     }

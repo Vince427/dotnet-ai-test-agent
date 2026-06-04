@@ -71,6 +71,10 @@ public class RunStep
 
     /// <summary>JSON index mapping each overlay box number to its element identifiers.</summary>
     public string? OverlayIndexPath { get; set; }
+
+    /// <summary>V8: a proposed selector replacement when the target wasn't found. Evidence only —
+    /// never auto-applied.</summary>
+    public HealingSuggestion? HealingSuggestion { get; set; }
 }
 
 public enum EvidenceLevel

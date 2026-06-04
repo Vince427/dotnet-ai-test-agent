@@ -97,7 +97,10 @@ public sealed class McpServer
             ObjSchema(("path", "string", "Repo-relative path to a single plan YAML (optional).", false))),
         Tool("list_runs", "List recorded runs from runs/ (runId, testId, result, score, started/ended, step count).", EmptySchema()),
         Tool("get_run", "Get one run's full report.json by runId.",
-            ObjSchema(("runId", "string", "The run id (the runs/<runId>/ folder name).", true)))
+            ObjSchema(("runId", "string", "The run id (the runs/<runId>/ folder name).", true))),
+        Tool("show_prompt", "Preview the exact prompt the LLM would receive for a test (key-free; no run).",
+            ObjSchema(("testId", "string", "The test id to preview.", true),
+                      ("path", "string", "Repo-relative plan YAML to narrow the search (optional).", false)))
     };
 
     private object CallTool(JsonElement prms)
@@ -113,6 +116,7 @@ public sealed class McpServer
             "validate_plan" => ValidatePlan(args),
             "list_runs" => ListRuns(),
             "get_run" => GetRun(args),
+            "show_prompt" => ShowPrompt(args),
             _ => throw new McpToolException("Unknown tool: " + name)
         };
 
@@ -154,6 +158,7 @@ public sealed class McpServer
             : new List<string> { ResolveUnderRepo(relPath!) ?? throw new McpToolException("path is outside the repository or not found.") };
 
         var errors = new List<string>();
+        var warnings = new List<string>();
         var planResults = new List<object>();
         var testCount = 0;
         foreach (var path in paths)
@@ -163,11 +168,36 @@ public sealed class McpServer
             catch (Exception ex) { errors.Add($"{Relative(path)}: {ex.Message}"); continue; }
             testCount += plan.Tests.Count;
             var result = TestPlanValidator.Validate(plan, Relative(path));
-            planResults.Add(new { path = Relative(path), valid = result.IsValid, errors = result.Errors });
+            planResults.Add(new { path = Relative(path), valid = result.IsValid, errors = result.Errors, warnings = result.Warnings });
             errors.AddRange(result.Errors);
+            warnings.AddRange(result.Warnings);
         }
 
-        return new { valid = errors.Count == 0, planCount = planResults.Count, testCount, errorCount = errors.Count, plans = planResults, errors };
+        return new { valid = errors.Count == 0, planCount = planResults.Count, testCount, errorCount = errors.Count, warningCount = warnings.Count, plans = planResults, errors, warnings };
+    }
+
+    private object ShowPrompt(JsonElement args)
+    {
+        var testId = args.ValueKind == JsonValueKind.Object && args.TryGetProperty("testId", out var te)
+            ? te.GetString() : null;
+        if (string.IsNullOrWhiteSpace(testId))
+            throw new McpToolException("show_prompt requires a 'testId'.");
+
+        string? relPath = args.TryGetProperty("path", out var pe) ? pe.GetString() : null;
+        var paths = string.IsNullOrWhiteSpace(relPath)
+            ? TestPlanLoader.DiscoverPlanPaths(_repoRoot)
+            : new List<string> { ResolveUnderRepo(relPath!) ?? throw new McpToolException("path is outside the repository or not found.") };
+
+        TestDefinition? test = null;
+        foreach (var path in paths)
+        {
+            try { test = TestPlanLoader.Load(path).FindById(testId!); } catch { continue; }
+            if (test != null) break;
+        }
+        if (test == null)
+            throw new McpToolException("Test not found: " + testId);
+
+        return new { testId, prompt = PromptPreview.BuildForTest(test) };
     }
 
     private object ListRuns()

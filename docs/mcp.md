@@ -25,6 +25,7 @@ stdout carries only JSON-RPC; diagnostics go to stderr. No `.env`, no LLM, no ta
 | `validate_plan` | `path?` (repo-relative) | Validation result for one plan, or all discovered plans. |
 | `list_runs` | — | Run summaries from `runs/` (runId, testId, result, score, timing, steps). |
 | `get_run` | `runId` | One run's full `report.json` (path-guarded). |
+| `show_prompt` | `testId`, `path?` | The exact prompt the LLM would receive for a test (key-free preview). |
 
 Tools that spawn a run or need a provider key are intentionally **not** exposed yet — runtime
 execution stays on the explicit CLI (`--plan`/`--test-id`), so a host can't trigger a desktop run

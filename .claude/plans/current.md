@@ -4,6 +4,35 @@ This file gives `/suite` and other agents a small executable backlog. The
 source of truth remains `docs/roadmap.md`; keep this file focused on near-term
 parallel work.
 
+## RESUME SNAPSHOT — 2026-06-04 (read this first)
+
+**`main` HEAD = `bc43bba`** (Merge MCP adapter). Build clean on net48 + net8 + Avalonia + MAUI;
+**232 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
+
+**Merged to `main` this session:** A1–A6 (audit hardening) · V3 vision moat **complete**
+(inc.1 overlay artifact, inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) ·
+V8 self-healing inc.1 (`SelectorHealer`, evidence-only) · MCP adapter inc.1 (`--mcp`).
+
+**Open branch awaiting merge → `claude/v7-prompt-preview`** (V7 prompt preview + policy warnings):
+`--show-prompt --test-id <id>` (+ MCP `show_prompt`) renders the prompt via `PromptPreview`;
+`TestPlanValidator.Warnings` (unknown framework / high max_steps / missing success_condition)
+surfaced by `--validate-plan` (WARN→stderr, `warnings` in `--format json`) + MCP `validate_plan`.
+239 tests + 2 gated, QA pending. **To resume: open/merge this PR, then `git pull`.**
+
+**Next executable (pick up here):**
+1. V7 inc.2 — surface the prompt preview + validation warnings in the dashboard/workbench UI.
+2. V8 inc.2 — `--heal-apply` (local-only, confirmed YAML rewrite) + screenshot in heal evidence + vision-assisted candidate.
+3. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
+4. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
+5. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
+
+**Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable
+**Settings → Pages → Source: GitHub Actions** (the `enablement:true` auto-enable didn't take).
+
+**Working rhythm:** one feature branch per increment → QA via `code-reviewer` subagent → push →
+user merges PR (sequential) → I sync `main` + delete the branch. Commit msgs end with the
+`Co-Authored-By: Claude Opus 4.8 (1M context)` trailer. Don't commit/push without being asked.
+
 ## Done
 
 - [x] V1.4 YAML backlog and directed test selection.

@@ -106,6 +106,23 @@ public sealed class McpServerTests : IDisposable
     }
 
     [Fact]
+    public void ToolsCall_ShowPrompt_ReturnsThePromptForATest()
+    {
+        var r = Parse(_server.HandleLine("""{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"show_prompt","arguments":{"testId":"SMOKE-001"}}}"""));
+        var text = r.GetProperty("result").GetProperty("content")[0].GetProperty("text").GetString();
+        var data = Parse(text);
+        Assert.Equal("SMOKE-001", data.GetProperty("testId").GetString());
+        Assert.Contains("Log in and confirm", data.GetProperty("prompt").GetString());
+    }
+
+    [Fact]
+    public void ToolsCall_ShowPrompt_UnknownTest_IsToolError()
+    {
+        var r = Parse(_server.HandleLine("""{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"show_prompt","arguments":{"testId":"NOPE-999"}}}"""));
+        Assert.True(r.GetProperty("result").GetProperty("isError").GetBoolean());
+    }
+
+    [Fact]
     public void UnknownMethod_IsJsonRpcMethodNotFound()
     {
         var r = Parse(_server.HandleLine("""{"jsonrpc":"2.0","id":7,"method":"does/notExist"}"""));

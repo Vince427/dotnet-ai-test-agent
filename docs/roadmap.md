@@ -158,6 +158,12 @@ Avalonia/MAUI, Citrix/RDP, legacy GDI) defeat a pure-UIA agent.
 - Validate YAML before running: missing success condition, unsafe action, impossible target, unsupported framework, too many max steps.
 - Mini UI should help users fix configuration without hiding the YAML.
 
+**Done (first increment):** `--show-prompt --test-id <id>` (+ MCP `show_prompt`) renders the exact
+prompt via `PromptPreview`/`PromptBuilder`; `TestPlanValidator` emits non-fatal **warnings**
+(unknown framework, high `max_steps`, missing `success_condition`) surfaced by `--validate-plan`
+and the MCP `validate_plan` tool. "Unsafe action" is already an error; "impossible target" stays
+runtime. **Next:** surface the preview + warnings in the dashboard/workbench UI.
+
 ## V8 - Controlled Self-Healing
 
 - If a selector fails, use semantic and vision fallback to find the likely replacement.

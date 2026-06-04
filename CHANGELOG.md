@@ -7,6 +7,15 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V7 prompt preview + policy warnings**. `--show-prompt --test-id <id>` prints the exact prompt
+  the LLM would receive for a test (key-free — `PromptPreview` reuses `PromptBuilder`, so it can't
+  drift from the real prompt; the live UI snapshot is a labelled placeholder). Text by default,
+  `--format json` supported; also an MCP `show_prompt` tool. And `TestPlanValidator` now emits
+  **non-fatal policy warnings** (unknown framework, `max_steps` > 100, missing `success_condition`)
+  surfaced by `--validate-plan` (as `WARN` on stderr, plus `warnings`/`warningCount` in `--format
+  json`) and the MCP `validate_plan` tool — plans stay valid, but authors get a heads-up before a
+  run. +6 tests. (Fixed in passing: `--show-prompt` no longer triggers single-plan runtime
+  selection, and its stdout stays clean.)
 - **MCP adapter (`--mcp`)** — a minimal Model Context Protocol server (JSON-RPC 2.0 over stdio)
   so an agent host (Claude Desktop, Copilot, …) can drive the runner natively. It's an *adapter
   over the same CLI contract* (reuses `TestPlanLoader`/`TestPlanValidator`/`RunArtifactLoader`, no

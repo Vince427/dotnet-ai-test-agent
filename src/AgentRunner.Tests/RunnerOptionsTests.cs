@@ -70,6 +70,16 @@ public sealed class RunnerOptionsTests
     }
 
     [Fact]
+    public void ParseShowPrompt_DoesNotRunSinglePlanSelection()
+    {
+        // --show-prompt resolves its own test across plans, so a lone --test-id must NOT throw
+        // the single-plan "test id not found" selection error here.
+        var o = RunnerOptions.Parse(["--show-prompt", "--test-id", "ANY-ID"], new WorkflowConfig());
+        Assert.True(o.ShowPromptOnly);
+        Assert.Equal("ANY-ID", o.TestId);
+    }
+
+    [Fact]
     public void ParseRejectsInvalidEvidenceLevel()
     {
         var ex = Assert.Throws<ArgumentException>(() =>

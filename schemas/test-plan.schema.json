@@ -2,17 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://desktop-ai-test-agent.local/schemas/test-plan.schema.json",
   "title": "Desktop AI Test Agent Test Plan",
+  "description": "A YAML plan of UI tests. One file may hold several tests under a suite. The agent reads the plain-language goal and drives the target app from the outside; YAML is the source of truth.",
   "type": "object",
   "additionalProperties": false,
   "required": ["tests"],
   "properties": {
     "suite": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Group these tests belong to (a bucket name). Often matches the file/folder, e.g. 'smoke', 'login', 'testzoo'."
     },
     "tests": {
       "type": "object",
       "minProperties": 1,
+      "description": "Map of test id -> test definition. The id is the key (e.g. DEMO-LOGIN-001).",
       "additionalProperties": {
         "$ref": "#/$defs/testDefinition"
       }
@@ -31,68 +34,92 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["goal"],
+      "description": "One test. Only 'goal' is required; everything else refines targeting, verification, and traceability.",
       "properties": {
         "title": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Short human-readable name shown in listings and the dashboard."
         },
         "priority": {
           "type": "string",
-          "minLength": 1
+          "enum": ["P0", "P1", "P2", "P3"],
+          "description": "Triage importance: P0 highest. Used for ordering/filtering only."
         },
         "framework": {
           "type": "string",
-          "enum": ["winforms", "wpf", "maui", "avalonia"]
+          "enum": ["winforms", "wpf", "maui", "avalonia"],
+          "description": "Desktop UI toolkit of the target app."
         },
         "target_window": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Exact window title to attach to (FlaUI matches by Name), e.g. 'Sample Login App (.NET 8)'."
         },
         "source_issue": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Traceability: issue/work-item/ticket id or URL. Surfaces as a JUnit testcase property."
         },
         "source_pr": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Traceability: pull request that introduced or updated the test. Surfaces as a JUnit property."
         },
         "authoring_agent": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Who authored it: 'manual', 'claude-code', 'codex', 'copilot', or a team value."
         },
         "risk": {
           "type": "string",
-          "enum": ["low", "medium", "high", "critical"]
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Business risk if this flow breaks. Informational."
         },
         "ci_profile": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Where it is expected to run, e.g. 'local-windows', 'github-windows', 'azure-windows'."
         },
         "category": {
           "type": "string",
-          "enum": ["Scenario", "Smoke", "Audit", "Monkey"]
+          "enum": ["Scenario", "Smoke", "Audit", "Monkey"],
+          "description": "Test style. Scenario: a directed business flow (most tests). Smoke: a quick 'does it open / basic path works' check. Audit: inspect UI/accessibility metadata, no mutation. Monkey: exploratory/stress poking. Defaults to Scenario."
         },
         "goal": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "REQUIRED. What the agent must accomplish, in plain language. Name the exact values to use, e.g. \"Enter admin / password123, click Login, confirm success.\""
         },
         "success_condition": {
-          "type": "string"
+          "type": "string",
+          "description": "Text the app shows when the goal is met (matched against a status label). Optional: omit and verify with an Assert action instead."
         },
         "max_steps": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Safety cap on agent iterations before the run fails. Typical 6-12 for a focused flow."
         },
         "allowed_actions": {
-          "$ref": "#/$defs/stringList"
+          "description": "Whitelist of UI actions the agent may use. An action outside this list is rejected, keeping runs bounded.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["EnterText", "Click", "DoubleClick", "Scroll", "Wait", "Assert", "Done", "Explore"]
+          }
         },
         "tags": {
+          "description": "Free-form labels for filtering (e.g. 'smoke', 'login', 'net8').",
           "$ref": "#/$defs/stringList"
         },
         "blocked_if": {
+          "description": "Human-readable preconditions that block the test (e.g. 'Target window not found').",
           "$ref": "#/$defs/stringList"
         },
         "existing_tests": {
+          "description": "Ids of existing automated tests this run complements (e.g. a TRX/JUnit testcase like 'MyApp.UiTests.LoginTests.HappyPath'). Surface as JUnit properties.",
           "$ref": "#/$defs/stringList"
         }
       }

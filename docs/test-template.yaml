@@ -1,0 +1,44 @@
+# Annotated test-plan template — copy into tests/<your-suite>.yaml and edit.
+# Only `goal` is required; every other field refines targeting, verification, or
+# traceability. Validated by schemas/test-plan.schema.json (your editor shows these
+# hints if you associate the schema). Lists may be inline [a, b] or YAML "- " items.
+
+suite: "my-suite"                 # bucket name; often the file/folder name
+
+tests:
+  MY-TEST-001:                    # the test id (the YAML key) — keep it stable
+    title: "Short human label"    # shown in listings / dashboard
+
+    # --- What & where -------------------------------------------------------
+    goal: "Enter admin / password123, click Login, confirm success."  # REQUIRED: plain-language intent; name exact values
+    success_condition: "Login successful"   # text the app shows when done; omit to verify with an Assert instead
+    framework: "winforms"         # winforms | wpf | avalonia | maui
+    target_window: "Sample Login App (.NET 8)"   # EXACT window title to attach to
+    max_steps: 8                  # safety cap on agent iterations (typical 6-12)
+
+    # allowed_actions: whitelist of UI actions the agent may use. Anything outside
+    # this list is rejected, keeping the run bounded. Supported:
+    #   EnterText, Click, DoubleClick, Scroll, Wait, Assert, Done, Explore
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+
+    # --- Classification -----------------------------------------------------
+    # category: the test STYLE.
+    #   Scenario  - a directed business flow (most tests).            [default]
+    #   Smoke     - a quick "does it open / basic path works" check.
+    #   Audit     - inspect UI / accessibility metadata; no mutation.
+    #   Monkey    - exploratory / stress poking.
+    category: "Scenario"
+    priority: "P1"                # P0 (highest) | P1 | P2 | P3
+    risk: "low"                   # low | medium | high | critical
+    tags: ["smoke", "login"]      # free-form labels for filtering
+
+    # --- Traceability (optional; surfaces as JUnit <testcase> properties) ---
+    authoring_agent: "manual"     # manual | claude-code | codex | copilot | team value
+    ci_profile: "local-windows"   # local-windows | github-windows | azure-windows
+    source_issue: "JIRA-1234"     # issue / work item / ticket id or URL
+    source_pr: "https://github.com/acme/app/pull/567"
+    existing_tests: ["MyApp.UiTests.LoginTests.HappyPath"]  # link, don't duplicate, existing TRX/JUnit tests
+
+    # --- Preconditions ------------------------------------------------------
+    blocked_if:                   # human-readable conditions that block the test
+      - "Target window not found"

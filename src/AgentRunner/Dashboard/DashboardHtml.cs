@@ -232,13 +232,37 @@ internal static class DashboardHtml
             async function loadCatalog(){
               const host=$("#tab-catalog");
               host.innerHTML=headHTML("Catalog","Tests under tests/ — filter, then Launch one or batch-run a selection through the bounded queue")
-                +"<div class='panel pad' id='cat-bar'></div><div id='cat'></div>";
+                +"<div class='panel pad' id='cat-bar'></div><div id='cat'></div><div id='cat-arch'></div>";
               try{
                 const [d,cfg]=await Promise.all([api("/api/tests"),api("/api/config").catch(()=>({maxConcurrency:2}))]);
                 CATALOG=d.tests||[]; MAXC=cfg.maxConcurrency||2; SEL.clear();
-                if(!CATALOG.length){ $("#cat").innerHTML="<div class='empty'>No tests found under tests/. Author one in <b>Create</b>.</div>"; $("#cat-bar").remove(); return; }
-                renderBar(); renderCatalog();
+                if(!CATALOG.length){ $("#cat").innerHTML="<div class='empty'>No tests found under tests/. Author one in <b>Create</b>.</div>"; }
+                else { renderBar(); renderCatalog(); }
+                loadArchived();
               }catch(e){ $("#cat").innerHTML=`<div class='empty'>${esc(e.message)}</div>`; }
+            }
+            async function loadArchived(){
+              const host=$("#cat-arch"); if(!host) return;
+              try{
+                const a=await api("/api/archived");
+                if(!a.count){ host.innerHTML=""; return; }
+                const rows=a.tests.map(t=>`<div class="row" style="justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)">
+                    <div class="row" style="gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">${esc(t.id)}</b>
+                      <span class="dim" style="font-size:11.5px">${esc(t.title||"")}</span>
+                      ${t.framework?`<span class="chip fw">${esc(t.framework)}</span>`:""}
+                      <span class="dim" style="font-size:11px">${esc(t.planPath)}</span></div>
+                    <button class="ghost" data-rp="${escAttr(t.planPath)}" style="padding:4px 10px" title="Move this YAML back to tests/ (un-archive)">↥ Restore</button>
+                  </div>`).join("");
+                host.innerHTML=`<div class="panel pad fade" style="margin-top:18px">
+                    <div class="head" style="margin-bottom:4px"><h2 style="font-size:12px">Archived (${a.count})</h2>
+                      <span class="sub">Under tests/archived/ — excluded from runs &amp; CI. Restore moves the YAML back.</span></div>
+                    ${rows}</div>`;
+                host.querySelectorAll("button[data-rp]").forEach(b=>b.onclick=()=>unarchive(b.dataset.rp));
+              }catch(e){ host.innerHTML=""; }
+            }
+            async function unarchive(planPath){
+              try{ await api("/api/tests/unarchive",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({planPath})}); loadCatalog(); }
+              catch(e){ alert("Restore failed: "+e.message); }
             }
             function renderBar(){
               const selFor=(k,label)=>`<select id="flt-${k}" title="Filter by ${label}"><option value="">${label}: all</option>`+

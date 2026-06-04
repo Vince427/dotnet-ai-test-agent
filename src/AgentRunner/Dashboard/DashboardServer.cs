@@ -112,6 +112,8 @@ public sealed class DashboardServer : IDisposable
                     return _api.GetTickets();
                 case "/api/ticket":
                     return _api.GetTicket(request.QueryString["path"] ?? "");
+                case "/api/archived":
+                    return _api.GetArchived();
                 case "/api/screenshot":
                     return _api.GetScreenshot(
                         request.QueryString["run"] ?? "", request.QueryString["file"] ?? "");
@@ -144,6 +146,7 @@ public sealed class DashboardServer : IDisposable
             {
                 "/api/tests" => _api.CreateTest(body),
                 "/api/tests/archive" => _api.ArchiveTest(body),
+                "/api/tests/unarchive" => _api.UnarchiveTest(body),
                 "/api/runs" => _api.LaunchRun(body),
                 "/api/tickets/run" => _api.RunTicket(body),
                 "/api/jobs/concurrency" => _api.SetConcurrency(body),

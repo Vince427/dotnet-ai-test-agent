@@ -119,6 +119,32 @@ public sealed class DashboardApiTests : IDisposable
     }
 
     [Fact]
+    public void Archive_ThenUnarchive_RoundTripsTheTestBackIntoTheCatalog()
+    {
+        Assert.Equal(200, _api.ArchiveTest("""{"planPath":"tests/smoke.yaml"}""").Status);
+
+        // It now shows under archived, and not in the catalog.
+        var archived = ParseBody(_api.GetArchived());
+        Assert.Equal(1, archived.GetProperty("count").GetInt32());
+        var archPath = archived.GetProperty("tests")[0].GetProperty("planPath").GetString();
+        Assert.Equal("tests/archived/smoke.yaml", archPath);
+        Assert.Equal(0, ParseBody(_api.GetTests()).GetProperty("count").GetInt32());
+
+        // Restore moves it back to its original path and into the catalog.
+        var res = _api.UnarchiveTest($$"""{"planPath":"{{archPath}}"}""");
+        Assert.Equal(200, res.Status);
+        Assert.True(File.Exists(Path.Combine(_repo, "tests", "smoke.yaml")));
+        Assert.Equal(1, ParseBody(_api.GetTests()).GetProperty("count").GetInt32());
+        Assert.Equal(0, ParseBody(_api.GetArchived()).GetProperty("count").GetInt32());
+    }
+
+    [Fact]
+    public void UnarchiveTest_RejectsPathNotUnderArchived()
+    {
+        Assert.Equal(400, _api.UnarchiveTest("""{"planPath":"tests/smoke.yaml"}""").Status);
+    }
+
+    [Fact]
     public void ArchiveTest_RejectsPathOutsideTests()
     {
         File.WriteAllText(Path.Combine(_repo, "WORKFLOW.md"), "# workflow");

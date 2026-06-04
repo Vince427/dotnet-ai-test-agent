@@ -31,7 +31,9 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
   `tests/created/`** through the same validator (catalog `editable` flag); Archive **moves** a
   single-test YAML to `tests/archived/` (catalog `archivable` flag), which `DiscoverPlanPaths`
   excludes everywhere (catalog + CLI + CI) — reversible, shows in Git. **No hard delete.**
-  Multi-test files stay "edit on disk". The catalog also surfaces `category` for filtering.
+  Archive is symmetric: `GET /api/archived` lists archived tests and `POST /api/tests/unarchive`
+  (Restore) moves the YAML back — both are just file moves. Multi-test files stay "edit on disk".
+  The catalog also surfaces `category` for filtering.
 - Manual-first: `--dashboard` starts without `.env`/LLM. Launching a run from it spawns
   the CLI, which then needs the user's target app + provider config.
 - Created "tickets" must be **validated YAML** (`TestPlanValidator`) before persisting,

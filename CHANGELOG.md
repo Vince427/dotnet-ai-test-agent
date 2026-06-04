@@ -16,7 +16,9 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   everything CI-replayable), mutation is bounded: **Edit** re-writes a single-test
   `tests/created/` file through the same validator; **Archive** *moves* a single-test YAML to
   `tests/archived/` (excluded from catalog + CLI `--list-tests`/`--suite` + CI; reversible, shows
-  in Git) — **no hard delete**; multi-test files stay edit-on-disk. Backed by a `BeginProcess`
+  in Git) — **no hard delete**; multi-test files stay edit-on-disk. Archiving is symmetric: an
+  **Archived** section in the Catalog lists archived tests with a **Restore** button
+  (`GET /api/archived` + `POST /api/tests/unarchive`) that moves the YAML back. Backed by a `BeginProcess`
   seam so the queue is unit-tested without spawning. +8 tests.
 - **V3 Tier-2 overlay artifact contract (the vision moat, increment 1 — no key needed)**: at
   `full` evidence each step now also emits `overlay/step_NNN.png` — the (masked) screenshot with

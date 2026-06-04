@@ -393,6 +393,61 @@ public sealed class DashboardApi
         return ApiResponse.Json(new { ok = true, archivedPath = Relative(dest) });
     }
 
+    /// <summary>List archived tests (under tests/archived/) so the dashboard can offer Restore.</summary>
+    public ApiResponse GetArchived()
+    {
+        var archivedRoot = Path.Combine(_repoRoot, "tests", "archived");
+        var items = new List<object>();
+        if (Directory.Exists(archivedRoot))
+        {
+            var files = Directory.EnumerateFiles(archivedRoot, "*.yaml", SearchOption.AllDirectories)
+                .Concat(Directory.EnumerateFiles(archivedRoot, "*.yml", SearchOption.AllDirectories))
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
+            foreach (var f in files)
+            {
+                TestPlan plan;
+                try { plan = TestPlanLoader.Load(f); } catch { continue; }
+                foreach (var t in plan.Tests)
+                    items.Add(new { planPath = Relative(f), id = t.Id, title = t.Title, framework = t.Framework, category = t.Category, suite = plan.Suite });
+            }
+        }
+        return ApiResponse.Json(new { count = items.Count, tests = items });
+    }
+
+    /// <summary>
+    /// Restore an archived test: move its YAML from tests/archived/ back to its original tests/
+    /// path. The reverse of <see cref="ArchiveTest"/> — both are just file moves, visible in Git.
+    /// </summary>
+    public ApiResponse UnarchiveTest(string body)
+    {
+        ArchiveRequest req;
+        try { req = JsonSerializer.Deserialize<ArchiveRequest>(body, ApiResponse.JsonOptions) ?? new(); }
+        catch (Exception ex) { return ApiResponse.Error(400, "Invalid JSON: " + ex.Message); }
+
+        if (string.IsNullOrWhiteSpace(req.PlanPath))
+            return ApiResponse.Error(400, "planPath is required.");
+
+        var resolved = ResolveUnderRepo(req.PlanPath!);
+        if (resolved == null || !File.Exists(resolved))
+            return ApiResponse.Error(400, "planPath not found under the repository.");
+
+        var archivedRoot = Path.GetFullPath(Path.Combine(_repoRoot, "tests", "archived"));
+        if (!resolved.StartsWith(archivedRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            return ApiResponse.Error(400, "Only tests under tests/archived/ can be restored.");
+        if (Path.GetExtension(resolved) is not (".yaml" or ".yml"))
+            return ApiResponse.Error(400, "Only a .yaml/.yml test file can be restored.");
+
+        var rel = resolved[(archivedRoot.Length + 1)..]; // path relative to tests/archived/
+        var dest = Path.Combine(_repoRoot, "tests", rel);
+        if (File.Exists(dest))
+            return ApiResponse.Error(409, "A test already exists at the original path; resolve it on disk.");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+        File.Move(resolved, dest);
+
+        return ApiResponse.Json(new { ok = true, planPath = Relative(dest) });
+    }
+
     /// <summary>Current max concurrent runs (the rest queue).</summary>
     public int MaxConcurrency => _jobs.MaxConcurrency;
 

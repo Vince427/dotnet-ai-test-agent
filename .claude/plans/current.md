@@ -143,8 +143,10 @@ prop hinges on **vision (V3)** + **adoption ergonomics (V9.5/V8)**.
   records a closest-selector suggestion on `action_target_not_found` (evidence-only, never
   auto-applied; +6 tests). Next: screenshot in evidence, vision-assisted candidate, local-only
   `--heal-apply` rewriting the YAML with confirmation.
-- **[P1] MCP adapter over the CLI** — agents (Claude Desktop/Copilot) drive list/author/
-  validate/run natively. Cheap, on-brand (adapter, not core), high 2026 visibility.
+- **[P1] MCP adapter over the CLI** — inc.1 done (branch `claude/mcp-adapter`): `--mcp` serves a
+  JSON-RPC/stdio MCP server with read-only key-free tools (`list_tests`/`validate_plan`/
+  `list_runs`/`get_run`); `McpServer.HandleLine` pure + 10 tests; `docs/mcp.md`. Next: an opt-in
+  `run_test` tool + author/edit tools (write YAML via the same validator).
 - **[P2] Real legacy-app case study** (ideally .NET Framework 4.8) — one credible proof beats
   ten features. **[P2] One-line install** (`dotnet tool install -g`) + signed release + Pages
   demo. **[P2] V11 analytics** from run history (flaky/selector-drift/cost/duration).

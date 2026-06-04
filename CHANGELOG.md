@@ -7,6 +7,16 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **MCP adapter (`--mcp`)** — a minimal Model Context Protocol server (JSON-RPC 2.0 over stdio)
+  so an agent host (Claude Desktop, Copilot, …) can drive the runner natively. It's an *adapter
+  over the same CLI contract* (reuses `TestPlanLoader`/`TestPlanValidator`/`RunArtifactLoader`, no
+  new data model) exposing **read-only, key-free** tools: `list_tests`, `validate_plan`,
+  `list_runs`, `get_run`. Nothing that spawns a run or needs `.env` is exposed in this increment;
+  `get_run` is path-guarded. The line dispatcher (`McpServer.HandleLine`) is pure and unit-tested
+  (initialize / tools-list / tools-call / notification / protocol + tool errors); only the stdio
+  loop is I/O. Also hardened: the config diagnostic no longer prints to stdout under `--mcp`
+  (stdout must carry only JSON-RPC) — same protection `--format json` already had. +10 tests.
+  See `docs/mcp.md`.
 - **V8 self-healing — selector-drift suggestions (increment 1, evidence-only)**. When an action
   targets an AutomationId/Name that isn't in the live snapshot (`action_target_not_found`), the
   new `SelectorHealer` proposes the closest present element by normalized edit distance over its

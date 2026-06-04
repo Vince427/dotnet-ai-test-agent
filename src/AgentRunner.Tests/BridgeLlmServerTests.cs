@@ -68,6 +68,26 @@ public sealed class BridgeLlmServerTests : IDisposable
     }
 
     [Fact]
+    public async Task IgnoresNonCompletionRequests()
+    {
+        // A health-probe GET must NOT consume a decision step (else it desyncs req/resp
+        // numbering, as a live demo surfaced). It answers 200 and writes no req file.
+        using var bridge = new BridgeLlmServer(_dir, FreePort(), timeoutMs: 500);
+        bridge.Start();
+
+        using var http = new HttpClient();
+        var res = await http.GetAsync(bridge.BaseUrl + "/");
+        Assert.Equal(System.Net.HttpStatusCode.OK, res.StatusCode);
+        Assert.False(File.Exists(Path.Combine(_dir, "req-1.txt")));
+
+        // A real completion is still step 1.
+        File.WriteAllText(Path.Combine(_dir, "resp-1.json"), "{\"actionType\":\"Done\"}");
+        var completion = await PostAsync(bridge.BaseUrl, "{\"messages\":[{\"role\":\"user\",\"content\":\"go\"}]}");
+        Assert.Contains("Done", AssistantContent(completion));
+        Assert.True(File.Exists(Path.Combine(_dir, "req-1.txt")));
+    }
+
+    [Fact]
     public async Task FallsBackToWait_OnTimeout()
     {
         using var bridge = new BridgeLlmServer(_dir, FreePort(), timeoutMs: 500);

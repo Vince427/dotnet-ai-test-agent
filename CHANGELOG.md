@@ -15,7 +15,10 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   - `--bridge-llm [port]`: an OpenAI-compatible bridge endpoint (drop-in via `LLM_ENDPOINT`)
     that writes each prompt to `bridge-io/req-N.txt` and waits for a `resp-N.json` action —
     so a human or an external agent (e.g. Claude Code) can *be* the decider with no provider
-    key. Times out to a safe `Wait`. Manual-first (starts without `.env`).
+    key. Times out to a safe `Wait`. Manual-first (starts without `.env`). Only POSTs to
+    the chat-completions path are treated as decisions (health probes don't consume a step).
+    Verified end-to-end live: Claude Code drove the real WinForms sample to "Login successful"
+    through this bridge with no provider key.
 - **V2-D: Avalonia sample (the 4th first-class desktop target)**. New
   `Sample.AvaloniaApp` (Avalonia 11.3) at login + gated-action parity with the WinForms
   and WPF samples — same automation ids (`txtUsername`/`txtPassword`/`btnLogin`/`lblStatus`,
@@ -137,8 +140,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 160 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
-  Avalonia (skipped unless `RUN_E2E_UI=1`; 166/166 with it). Build clean across
+- Test suite: 161 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 167/167 with it). Build clean across
   net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

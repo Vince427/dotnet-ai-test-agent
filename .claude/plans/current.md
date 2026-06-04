@@ -107,6 +107,20 @@ parallel work.
   UI redesign + a **Files** explorer (on-disk tree + secret-safe text preview), and the
   OBS-1b trace link now also renders in the **static workbench** drill-down.
   Secret-field screenshot masking (V3-A) now redacts sensitive regions at capture.
+- [x] AUDIT-HARDENING (branch `claude/action-plan-a4a6`, PR open): the global-audit
+  action plan. **A1** dashboard CSRF same-origin guard on POSTs (+3 tests); **A2**
+  `UiElement.IsPassword` OR'd into secret redaction + screenshot masking (benign-id password
+  fields now masked); **A3** the two high-value missing tests; **A4** act-dispatch extracted
+  into a testable `ActionExecutor` + a single `ActionVocabulary` source of truth (kills the
+  4-place verb duplication; +11 tests) — this is the WB-2 follow-up; **A5** `Symphony*`→
+  `AgentLoop*` code rename (D3 done for code; generated `symphony.html` + "Symphony ticket"
+  name kept on purpose); **A6** multi-region status resolution via `UiSnapshot.StatusContains`
+  (success condition found in any status region, not just the first; +5 tests). Suite
+  **189 + 2 gated**, build clean net48 + net8 + Avalonia + MAUI. A1-A3 landed on `main`
+  (ebf9d20); A4-A6 on the branch.
+- [ ] MAUI gated E2E (the remaining half of A6/V2-D): wire the MAUI sample into the gated
+  `[InteractiveUiTheory]`. Needs an exe-locate step (win10 RID output path) + interactive
+  packaged/unpackaged launch verification — environment-bound, not yet done.
 
 ## Human-Orchestrated Items
 

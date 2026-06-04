@@ -7,6 +7,16 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V3 Tier-2 vision fallback decider (increment 2, the moat)**. `VisionActionDecider`
+  (`IActionDecider`) wraps a Tier-1 decider and **escalates to a VLM only when Tier-1's UIA
+  target can't be resolved** against the live snapshot — the flat/owner-drawn-UI case where UIA
+  alone fails. On escalation it builds the overlay (increment 1), masks secret regions, draws the
+  numbered boxes, and sends the image + identifiers-only index to an `IVisionClient`; the model
+  replies `{box, actionType, value, …}` and `VisionResponseParser` maps the chosen box back to its
+  element. Deterministic + key-free apart from the VLM call itself (a scripted client drives the
+  tests, mirroring `MockLlmServer`); vision stays a fallback (cost/latency), never the default,
+  and the image is masked before it leaves the machine. +8 tests. The real OpenAI-compatible
+  multimodal client + a `--vision` CLI wire-up are the next small step (increment 2b).
 - **Dashboard Catalog: filters, batch runs, category visibility, edit/archive**. The Catalog
   now has a filter bar (search + category/framework/priority/suite) and shows each test's
   **category** (was hidden). Multi-select + **Run selected** / **Run filtered** queue many runs

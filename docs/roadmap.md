@@ -115,8 +115,12 @@ Avalonia/MAUI, Citrix/RDP, legacy GDI) defeat a pure-UIA agent.
     maps it to image pixels (via `WindowBounds`), `ScreenshotAnnotator` draws numbered boxes, and
     the run emits `overlay/step_NNN.png` + `overlay/step_NNN.json` at `full` evidence. This is the
     prerequisite the VLM decider consumes ("pick box N").
-  - Tier-2 increment 2 (next): a vision decider that, when UIA resolution is ambiguous, sends the
-    annotated screenshot + index to a VLM and maps the chosen number back to an element/action.
+  - **Tier-2 increment 2 (done on `claude/v3-vision-decider`):** `VisionActionDecider`
+    (`IActionDecider`) escalates to a VLM (`IVisionClient` + `VisionResponseParser`) **only when
+    Tier-1's UIA target is unresolvable**; it masks + annotates the screenshot, sends image +
+    identifiers-only index, and maps the chosen box back to an element. Key-free/tested via a
+    scripted client. **Increment 2b (next):** the real OpenAI-compatible multimodal `IVisionClient`
+    + a `--vision` CLI wire-up (the non-deterministic edge, like `LlmService` vs `MockLlmServer`).
 - Tier 3: pure vision mode with strict JSON coordinates and physical mouse execution.
 - Vision is a fallback, not the default, to control cost and latency.
 

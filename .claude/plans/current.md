@@ -128,11 +128,12 @@ Sequenced by what unlocks the next unit of credibility. The competitive wedge is
 *desktop + open + AI-optional + offline + legacy .NET 4.8*; the analysis argues the value
 prop hinges on **vision (V3)** + **adoption ergonomics (V9.5/V8)**.
 
-- **[P0] V3 Tier-2 vision fallback** — THE moat. Increment 1 (this branch
-  `claude/v3-vision-overlay`): deterministic no-key overlay artifact contract
-  (`ScreenshotOverlay` + `ScreenshotAnnotator` → `overlay/step_NNN.{png,json}` at `full`
-  evidence). Increment 2: a VLM decider that consumes the annotated shot + index when UIA
-  resolution is ambiguous ("pick box N" → element/action). Cost-aware, fallback-only.
+- **[P0] V3 Tier-2 vision fallback** — THE moat. Inc.1 (merged): no-key overlay artifact
+  contract (`ScreenshotOverlay` + `ScreenshotAnnotator` → `overlay/step_NNN.{png,json}` at
+  `full`). Inc.2 (branch `claude/v3-vision-decider`): `VisionActionDecider` escalates to a VLM
+  (`IVisionClient` + `VisionResponseParser`) only when Tier-1's UIA target is unresolvable;
+  masks+annotates, maps box→element. Key-free/tested via a scripted client. **Inc.2b (next):**
+  real multimodal `IVisionClient` + `--vision` CLI wire-up (the non-deterministic edge).
 - **[P0] MAUI gated E2E + runtime cross-framework proof** — close the samples-only gap;
   MAUI/Avalonia custom controls are where vision pays off. (Also the remaining half of A6.)
 - **[P1] V9.5 Recording mode** — manual session → first YAML draft (editable, validated).

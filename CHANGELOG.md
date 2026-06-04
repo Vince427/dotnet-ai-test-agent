@@ -141,7 +141,29 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   run a test → render → open the Workbench).
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
+### Changed
+- **Symphony→AgentLoop code rename (A5, decision D3)**: the workbench C# types/files
+  `SymphonyWorkbench{Options,Result,Generator}` were renamed to `AgentLoopWorkbench*` to drop
+  the legacy loop name (collides with the unrelated `openai/symphony`). The generated
+  `docs/symphony.html` artifact name and the deliberate "Symphony **ticket**" model name are
+  kept on purpose. No behaviour change.
+- **Act-stage refactor (post global-audit, A4)**: the action dispatch is extracted out of
+  `RunOrchestrator.RunCoreAsync` into a testable `ActionExecutor` (`IActionExecutor` +
+  `ActionExecutionResult`), and the action verbs now come from one `ActionVocabulary` source
+  of truth instead of being duplicated across the dispatch, `PromptBuilder`'s default
+  "Allowed actions" line, `TestPlanValidator`, and `AgentActionValidator`. Behaviour is
+  unchanged (same outcomes/failure codes/Done semantics); the dispatch gained 11 direct unit
+  tests (`ActionExecutorTests`). Adding a verb is now a one-line `ActionVocabulary.All` edit
+  plus an executor branch.
+
 ### Fixed
+- **Multi-region status resolution (A6)**: success-condition detection scanned only the
+  *first* status label, so a flow whose result lands in a different status region (e.g.
+  `lblControlsStatus` vs. the login `lblStatus`) could never satisfy `success_condition`. New
+  `UiSnapshot.StatusContains` scans every status region; both the early-success check
+  (`RunOrchestrator`) and the `Done` gate (`ActionExecutor`) use it. `FindStatusText` still
+  returns the first region (now skipping empty labels — logging-only). +5 tests. (MAUI gated E2E wiring remains deferred
+  — its packaged/unpackaged launch needs interactive verification.)
 - Dashboard CSRF (post global-audit): POST routes (`/api/runs`, `/api/tickets/run`,
   `/api/tests`) now require a same-origin request (Origin == the dashboard URL, or, for
   non-browser clients, a loopback Host) — a random web page the dev visits can no longer

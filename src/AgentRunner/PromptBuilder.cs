@@ -39,7 +39,7 @@ public sealed class PromptBuilder
             : "";
         var allowedActionsLine = goal.AllowedActions.Count > 0
             ? "Allowed actions for this test: " + string.Join(", ", goal.AllowedActions)
-            : "Allowed actions: EnterText, Click, DoubleClick, Scroll, Wait, Assert, Done, Explore";
+            : "Allowed actions: " + ActionVocabulary.DefaultAllowedList;
         var loopLine = loopWarning != null
             ? "WARNING: " + loopWarning + "\nYou MUST try a DIFFERENT action than before.\n"
             : "";

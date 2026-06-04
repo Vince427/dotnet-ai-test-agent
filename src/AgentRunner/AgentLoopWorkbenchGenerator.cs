@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 
 namespace DesktopAiTestAgent.AgentRunner;
 
-public sealed class SymphonyWorkbenchOptions
+public sealed class AgentLoopWorkbenchOptions
 {
     public string RepoRoot { get; set; } = Directory.GetCurrentDirectory();
     public string OutputPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html");
@@ -24,16 +24,16 @@ public sealed class SymphonyWorkbenchOptions
     public int AutoRefreshSeconds { get; set; }
 }
 
-public sealed class SymphonyWorkbenchResult
+public sealed class AgentLoopWorkbenchResult
 {
     public string OutputPath { get; set; } = "";
     public int TestCount { get; set; }
     public int RunCount { get; set; }
 }
 
-public static class SymphonyWorkbenchGenerator
+public static class AgentLoopWorkbenchGenerator
 {
-    public static SymphonyWorkbenchResult Generate(SymphonyWorkbenchOptions options)
+    public static AgentLoopWorkbenchResult Generate(AgentLoopWorkbenchOptions options)
     {
         if (options == null) throw new ArgumentNullException(nameof(options));
 
@@ -51,7 +51,7 @@ public static class SymphonyWorkbenchGenerator
 
         File.WriteAllText(outputPath, html, Encoding.UTF8);
 
-        return new SymphonyWorkbenchResult
+        return new AgentLoopWorkbenchResult
         {
             OutputPath = outputPath,
             TestCount = tests.Count,

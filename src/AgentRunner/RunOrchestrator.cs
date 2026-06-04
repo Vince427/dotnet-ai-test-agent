@@ -71,6 +71,7 @@ public sealed class RunOrchestrator(
         var scoring = new ScoringEngine { AbortThreshold = _config.AbortThreshold };
         var qualityGuards = QualityGuardEngine.CreateDefault();
         var artifactWriter = new ArtifactWriter(_config.WorkspaceRoot, secretRedactor);
+        var actionExecutor = new ActionExecutor(_driver, secretRedactor, logger, memory, _waitActionDelayMs);
 
         var runArtifact = new RunArtifact
         {
@@ -145,11 +146,10 @@ public sealed class RunOrchestrator(
             var screenSig = $"{snapshot.WindowTitle}|{snapshot.Elements.Count}";
             memory.RecordScreen(screenSig);
 
-            // Check for goal success condition
+            // Check for goal success condition (scans every status region, not just the first).
             var statusText = snapshot.FindStatusText();
             if (!string.IsNullOrEmpty(goal.SuccessCondition) &&
-                !string.IsNullOrEmpty(statusText) &&
-                statusText!.IndexOf(goal.SuccessCondition, StringComparison.OrdinalIgnoreCase) >= 0)
+                snapshot.StatusContains(goal.SuccessCondition!))
             {
                 logger.Info($"SUCCESS: Goal achieved. Status=\"{statusText}\"");
                 scoring.ScoreAction("Done", true, false, "success");
@@ -240,125 +240,28 @@ public sealed class RunOrchestrator(
             if (options.EvidenceLevel == EvidenceLevel.Full)
                 runStep.UiTreePath = artifactWriter.SaveUiTreeSnapshot(runArtifact.RunId, step, snapshot);
 
-            try
-            {
-                if (!IsActionAllowed(goal, action.ActionType))
-                {
-                    succeeded = false;
-                    outcomeDetail = "action_not_allowed";
-                    runStep.FailureCode = outcomeDetail;
-                    runStep.FailureMessage = $"Action '{action.ActionType}' is not listed in allowed_actions.";
-                }
-                else
-                {
-                    var targetValidation = AgentActionValidator.ValidateTargetExists(action, snapshot);
-                    if (!targetValidation.IsValid)
-                    {
-                        succeeded = false;
-                        outcomeDetail = targetValidation.Code ?? "action_target_invalid";
-                        runStep.FailureCode = outcomeDetail;
-                        runStep.FailureMessage = targetValidation.Message;
-                        logger.Warning(targetValidation.Message ?? outcomeDetail);
-                    }
-                }
+            var execResult = await actionExecutor.ExecuteAsync(action, snapshot, goal);
+            succeeded = execResult.Succeeded;
+            outcomeDetail = execResult.OutcomeDetail;
+            if (execResult.FailureCode != null)
+                runStep.FailureCode = execResult.FailureCode;
+            if (execResult.FailureMessage != null)
+                runStep.FailureMessage = execResult.FailureMessage;
 
-                if (!succeeded)
-                {
-                    // Validation failed before dispatching to the automation driver.
-                }
-                else if (string.Equals(action.ActionType, "EnterText", StringComparison.OrdinalIgnoreCase) &&
-                    !string.IsNullOrEmpty(action.AutomationId))
-                {
-                    _driver.EnterText(action.AutomationId!, action.Value ?? "");
-                    memory.AddFact($"entered_{action.AutomationId}", action.Value ?? "");
-                }
-                else if (string.Equals(action.ActionType, "Click", StringComparison.OrdinalIgnoreCase) &&
-                         !string.IsNullOrEmpty(action.AutomationId))
-                {
-                    _driver.Click(action.AutomationId!);
-                }
-                else if (string.Equals(action.ActionType, "DoubleClick", StringComparison.OrdinalIgnoreCase) &&
-                         !string.IsNullOrEmpty(action.AutomationId))
-                {
-                    _driver.DoubleClick(action.AutomationId!);
-                }
-                else if (string.Equals(action.ActionType, "Scroll", StringComparison.OrdinalIgnoreCase) &&
-                         !string.IsNullOrEmpty(action.AutomationId))
-                {
-                    _driver.Scroll(action.AutomationId!, action.Value ?? "down");
-                }
-                else if (string.Equals(action.ActionType, "Assert", StringComparison.OrdinalIgnoreCase) &&
-                         !string.IsNullOrEmpty(action.AutomationId))
-                {
-                    var actualText = _driver.ReadText(action.AutomationId!);
-                    if (!string.Equals(actualText, action.Value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var safeExpected = secretRedactor.RedactActionValue(action);
-                        var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
-                        succeeded = false;
-                        outcomeDetail = $"assertion_failed on {action.AutomationId}. Expected: '{safeExpected}', Actual: '{safeActual}'";
-                        runStep.FailureCode = "assertion_failed";
-                        runStep.FailureMessage = outcomeDetail;
-                    }
-                    else
-                    {
-                        var safeActual = secretRedactor.RedactValueForIdentifier(action.AutomationId, actualText);
-                        logger.Info($"Assertion passed on {action.AutomationId}: '{safeActual}'");
-                    }
-                }
-                else if (string.Equals(action.ActionType, "Wait", StringComparison.OrdinalIgnoreCase))
-                {
-                    await Task.Delay(_waitActionDelayMs);
-                }
-                else if (string.Equals(action.ActionType, "Done", StringComparison.OrdinalIgnoreCase))
-                {
-                    var doneStatusText = snapshot.FindStatusText();
-                    if (!string.IsNullOrEmpty(goal.SuccessCondition) &&
-                        (string.IsNullOrEmpty(doneStatusText) ||
-                         doneStatusText!.IndexOf(goal.SuccessCondition, StringComparison.OrdinalIgnoreCase) < 0))
-                    {
-                        succeeded = false;
-                        outcomeDetail = "done_without_success_condition";
-                        runStep.FailureCode = outcomeDetail;
-                        runStep.FailureMessage = "Agent signaled Done before the configured success condition was visible.";
-                        logger.Warning($"Agent signaled Done before success condition was visible. status=\"{doneStatusText ?? ""}\"");
-                    }
-                    else
-                    {
-                        logger.Info("Agent signaled Done.");
-                        outcomeDetail = "agent_done";
-                        runStep.Outcome = "Succeeded";
-
-                        runArtifact.Result = options.Test != null ? "Passed" : "Succeeded";
-                        runArtifact.FinalScore = scoring.TotalScore;
-                        runArtifact.EndedAt = DateTime.UtcNow;
-                        runArtifact.Steps.Add(runStep);
-                        artifactWriter.WriteReport(runArtifact);
-                        artifactWriter.WriteSummary(runArtifact);
-                        logger.Score(scoring.GetSummary());
-                        return 0;
-                    }
-                }
-                else if (string.Equals(action.ActionType, "Explore", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Explore = just re-capture, no real action
-                    outcomeDetail = "explore";
-                }
-                else
-                {
-                    succeeded = false;
-                    outcomeDetail = "unsupported_action";
-                    runStep.FailureCode = outcomeDetail;
-                    runStep.FailureMessage = $"Unsupported action '{action.ActionType}'.";
-                }
-            }
-            catch (Exception ex)
+            // Done with the success condition satisfied is the only terminal-success path; the
+            // loop records the final step and stops here. Every other outcome falls through to
+            // the guard / score / record stages below.
+            if (execResult.DoneSucceeded)
             {
-                succeeded = false;
-                outcomeDetail = secretRedactor.RedactText(ex.Message) ?? ex.Message;
-                runStep.FailureCode = "action_failed";
-                runStep.FailureMessage = outcomeDetail;
-                logger.Error($"Action failed: {action.ActionType} on {action.AutomationId}: {outcomeDetail}");
+                runStep.Outcome = "Succeeded";
+                runArtifact.Result = options.Test != null ? "Passed" : "Succeeded";
+                runArtifact.FinalScore = scoring.TotalScore;
+                runArtifact.EndedAt = DateTime.UtcNow;
+                runArtifact.Steps.Add(runStep);
+                artifactWriter.WriteReport(runArtifact);
+                artifactWriter.WriteSummary(runArtifact);
+                logger.Score(scoring.GetSummary());
+                return 0;
             }
 
             QualityGuardResult? guardResult = null;
@@ -492,19 +395,4 @@ public sealed class RunOrchestrator(
         return 3;
     }
 
-    private static bool IsActionAllowed(AgentGoal goal, string? actionType)
-    {
-        if (goal.AllowedActions.Count == 0)
-            return true;
-        if (string.IsNullOrWhiteSpace(actionType))
-            return false;
-
-        foreach (var allowedAction in goal.AllowedActions)
-        {
-            if (string.Equals(allowedAction, actionType, StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        return false;
-    }
 }

@@ -91,7 +91,14 @@ smarter status resolution (e.g. the status nearest the last-acted control, or le
 YAML name the status element) — an automation-domain change; weigh against keeping the
 heuristic simple. Not urgent; the Assert path already covers it.
 
-**Status**: `OPEN`
+**Status**: `CLOSED - done (A6)`. `UiSnapshot.StatusContains` scans **every** status region
+(not just the first label `FindStatusText` returns), and both success-condition checks
+(`RunOrchestrator` early-success + `ActionExecutor.Done`) now use it — so a success condition
+landing in a non-first status region (e.g. `lblControlsStatus` vs. `lblStatus`) is detected.
+`FindStatusText` still returns the first status region (now skipping empty labels — a
+logging-only refinement; success checks no longer depend on it). +5 tests (`UiSnapshotStatusTests`). The
+explicit `Assert` pattern stays valid and is still the recommendation when an app reuses one
+status string across regions.
 
 ## 2026-06-01 - claude/workbench-interactive - workbench
 

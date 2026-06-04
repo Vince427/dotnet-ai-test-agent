@@ -1,9 +1,10 @@
 # Architecture Diagram
 
 A complete map of the components and how data flows. (Renders on GitHub via Mermaid.)
-Naming note: the loop is **AgentLoop**; some code files still carry the legacy `Symphony*`
-name (decision D3) — it is **our own** code, unrelated to `openai/symphony` (a coding-agent
-orchestrator).
+Naming note: the loop is **AgentLoop** (decision D3). The code symbols were renamed off the
+legacy `Symphony*` name; the only retained `symphony` token is the generated `docs/symphony.html`
+artifact (a possibly-published Pages URL) and the deliberate "Symphony ticket" model name. All
+of it is **our own** code, unrelated to `openai/symphony` (a coding-agent orchestrator).
 
 ## End-to-end flow
 
@@ -76,7 +77,7 @@ flowchart TB
     REC --> OUT
 
     subgraph VIEW["Consumers (read-only over artifacts)"]
-        WB["Static Workbench (SymphonyWorkbenchGenerator)"]
+        WB["Static Workbench (AgentLoopWorkbenchGenerator)"]
         DB["Dashboard (DashboardServer + DashboardApi)"]
         JU["JUnit XML for CI"]
     end
@@ -104,7 +105,7 @@ flowchart TB
 | `ArtifactWriter.cs` / `RunArtifactLoader.cs` | `WriteReport`/`WriteSummary`/`SaveScreenshot`/`SaveUiTreeSnapshot`; `LoadFromDirectory` |
 | `JUnitReportWriter.cs` | `Write`, `ToTestCase`, `BuildProperties` (existing_test/source_*/trace_id) |
 | `RunnerTelemetry.cs` | `Source`/`Meter` instruments, `TryStartExport` (OTLP HttpProtobuf) |
-| `SymphonyWorkbenchGenerator.cs` | `Generate`, `RenderHtml`, `BuildDataIsland`, `InteractiveScript`, `LoadTests`, `LoadRuns` |
+| `AgentLoopWorkbenchGenerator.cs` | `Generate`, `RenderHtml`, `BuildDataIsland`, `InteractiveScript`, `LoadTests`, `LoadRuns` |
 | `Dashboard/DashboardServer.cs` | `Start`, `Route`, `Handle` (localhost HTTP) |
 | `Dashboard/DashboardApi.cs` | `GetTests`, `GetRuns`, `GetRun`, `GetJobs`, `CreateTest`, `LaunchRun`, `GetScreenshot(List)`, `GetFiles`, `GetFile`, `ResolveUnderRoot` |
 | `Dashboard/RunJobManager.cs` | `Launch`, `Snapshot`, runId correlation |

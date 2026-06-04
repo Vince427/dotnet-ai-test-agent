@@ -22,8 +22,11 @@ Keeps CI deterministic and the tool useful offline. **Status:** active.
 
 ### D3 — Name the loop "AgentLoop", not "Symphony"
 Public/doc language uses AgentLoop. `openai/symphony` (Apr 2026) is an unrelated
-coding-agent orchestrator — avoid the collision. Code-level `Symphony*` filenames
-are renamed only when safe. **Status:** in progress (docs done).
+coding-agent orchestrator — avoid the collision. **Status:** done for code. The
+`Symphony*` C# types/files were renamed to `AgentLoopWorkbench*` (A5). Two `symphony`
+tokens are kept deliberately: the generated `docs/symphony.html` artifact (a possibly
+externally-linked GitHub Pages URL — see `docs/github-pages.md`) and the "Symphony ticket"
+model name, which intentionally evokes OpenAI's ticket workflow we reused.
 
 ### D4 — Microsoft Agent Framework (MAF) as the LLM SDK
 `Microsoft.Agents.AI` (GA Apr 2026, successor to Semantic Kernel + AutoGen) via an

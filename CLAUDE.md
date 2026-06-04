@@ -37,7 +37,7 @@ session resumes cleanly.
 | `WORKFLOW.md`, `tests/*.yaml`, `schemas/**`, `docs/ai-authoring.md` | `.claude/context/workflow.md` |
 | `src/UIAutomation/**`, `src/Core/IAutomationDriver.cs`, `src/Core/AgentAction.cs`, `src/Core/Ui*.cs` | `.claude/context/automation.md` |
 | `src/Samples/**`, `tests/testzoo.yaml`, `docs/testzoo.md` | `.claude/context/testzoo.md` |
-| `src/AgentRunner/SymphonyWorkbenchGenerator.cs`, `docs/symphony.html`, `scripts/render-ui.ps1` | `.claude/context/workbench.md` |
+| `src/AgentRunner/AgentLoopWorkbenchGenerator.cs`, `docs/symphony.html`, `scripts/render-ui.ps1` | `.claude/context/workbench.md` |
 | `src/AgentRunner/Dashboard/**`, `--dashboard` CLI, dashboard tests | `.claude/context/dashboard.md` |
 | `.github/**`, `.azure/**`, `scripts/**`, CI docs, release docs | `.claude/context/ci.md` |
 | `.env.template`, `.gitignore`, `LlmService`, provider config, secrets handling | `.claude/context/security.md` |

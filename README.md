@@ -112,6 +112,7 @@ The real `.env` file is ignored by git.
 ## Documentation
 
 - [Getting started](docs/getting-started.md) — start here
+- [Project status](docs/status.md) — where we are now
 - [MVP path](docs/mvp.md)
 - [Product spec](docs/spec.md)
 - [Architecture](docs/architecture.md) · [diagram](docs/architecture-diagram.md)

@@ -33,14 +33,17 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/LoopDetector.cs`
 - `src/AgentRunner/QualityGuards.cs`
 - `src/AgentRunner/ManualCommandOutput.cs`
+- `src/AgentRunner/Mcp/McpServer.cs` (the `--mcp` JSON-RPC/stdio adapter; read-only, key-free
+  tools over the same loaders — `docs/mcp.md`)
 - `src/AgentRunner.Tests/**`
 - `src/Core/AgentGoal.cs`
 
 ## Invariants
 
-- Manual modes `--validate-plan`, `--list-tests`, `--render-ui`, and
-  `--write-guard-demos` must not require `.env`, LLM access, FlaUI, or a target
-  app.
+- Manual modes `--validate-plan`, `--list-tests`, `--render-ui`,
+  `--write-guard-demos`, and `--mcp` must not require `.env`, LLM access, FlaUI, or a target
+  app. `--mcp` (and `--format json`) must keep **stdout** free of diagnostics (JSON-RPC/JSON only;
+  logs go to stderr).
 - `TestPlanLoader.DiscoverPlanPaths` excludes `tests/archived/` everywhere (so
   `--list-tests`/`--suite`, the dashboard catalog, and CI all skip archived tests).
   Archiving a test = moving its YAML under `tests/archived/`; it stays in Git, reversible.

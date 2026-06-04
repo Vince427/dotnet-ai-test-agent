@@ -29,13 +29,15 @@ internal static class Program
             HasArgument(args, "--write-guard-demos") ||
             HasArgument(args, "--to-junit") ||
             HasArgument(args, "--dashboard") ||
-            HasArgument(args, "--bridge-llm");
+            HasArgument(args, "--bridge-llm") ||
+            HasArgument(args, "--mcp");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
         var config = WorkflowConfig.Load(
             loadDotEnv: !manualOnlyRequested,
-            logConfig: !jsonManualOutputRequested);
+            // --mcp speaks JSON-RPC on stdout; never write the config diagnostic there.
+            logConfig: !jsonManualOutputRequested && !HasArgument(args, "--mcp"));
         RunnerOptions options;
         try
         {
@@ -133,6 +135,9 @@ internal static class Program
         if (options.BridgeLlmOnly)
             return RunBridgeLlm(config, options);
 
+        if (options.McpOnly)
+            return RunMcp(config);
+
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
         // The driver is IDisposable, so Program owns its lifetime.
@@ -159,6 +164,27 @@ internal static class Program
 
         var orchestrator = new RunOrchestrator(driver, decider, config);
         return await orchestrator.RunAsync(options);
+    }
+
+    // Manual command: serve the read-only MCP adapter over stdio (--mcp). An adapter over the
+    // same CLI contract — exposes list/validate/read tools, no .env, nothing that spawns a run.
+    // stdout MUST carry only JSON-RPC, so we write nothing else there.
+    private static int RunMcp(WorkflowConfig config)
+    {
+        var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        var server = new Mcp.McpServer(repoRoot, config.WorkspaceRoot);
+
+        string? line;
+        while ((line = Console.In.ReadLine()) != null)
+        {
+            var response = server.HandleLine(line);
+            if (response != null)
+            {
+                Console.Out.WriteLine(response);
+                Console.Out.Flush();
+            }
+        }
+        return 0;
     }
 
     // Manual command: serve the local-only all-in-one dashboard (OBS-2). No .env

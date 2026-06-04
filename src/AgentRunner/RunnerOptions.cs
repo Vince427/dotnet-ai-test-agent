@@ -28,6 +28,9 @@ public sealed class RunnerOptions
 
     /// <summary>Wrap the decider in the V3 Tier-2 <c>VisionActionDecider</c> (vision fallback).</summary>
     public bool Vision { get; set; }
+
+    /// <summary>Serve the read-only MCP adapter over stdio (`--mcp`).</summary>
+    public bool McpOnly { get; set; }
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -61,6 +64,7 @@ public sealed class RunnerOptions
         string? junitOutputPath = null;
         var watch = false;
         var vision = false;
+        var mcpOnly = false;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -90,6 +94,8 @@ public sealed class RunnerOptions
                 watch = true;
             else if (arg == "--vision")
                 vision = true;
+            else if (arg == "--mcp")
+                mcpOnly = true;
             else if (arg == "--write-guard-demos")
             {
                 writeGuardDemosOnly = true;
@@ -185,8 +191,9 @@ public sealed class RunnerOptions
         if (toJUnitOnly) modeCount++;
         if (dashboardOnly) modeCount++;
         if (bridgeLlmOnly) modeCount++;
+        if (mcpOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, or --bridge-llm.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, or --mcp.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
@@ -265,6 +272,7 @@ public sealed class RunnerOptions
             BridgePort = bridgePort,
             BridgeIoDir = bridgeIoDir,
             Vision = vision,
+            McpOnly = mcpOnly,
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

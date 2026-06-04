@@ -69,6 +69,9 @@ interaction/recording (V9/V9.5), analytics (V11), and MCP/plugin adapters.
 
 - Codex, Claude Code, Copilot, GitHub, Azure, MCP, and plugins should call the runner through stable CLI commands.
 - Do not make MCP or a plugin the product core; they are adapters over the local engine.
+  **Done (first increment):** `--mcp` serves an MCP (JSON-RPC/stdio) adapter exposing read-only,
+  key-free tools (`list_tests`/`validate_plan`/`list_runs`/`get_run`) over the same loaders — see
+  `docs/mcp.md`. Runtime execution stays on the explicit CLI (no implicit-run tool yet).
 - Add authoring guidance for agents while preserving a complete human workflow.
 - CI should validate specs and publish runtime evidence that both humans and AI agents can read.
 - Manual commands should provide both human text output and clean JSON output for agent/tool wrappers.

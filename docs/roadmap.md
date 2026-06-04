@@ -162,6 +162,12 @@ Avalonia/MAUI, Citrix/RDP, legacy GDI) defeat a pure-UIA agent.
 - CI mode never edits tests automatically.
 - Local mode may apply a patch only with an explicit flag.
 
+**Increment 1 (done):** `SelectorHealer` — deterministic semantic suggestion (normalized
+edit-distance over id + name) recorded on the failing step as `RunStep.HealingSuggestion`
+(`heal→<newTarget>` in the summary), evidence-only, never auto-applied. **Next:** add the
+screenshot to the evidence; a vision-assisted candidate when UIA is flat; and a local-only
+`--heal-apply` that rewrites the YAML selector with confirmation.
+
 ## V9 - Advanced Desktop Interaction
 
 - Add more action types: keyboard shortcuts, menu navigation, right-click, drag/drop, combo selection, tab traversal.

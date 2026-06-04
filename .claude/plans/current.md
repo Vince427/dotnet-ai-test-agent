@@ -132,14 +132,17 @@ prop hinges on **vision (V3)** + **adoption ergonomics (V9.5/V8)**.
   contract (`ScreenshotOverlay` + `ScreenshotAnnotator` → `overlay/step_NNN.{png,json}` at
   `full`). Inc.2 (branch `claude/v3-vision-decider`): `VisionActionDecider` escalates to a VLM
   (`IVisionClient` + `VisionResponseParser`) only when Tier-1's UIA target is unresolvable;
-  masks+annotates, maps box→element. Key-free/tested via a scripted client. **Inc.2b (next):**
-  real multimodal `IVisionClient` + `--vision` CLI wire-up (the non-deterministic edge).
+  masks+annotates, maps box→element. Key-free/tested via a scripted client. **Inc.2b (done,
+  merged):** `OpenAiVisionClient` (real multimodal) + `--vision` CLI flag. V3 moat now functional
+  end-to-end; remaining: a live multimodal demo + a Tier-2 gated E2E (environment-bound).
 - **[P0] MAUI gated E2E + runtime cross-framework proof** — close the samples-only gap;
   MAUI/Avalonia custom controls are where vision pays off. (Also the remaining half of A6.)
 - **[P1] V9.5 Recording mode** — manual session → first YAML draft (editable, validated).
   Biggest top-of-funnel lever; table-stakes vs Ranorex/TestComplete/testRigor.
-- **[P1] V8 Controlled self-healing** — selector drift → semantic/vision suggestion *with
-  evidence*; CI never auto-edits, local applies only with an explicit flag.
+- **[P1] V8 Controlled self-healing** — inc.1 (branch `claude/v8-self-healing`): `SelectorHealer`
+  records a closest-selector suggestion on `action_target_not_found` (evidence-only, never
+  auto-applied; +6 tests). Next: screenshot in evidence, vision-assisted candidate, local-only
+  `--heal-apply` rewriting the YAML with confirmation.
 - **[P1] MCP adapter over the CLI** — agents (Claude Desktop/Copilot) drive list/author/
   validate/run natively. Cheap, on-brand (adapter, not core), high 2026 visibility.
 - **[P2] Real legacy-app case study** (ideally .NET Framework 4.8) — one credible proof beats

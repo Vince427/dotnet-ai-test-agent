@@ -7,6 +7,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V8 self-healing — selector-drift suggestions (increment 1, evidence-only)**. When an action
+  targets an AutomationId/Name that isn't in the live snapshot (`action_target_not_found`), the
+  new `SelectorHealer` proposes the closest present element by normalized edit distance over its
+  id and name, with a confidence and rationale. It's recorded on the failing step
+  (`RunStep.HealingSuggestion`, shown as `heal→<newTarget>` in the summary evidence) but **never
+  auto-applied** — CI stays deterministic; a human (or a later local-only `--heal-apply`) decides.
+  Pure/key-free (no LLM, no vision) so it runs on every failed target; complements the heavier
+  optional `--vision` escalation. +6 tests.
 - **V3 Tier-2 vision — real multimodal client + `--vision` (increment 2b)**. `OpenAiVisionClient`
   implements `IVisionClient` against an OpenAI-compatible multimodal endpoint (same
   `LLM_ENDPOINT`/`LLM_API_KEY` as the text path, with an optional vision-capable `VISION_MODEL` /

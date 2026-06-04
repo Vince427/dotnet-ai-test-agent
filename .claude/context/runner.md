@@ -50,7 +50,8 @@ Owns the executable orchestration loop and manual CLI surface.
   `UiSnapshot.StatusContains`, which scans **every** status region (not just the first
   label) so multi-region apps work without explicit `Assert`s.
 - Unsupported actions and missing targets must fail visibly, not become no-op
-  successes.
+  successes. On `action_target_not_found` the loop also records a `SelectorHealer`
+  suggestion (`RunStep.HealingSuggestion`, V8) — evidence only, **never auto-applied**.
 - The act dispatch lives in `ActionExecutor`, not inline in the loop. New verbs are added
   to `ActionVocabulary.All` (which feeds plan/prompt/target validation) and given a branch
   in `ActionExecutor.ExecuteAsync` — never by hardcoding the verb string in a fourth place.

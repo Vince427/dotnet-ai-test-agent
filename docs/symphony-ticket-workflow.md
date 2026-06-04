@@ -141,3 +141,17 @@ requiring hidden agent state.
 - Runtime artifacts match `evidence_level`.
 - Workbench can inspect the run.
 - Ticket or PR comment links the artifact path and summarizes the result.
+
+## Dashboard As A Ticket Front-End
+
+The local dashboard (`--dashboard`) is a convenience layer over this same contract, not a
+second source of truth:
+
+- **Create** writes both a `tests/created/<id>.yaml` test and a `tickets/created/<id>.md`
+  ticket (the frontmatter above) referencing it.
+- The **Tickets** tab lists/views `tickets/*.md` and **Run**s one by spawning
+  `scripts/run-ticket-proof.ps1 -TicketPath <ticket>` — the exact adapter CI uses.
+
+So a ticket authored in the dashboard is the same file CI consumes: run it headless with
+`scripts/run-ticket-proof.ps1` (add `-SkipRuntime` for no-desktop CI stages). The dashboard
+never bypasses the YAML/ticket/CLI contract.

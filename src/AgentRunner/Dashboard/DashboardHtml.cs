@@ -152,8 +152,10 @@ internal static class DashboardHtml
             <nav class="rail">
               <button data-tab="catalog" class="active" title="Browse the tests found under tests/*.yaml, grouped by suite. Click Launch to run one.">
                 <span class="ico">▦</span> Catalog</button>
-              <button data-tab="create" title="Author a new test as a guided form. It writes a validated YAML file under tests/created/ — you can also edit it by hand.">
+              <button data-tab="create" title="Author a new test as a guided form. It writes a validated YAML test under tests/created/ AND a Symphony ticket under tickets/created/ — you can also edit them by hand.">
                 <span class="ico">+</span> Create</button>
+              <button data-tab="tickets" title="Symphony tickets (tickets/*.md): a portable contract — view one, or Run it through the same scripts/run-ticket-proof.ps1 that CI uses.">
+                <span class="ico">◆</span> Tickets</button>
               <button data-tab="runs" title="Recorded run history from runs/: result, score, steps, screenshots, and the OpenTelemetry trace link.">
                 <span class="ico">≡</span> Runs</button>
               <button data-tab="live" title="Watch runs in progress: streaming logs, current step, and live screenshots. Launching a test spawns the CLI.">
@@ -166,6 +168,7 @@ internal static class DashboardHtml
             <main>
               <section id="tab-catalog"></section>
               <section id="tab-create" class="hidden"></section>
+              <section id="tab-tickets" class="hidden"></section>
               <section id="tab-runs" class="hidden"></section>
               <section id="tab-live" class="hidden"></section>
               <section id="tab-files" class="hidden"></section>
@@ -206,11 +209,12 @@ internal static class DashboardHtml
             let liveTimer=null,tickTimer=null;
             function show(tab){
               document.querySelectorAll(".rail button[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
-              ["catalog","create","runs","live","files"].forEach(t=>$("#tab-"+t).classList.toggle("hidden",t!==tab));
+              ["catalog","create","tickets","runs","live","files"].forEach(t=>$("#tab-"+t).classList.toggle("hidden",t!==tab));
               if(location.hash.slice(1)!==tab) location.hash=tab;
               if(tab!=="live"){ clearInterval(liveTimer); clearInterval(tickTimer); liveTimer=tickTimer=null; }
               if(tab==="catalog")loadCatalog();
               if(tab==="create")loadCreate();
+              if(tab==="tickets")loadTickets();
               if(tab==="runs")loadRuns();
               if(tab==="live")loadLive();
               if(tab==="files")loadFiles();
@@ -264,7 +268,7 @@ internal static class DashboardHtml
             function loadCreate(){
               const fld=([k,l,req,help,ph])=>`<div class="field"><label>${l} ${req?'<span class="req">*</span>':''}</label>
                 <span class="help">${help}</span><input id="f-${k}" placeholder="${esc(ph)}"/></div>`;
-              $("#tab-create").innerHTML=headHTML("Create a ticket","Writes a validated YAML test under tests/created/ — the YAML stays the source of truth")+
+              $("#tab-create").innerHTML=headHTML("Create a ticket","Writes a validated YAML test under tests/created/ AND a Symphony ticket under tickets/created/ — both are editable by hand and runnable in CI")+
                 `<div class="panel pad form fade">
                   ${fld(F[0])}
                   <div class="two">${fld(F[1])}${fld(F[2])}</div>
@@ -281,8 +285,14 @@ internal static class DashboardHtml
                     <div class="field"><label>Max steps</label><span class="help">Hard cap on agent iterations before failing.</span><input id="f-maxSteps" type="number" value="8"/></div>
                     <div class="field"><label>Allowed actions</label><span class="help">Comma-separated UI actions the agent may use.</span><input id="f-actions" value="EnterText, Click, Assert, Done, Wait"/></div>
                   </div>
+                  <div class="two">
+                    <div class="field"><label>Evidence level</label><span class="help">Ticket: how much to capture (report+summary / +screenshots / +ui-tree).</span>
+                      <select id="f-evidence"><option>standard</option><option>minimal</option><option>full</option></select></div>
+                    <div class="field"><label>Launch sample</label><span class="help">Ticket: start the built-in sample app around the run (demo targets only).</span>
+                      <select id="f-launch"><option value="false">no</option><option value="true">yes</option></select></div>
+                  </div>
                   <div class="field"><label>Tags</label><span class="help">Comma-separated labels for filtering.</span><input id="f-tags" placeholder="smoke, login"/></div>
-                  <div class="row" style="margin-top:6px"><button class="act" id="f-save">✓ Validate &amp; save</button><span class="dim" id="f-hint">Validated with the same checker the CLI uses.</span></div>
+                  <div class="row" style="margin-top:6px"><button class="act" id="f-save">✓ Validate &amp; save</button><span class="dim" id="f-hint">Writes the YAML test + a Symphony ticket; validated with the same checker the CLI uses.</span></div>
                   <div id="f-out" style="margin-top:14px"></div>
                 </div>`;
               $("#f-save").onclick=saveTest;
@@ -292,10 +302,11 @@ internal static class DashboardHtml
               const list=s=>s.split(",").map(x=>x.trim()).filter(Boolean);
               const req={id:v("id"),suite:v("suite"),title:v("title"),framework:v("framework"),priority:v("priority"),
                 targetWindow:v("targetWindow"),goal:v("goal"),successCondition:v("successCondition")||null,
-                maxSteps:parseInt(v("maxSteps"))||8,allowedActions:list(v("actions")),tags:list(v("tags"))};
+                maxSteps:parseInt(v("maxSteps"))||8,allowedActions:list(v("actions")),tags:list(v("tags")),
+                evidenceLevel:v("evidence")||"standard",launchSample:v("launch")==="true"};
               const out=$("#f-out");
               try{ const r=await api("/api/tests",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(req)});
-                out.innerHTML=`<div class="chip ok" style="margin-bottom:8px">saved ${esc(r.planPath)}</div><pre class="term">${esc(r.yaml)}</pre>`;
+                out.innerHTML=`<div class="row" style="margin-bottom:8px"><span class="chip ok">test ${esc(r.planPath)}</span><span class="chip ok">ticket ${esc(r.ticketPath)}</span></div><pre class="term">${esc(r.yaml)}</pre>`;
               }catch(e){ out.innerHTML=`<div class="chip bad">${esc(e.message)}</div>`; }
             }
 
@@ -386,6 +397,35 @@ internal static class DashboardHtml
               }catch(e){ v.innerHTML=`<div class='empty'>${esc(e.message)}</div>`; }
             }
 
+            // TICKETS — Symphony contract (same files CI runs via run-ticket-proof.ps1)
+            async function loadTickets(){
+              $("#tab-tickets").innerHTML=headHTML("Tickets","Symphony tickets under tickets/ — view one, or Run it through the same adapter CI uses")+
+                "<div class='panel pad' id='tk-body'></div><div id='tk-detail' style='margin-top:14px'></div>";
+              try{
+                const d=await api("/api/tickets");
+                if(!d.count){ $("#tk-body").innerHTML="<div class='empty'>No tickets under tickets/. Use Create to author one.</div>"; return; }
+                const rows=d.tickets.map(t=>`<tr class="clk" data-path="${escAttr(t.path)}">
+                  <td>${esc(t.ticketId||t.path)}</td><td>${esc(t.title||"")}</td>
+                  <td class="fw">${esc(t.framework||"")}</td><td class="mut">${esc(t.testId||"")}</td>
+                  <td class="mut" style="font-size:11.5px">${esc(t.plan||"")}</td>
+                  <td><button class="act" data-run="${escAttr(t.path)}" style="padding:4px 10px">▶ Run</button></td></tr>`).join("");
+                $("#tk-body").innerHTML=`<table><thead><tr><th>Ticket</th><th>Title</th><th>Framework</th><th>Test</th><th>Plan</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+                $("#tk-body").querySelectorAll("tr.clk").forEach(tr=>tr.onclick=e=>{ if(e.target.dataset.run) return; viewTicket(tr.dataset.path); });
+                $("#tk-body").querySelectorAll("button[data-run]").forEach(b=>b.onclick=()=>runTicket(b.dataset.run));
+              }catch(e){ $("#tk-body").innerHTML=`<div class='empty'>${esc(e.message)}</div>`; }
+            }
+            async function viewTicket(path){
+              const host=$("#tk-detail"); host.innerHTML="<div class='panel pad mut'>Loading…</div>";
+              try{ const md=await api("/api/ticket?path="+encodeURIComponent(path));
+                host.innerHTML=`<div class="panel pad fade"><div class="row" style="margin-bottom:8px;justify-content:space-between"><span class="chip info">${esc(path)}</span><button class="ghost" id="tk-run2">▶ Run this ticket</button></div><pre class="term" style="max-height:520px">${esc(md)}</pre></div>`;
+                $("#tk-run2").onclick=()=>runTicket(path);
+              }catch(e){ host.innerHTML=`<div class='empty'>${esc(e.message)}</div>`; }
+            }
+            async function runTicket(path){
+              try{ await api("/api/tickets/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({ticketPath:path})}); show("live"); }
+              catch(e){ alert("Run ticket failed: "+e.message); }
+            }
+
             // LIVE — supervision console
             const endStamp={};            // jobId -> client end time (ms) when first seen exited
             function logLine(line){
@@ -446,7 +486,7 @@ internal static class DashboardHtml
                 const start=+t.dataset.start; const end=endStamp[t.dataset.job]||Date.now(); t.textContent=dur(end-start); }); },250);
             }
 
-            const validTab=t=>["catalog","create","runs","live","files"].includes(t);
+            const validTab=t=>["catalog","create","tickets","runs","live","files"].includes(t);
             window.addEventListener("hashchange",()=>{ const t=location.hash.slice(1); if(validTab(t)) show(t); });
             (async()=>{ try{CONFIG=await api("/api/config");}catch{} refreshStatus(); setInterval(refreshStatus,5000);
               show(validTab(location.hash.slice(1))?location.hash.slice(1):"catalog"); })();

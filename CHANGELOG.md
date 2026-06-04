@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Dashboard ↔ Symphony tickets**: the dashboard now speaks the same ticket contract CI
+  uses. **Create** writes a `tests/created/<id>.yaml` test **and** a `tickets/created/<id>.md`
+  Symphony ticket (frontmatter `ticket_id/plan/test_id/framework/target_window/evidence_level/
+  launch_sample/expected_artifacts` + body) referencing it. A new **Tickets** tab lists/views
+  `tickets/*.md` and **Run**s one via `scripts/run-ticket-proof.ps1` — the exact adapter CI
+  runs — so a dashboard-authored ticket is CI-functional unchanged (verified end-to-end with
+  `run-ticket-proof.ps1 -DryRun`). Orchestration stays in the script, not C# core.
 - **Usability**: a `docs/getting-started.md` walkthrough (mental model → no-key commands →
   run with one of the three brains → view results → write your first YAML), linked from the
   README. Tooltips on the WinForms/WPF/Avalonia sample controls showing each control's role
@@ -151,8 +158,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 162 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
-  Avalonia (skipped unless `RUN_E2E_UI=1`; 168/168 with it). Build clean across
+- Test suite: 167 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 173/173 with it). Build clean across
   net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

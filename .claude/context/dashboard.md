@@ -25,6 +25,12 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
   the CLI, which then needs the user's target app + provider config.
 - Created "tickets" must be **validated YAML** (`TestPlanValidator`) before persisting,
   written under `tests/created/`. YAML stays the source of truth.
+- The **Tickets** tab + Create are the Symphony bridge: `CreateTest` writes a YAML test
+  **and** a `tickets/created/<id>.md` ticket (flat `key: value` frontmatter compatible with
+  `scripts/run-ticket-proof.ps1`); `GetTickets`/`GetTicket` list/view them; `RunTicket`
+  spawns `run-ticket-proof.ps1` via `RunJobManager.LaunchTicket` — the SAME adapter CI uses,
+  so a dashboard-authored ticket runs unchanged in CI. Orchestration stays in the script,
+  not C# core (product rule: Symphony/hooks are adapters over the CLI).
 - The **Files** tab is read-only and reinforces "edit on disk": it lists the tree under
   `tests/` + `runs/` (+ `WORKFLOW.md`, `.env.template`) and previews text/config files.
   `GetFile` MUST stay locked down: `ResolveUnderRoot` containment, an extension

@@ -4,7 +4,7 @@ Owns black-box desktop automation and UI tree capture.
 
 ## Files
 
-- `src/UIAutomation/**` (incl. `ScreenshotMasker.cs`)
+- `src/UIAutomation/**` (incl. `ScreenshotMasker.cs`, `ScreenshotAnnotator.cs`)
 - `src/Core/IAutomationDriver.cs`
 - `src/Core/AgentAction.cs`
 - `src/Core/UiElement.cs`
@@ -26,6 +26,12 @@ Owns black-box desktop automation and UI tree capture.
   `WindowBounds`/`BoundingBox` in the same screen-coordinate space so the mapping holds.
   `ScreenshotMasker` is a pure image op (no secret knowledge); it must never throw away
   a screenshot on failure.
+- V3 Tier-2 overlay (the prerequisite for the VLM decider): `ScreenshotOverlay` (runner) numbers
+  each visible, locatable element and maps it to image pixels via `WindowBounds` (same mapping as
+  redaction); `ScreenshotAnnotator` (a pure image op like `ScreenshotMasker`, never throws away a
+  shot) draws the numbered boxes. Emitted at `full` evidence as `overlay/step_NNN.{png,json}`,
+  drawn on top of the already-masked bytes. The index carries identifiers only — never a control's
+  `Value` — so it is secret-safe even for password fields.
 
 ## Validation
 

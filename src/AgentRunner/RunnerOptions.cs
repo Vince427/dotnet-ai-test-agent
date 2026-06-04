@@ -25,6 +25,9 @@ public sealed class RunnerOptions
     public bool BridgeLlmOnly { get; set; }
     public int BridgePort { get; set; } = 8088;
     public string? BridgeIoDir { get; set; }
+
+    /// <summary>Wrap the decider in the V3 Tier-2 <c>VisionActionDecider</c> (vision fallback).</summary>
+    public bool Vision { get; set; }
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -57,6 +60,7 @@ public sealed class RunnerOptions
         string? bridgeIoDir = null;
         string? junitOutputPath = null;
         var watch = false;
+        var vision = false;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -84,6 +88,8 @@ public sealed class RunnerOptions
                 uiOutputPath = ReadValue(args, ref i, "--render-ui");
             else if (arg == "--watch")
                 watch = true;
+            else if (arg == "--vision")
+                vision = true;
             else if (arg == "--write-guard-demos")
             {
                 writeGuardDemosOnly = true;
@@ -258,6 +264,7 @@ public sealed class RunnerOptions
             BridgeLlmOnly = bridgeLlmOnly,
             BridgePort = bridgePort,
             BridgeIoDir = bridgeIoDir,
+            Vision = vision,
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

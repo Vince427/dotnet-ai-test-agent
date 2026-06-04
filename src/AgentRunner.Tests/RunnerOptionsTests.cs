@@ -63,6 +63,13 @@ public sealed class RunnerOptionsTests
     }
 
     [Fact]
+    public void ParseSupportsVisionFlag()
+    {
+        Assert.True(RunnerOptions.Parse(["--vision"], new WorkflowConfig()).Vision);
+        Assert.False(RunnerOptions.Parse([], new WorkflowConfig()).Vision); // off by default
+    }
+
+    [Fact]
     public void ParseRejectsInvalidEvidenceLevel()
     {
         var ex = Assert.Throws<ArgumentException>(() =>

@@ -143,7 +143,21 @@ internal static class Program
         var llmService = new LlmService(config, secretRedactor);
         using var driver = new FlaUiDesktopDriver();
 
-        var orchestrator = new RunOrchestrator(driver, llmService, config);
+        // --vision: wrap the decider in the V3 Tier-2 fallback. It uses the LLM only for Tier-1
+        // (text) and escalates to a multimodal VLM (annotated screenshot + overlay index) when the
+        // Tier-1 UIA target can't be resolved. The driver supplies the screenshot on demand.
+        IActionDecider decider = llmService;
+        if (options.Vision)
+        {
+            decider = new VisionActionDecider(
+                llmService,
+                new OpenAiVisionClient(config),
+                () => driver.CaptureScreenshot(),
+                secretRedactor);
+            Console.WriteLine("Vision fallback enabled (V3 Tier-2): escalates to the VLM when UIA resolution is ambiguous.");
+        }
+
+        var orchestrator = new RunOrchestrator(driver, decider, config);
         return await orchestrator.RunAsync(options);
     }
 

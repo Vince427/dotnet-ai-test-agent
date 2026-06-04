@@ -119,8 +119,10 @@ Avalonia/MAUI, Citrix/RDP, legacy GDI) defeat a pure-UIA agent.
     (`IActionDecider`) escalates to a VLM (`IVisionClient` + `VisionResponseParser`) **only when
     Tier-1's UIA target is unresolvable**; it masks + annotates the screenshot, sends image +
     identifiers-only index, and maps the chosen box back to an element. Key-free/tested via a
-    scripted client. **Increment 2b (next):** the real OpenAI-compatible multimodal `IVisionClient`
-    + a `--vision` CLI wire-up (the non-deterministic edge, like `LlmService` vs `MockLlmServer`).
+    scripted client. **Increment 2b (done):** `OpenAiVisionClient` (real OpenAI-compatible
+    multimodal `IVisionClient`, optional `VISION_MODEL`) + a `--vision` CLI flag wrapping the
+    decider — the non-deterministic edge, like `LlmService` vs `MockLlmServer`. Next: a live demo
+    run + a Tier-2 gated E2E once an interactive multimodal endpoint is available.
 - Tier 3: pure vision mode with strict JSON coordinates and physical mouse execution.
 - Vision is a fallback, not the default, to control cost and latency.
 

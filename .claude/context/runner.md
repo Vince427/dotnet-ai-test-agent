@@ -13,6 +13,8 @@ Owns the executable orchestration loop and manual CLI surface.
   `VisionActionDecider` (V3 Tier-2: wraps a Tier-1 decider, escalates to a VLM via `IVisionClient`
   + `VisionResponseParser` only when the Tier-1 UIA target is unresolvable). The VLM gets the
   masked, numbered-box overlay + identifiers-only index; the chosen box maps back to an element.
+  Enabled with the `--vision` CLI flag (off by default); `OpenAiVisionClient` is the real
+  multimodal client (`VISION_MODEL` / `llm.vision_model`, falls back to `LLM_MODEL`).
 - `src/AgentRunner/ActionExecutor.cs` (the "act" seam: `IActionExecutor` +
   `ActionExecutionResult`). Validates the action (allow-list + target existence) then
   dispatches the verb to the driver; returns the outcome the loop records. Extracted out of

@@ -36,6 +36,9 @@ public class WorkflowConfig
     public string? LlmApiKey { get; set; }
     public string? LlmModel { get; set; }
 
+    /// <summary>Optional multimodal model for the V3 Tier-2 vision decider; falls back to <see cref="LlmModel"/>.</summary>
+    public string? VisionModel { get; set; }
+
     // Predefined goals
     public Dictionary<string, AgentGoal> Goals { get; set; } = [];
 
@@ -94,6 +97,7 @@ public class WorkflowConfig
         config.LlmEndpoint = ResolveEnvVar(config.LlmEndpoint) ?? envEndpoint ?? DefaultLlmEndpoint;
         config.LlmApiKey = ResolveEnvVar(config.LlmApiKey) ?? envApiKey ?? DefaultLlmApiKey;
         config.LlmModel = ResolveEnvVar(config.LlmModel) ?? envModel ?? DefaultLlmModel;
+        config.VisionModel = ResolveEnvVar(config.VisionModel) ?? Environment.GetEnvironmentVariable("VISION_MODEL");
         config.ResolveWorkspaceRoot();
 
         return config;
@@ -289,6 +293,7 @@ public class WorkflowConfig
                         if (key == "endpoint") config.LlmEndpoint = val;
                         if (key == "api_key") config.LlmApiKey = val;
                         if (key == "model") config.LlmModel = val;
+                        if (key == "vision_model") config.VisionModel = val;
                         break;
                 }
             }

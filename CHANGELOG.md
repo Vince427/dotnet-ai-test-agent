@@ -7,6 +7,15 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V3 Tier-2 vision — real multimodal client + `--vision` (increment 2b)**. `OpenAiVisionClient`
+  implements `IVisionClient` against an OpenAI-compatible multimodal endpoint (same
+  `LLM_ENDPOINT`/`LLM_API_KEY` as the text path, with an optional vision-capable `VISION_MODEL` /
+  `llm.vision_model`, falling back to `LLM_MODEL`): it sends the masked annotated screenshot + the
+  identifiers-only overlay index and returns the model's `{box, actionType, …}`. A new `--vision`
+  CLI flag wraps the decider in `VisionActionDecider`, so a run uses semantic UIA first and only
+  escalates to the VLM when a target can't be resolved. Manual-first/AI-optional unchanged —
+  `--vision` is off by default. The network call is the only untested step (like `LlmService`);
+  the mapping/escalation/masking are covered by increment 2's tests. +1 test.
 - **V3 Tier-2 vision fallback decider (increment 2, the moat)**. `VisionActionDecider`
   (`IActionDecider`) wraps a Tier-1 decider and **escalates to a VLM only when Tier-1's UIA
   target can't be resolved** against the live snapshot — the flat/owner-drawn-UI case where UIA

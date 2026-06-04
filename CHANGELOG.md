@@ -157,6 +157,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   plus an executor branch.
 
 ### Fixed
+- **Multi-region status resolution (A6)**: success-condition detection scanned only the
+  *first* status label, so a flow whose result lands in a different status region (e.g.
+  `lblControlsStatus` vs. the login `lblStatus`) could never satisfy `success_condition`. New
+  `UiSnapshot.StatusContains` scans every status region; both the early-success check
+  (`RunOrchestrator`) and the `Done` gate (`ActionExecutor`) use it. `FindStatusText` is
+  unchanged (still returns the first region). +5 tests. (MAUI gated E2E wiring remains deferred
+  — its packaged/unpackaged launch needs interactive verification.)
 - Dashboard CSRF (post global-audit): POST routes (`/api/runs`, `/api/tickets/run`,
   `/api/tests`) now require a same-origin request (Origin == the dashboard URL, or, for
   non-browser clients, a loopback Host) — a random web page the dev visits can no longer

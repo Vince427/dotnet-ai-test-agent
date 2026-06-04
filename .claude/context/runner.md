@@ -38,7 +38,9 @@ Owns the executable orchestration loop and manual CLI surface.
   app.
 - `--format json` must keep stdout parseable JSON.
 - `Done` is not success unless the configured success condition is visible or
-  the test has no success condition by design.
+  the test has no success condition by design. Visibility is tested with
+  `UiSnapshot.StatusContains`, which scans **every** status region (not just the first
+  label) so multi-region apps work without explicit `Assert`s.
 - Unsupported actions and missing targets must fail visibly, not become no-op
   successes.
 - The act dispatch lives in `ActionExecutor`, not inline in the loop. New verbs are added

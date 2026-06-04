@@ -39,24 +39,55 @@ public sealed class UiSnapshot(string windowTitle, List<UiElement> elements, str
 
     /// <summary>
     /// Tries to find a status-like label in the elements (common pattern for WinForms apps).
+    /// Returns the FIRST status region — use <see cref="StatusContains"/> to test a success
+    /// condition, which scans every status region (multi-region apps).
     /// </summary>
     public string? FindStatusText()
     {
         if (!string.IsNullOrEmpty(StatusText))
             return StatusText;
 
+        foreach (var label in EnumerateStatusLabels())
+            return label;
+        return null;
+    }
+
+    /// <summary>
+    /// True when <paramref name="text"/> appears in <em>any</em> status region (the snapshot's
+    /// <see cref="StatusText"/> or any status-like label). Unlike <see cref="FindStatusText"/>,
+    /// this does not stop at the first label — so a success condition that lands in a non-first
+    /// status region (e.g. a separate action-result label, distinct from the login status) is
+    /// still detected. See DISCOVERY_LOG 2026-06-02.
+    /// </summary>
+    public bool StatusContains(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return false;
+        if (!string.IsNullOrEmpty(StatusText) &&
+            StatusText!.IndexOf(text, System.StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+        foreach (var label in EnumerateStatusLabels())
+        {
+            if (label.IndexOf(text, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Yields the text of every status-like label, in element order.</summary>
+    private IEnumerable<string> EnumerateStatusLabels()
+    {
         foreach (var el in Elements)
         {
-            if (el.ControlType == "Text" || el.ControlType == "Label")
-            {
-                var id = el.AutomationId ?? el.Name ?? "";
-                if (id.IndexOf("status", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    id.IndexOf("lblStatus", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return el.Value ?? el.Name;
-                }
-            }
+            if (el.ControlType != "Text" && el.ControlType != "Label")
+                continue;
+            var id = el.AutomationId ?? el.Name ?? "";
+            if (id.IndexOf("status", System.StringComparison.OrdinalIgnoreCase) < 0 &&
+                id.IndexOf("lblStatus", System.StringComparison.OrdinalIgnoreCase) < 0)
+                continue;
+            var text = el.Value ?? el.Name;
+            if (!string.IsNullOrEmpty(text))
+                yield return text!;
         }
-        return null;
     }
 }

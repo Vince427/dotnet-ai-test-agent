@@ -150,11 +150,11 @@ public sealed class ActionExecutor(
 
     private ActionExecutionResult Done(AgentAction action, UiSnapshot snapshot, AgentGoal goal)
     {
-        var doneStatusText = snapshot.FindStatusText();
+        // Scan every status region (not just the first label) for the success condition.
         if (!string.IsNullOrEmpty(goal.SuccessCondition) &&
-            (string.IsNullOrEmpty(doneStatusText) ||
-             doneStatusText!.IndexOf(goal.SuccessCondition, StringComparison.OrdinalIgnoreCase) < 0))
+            !snapshot.StatusContains(goal.SuccessCondition!))
         {
+            var doneStatusText = snapshot.FindStatusText();
             logger.Warning($"Agent signaled Done before success condition was visible. status=\"{doneStatusText ?? ""}\"");
             return ActionExecutionResult.Failure(
                 "done_without_success_condition",

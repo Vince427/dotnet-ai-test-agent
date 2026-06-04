@@ -146,11 +146,10 @@ public sealed class RunOrchestrator(
             var screenSig = $"{snapshot.WindowTitle}|{snapshot.Elements.Count}";
             memory.RecordScreen(screenSig);
 
-            // Check for goal success condition
+            // Check for goal success condition (scans every status region, not just the first).
             var statusText = snapshot.FindStatusText();
             if (!string.IsNullOrEmpty(goal.SuccessCondition) &&
-                !string.IsNullOrEmpty(statusText) &&
-                statusText!.IndexOf(goal.SuccessCondition, StringComparison.OrdinalIgnoreCase) >= 0)
+                snapshot.StatusContains(goal.SuccessCondition!))
             {
                 logger.Info($"SUCCESS: Goal achieved. Status=\"{statusText}\"");
                 scoring.ScoreAction("Done", true, false, "success");

@@ -71,7 +71,12 @@ public sealed class VisionDeciderTests
     private sealed class ScriptedVision(string json) : IVisionClient
     {
         public bool Called { get; private set; }
-        public Task<string> AskAsync(byte[] png, string indexJson, string prompt) { Called = true; return Task.FromResult(json); }
+        public byte[]? LastPng { get; private set; }
+        public string? LastIndexJson { get; private set; }
+        public Task<string> AskAsync(byte[] png, string indexJson, string prompt)
+        {
+            Called = true; LastPng = png; LastIndexJson = indexJson; return Task.FromResult(json);
+        }
     }
 
     private static UiSnapshot SnapshotWithBoxedElement() => new("App", new List<UiElement>
@@ -108,6 +113,39 @@ public sealed class VisionDeciderTests
         Assert.True(vlm.Called);            // UIA ambiguous → escalated
         Assert.Equal("Click", a.ActionType);
         Assert.Equal("realBtn", a.AutomationId); // box 1 mapped back to the real element
+    }
+
+    [Fact]
+    public async Task Decider_MasksSecretRegionsAndKeepsValuesOutOfTheIndexBeforeSendingToVlm()
+    {
+        // A password field, visible (so it gets an overlay box) and sensitive (so it's masked).
+        var snapshot = new UiSnapshot("App", new List<UiElement>
+        {
+            new() { AutomationId = "txtPassword", ControlType = "Edit", Value = "hunter2-secret",
+                    BoundingBox = "10,10,60,60" }
+        }, windowBounds: "0,0,100,100");
+        var tier1 = new FixedDecider(new AgentAction { ActionType = "Click", AutomationId = "ghost" });
+        var vlm = new ScriptedVision("""{"box":1,"actionType":"EnterText"}""");
+
+        // Capture returns an all-white 100x100 PNG; the secret region must come back painted.
+        var decider = new VisionActionDecider(tier1, vlm, () => WhitePng(100, 100));
+        await decider.DecideActionAsync(snapshot, Goal(), "");
+
+        Assert.True(vlm.Called);
+        Assert.DoesNotContain("hunter2-secret", vlm.LastIndexJson); // index is identifiers-only
+        using var ms = new System.IO.MemoryStream(vlm.LastPng!);
+        using var bmp = new System.Drawing.Bitmap(ms);
+        // A pixel well inside the password region (away from the box outline/number badge) is masked.
+        Assert.Equal(System.Drawing.Color.Black.ToArgb(), bmp.GetPixel(50, 50).ToArgb());
+    }
+
+    private static byte[] WhitePng(int w, int h)
+    {
+        using var bmp = new System.Drawing.Bitmap(w, h);
+        using (var g = System.Drawing.Graphics.FromImage(bmp)) g.Clear(System.Drawing.Color.White);
+        using var ms = new System.IO.MemoryStream();
+        bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+        return ms.ToArray();
     }
 
     [Fact]

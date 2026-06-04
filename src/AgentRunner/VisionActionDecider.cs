@@ -70,8 +70,9 @@ public sealed class VisionActionDecider(
 
     private string BuildGoalPrompt(AgentGoal goal, string memoryContext, string? loopWarning)
     {
-        var goalText = _redactor.RedactText(goal.Description) ?? goal.Description ?? "";
-        var mem = _redactor.RedactText(memoryContext) ?? memoryContext ?? "";
+        // Fall back to "" (never the unredacted original) so redaction intent can't be defeated.
+        var goalText = _redactor.RedactText(goal.Description) ?? "";
+        var mem = _redactor.RedactText(memoryContext) ?? "";
         var sc = string.IsNullOrEmpty(goal.SuccessCondition) ? "" : $"\nSuccess condition: {goal.SuccessCondition}";
         var warn = string.IsNullOrEmpty(loopWarning) ? "" : $"\nWARNING: {loopWarning} — try a different box/action.";
         return

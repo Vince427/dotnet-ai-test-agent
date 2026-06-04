@@ -25,6 +25,7 @@ public sealed class LoginForm : Form
     private readonly Button _loadCasesButton;
     private readonly Label _controlsStatusLabel;
     private readonly Panel _confirmationPanel;
+    private readonly ToolTip _tips = new() { AutoPopDelay = 12000, InitialDelay = 300, ReshowDelay = 100 };
 
     public LoginForm()
     {
@@ -144,6 +145,20 @@ public sealed class LoginForm : Form
         Controls.Add(_protectedActionButton);
         Controls.Add(_controlsStatusLabel);
         Controls.Add(_confirmationPanel);
+
+        // Tooltips double as authoring hints: each shows the control's role + its
+        // AutomationId — the value you reference in a YAML test.
+        _tips.SetToolTip(_usernameTextBox, "Username field — AutomationId: txtUsername (use 'admin').");
+        _tips.SetToolTip(_passwordTextBox, "Password field — AutomationId: txtPassword (use 'password123').");
+        _tips.SetToolTip(_loginButton, "Submit login — AutomationId: btnLogin. Sets the status to 'Login successful'.");
+        _tips.SetToolTip(_statusLabel, "Login status — AutomationId: lblStatus. Success condition: 'Login successful'.");
+        _tips.SetToolTip(_displayNameTextBox, "Profile display name — AutomationId: txtDisplayName.");
+        _tips.SetToolTip(_emailTextBox, "Profile email (must contain '@') — AutomationId: txtEmail.");
+        _tips.SetToolTip(_activeCheckBox, "Active flag — AutomationId: chkActive. Required for a valid profile.");
+        _tips.SetToolTip(_saveProfileButton, "Save profile — AutomationId: btnSaveProfile → 'Profile saved'.");
+        _tips.SetToolTip(_enableProtectedActionButton, "Enables the gated button — AutomationId: btnEnableProtectedAction.");
+        _tips.SetToolTip(_protectedActionButton, "Gated action (disabled until enabled) — AutomationId: btnProtectedAction → 'Protected action completed'.");
+        _tips.SetToolTip(_controlsStatusLabel, "Test-controls status — AutomationId: lblControlsStatus.");
     }
 
     private void OnLoginClicked(object? sender, EventArgs e)

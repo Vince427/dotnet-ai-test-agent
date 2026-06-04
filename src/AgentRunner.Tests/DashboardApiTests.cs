@@ -198,4 +198,63 @@ public sealed class DashboardApiTests : IDisposable
     {
         Assert.Equal(expected, RunJobManager.QuoteArg(input));
     }
+
+    [Fact]
+    public void CreateTest_AlsoEmitsSymphonyTicket()
+    {
+        var res = _api.CreateTest("""
+            {"id":"TKT-001","suite":"created","title":"Ticketed test","framework":"winforms",
+             "targetWindow":"Sample Login App (.NET 8)","goal":"Log in and confirm","evidenceLevel":"full",
+             "launchSample":true,"allowedActions":["Click","Done"]}
+            """);
+        Assert.Equal(200, res.Status);
+        var root = ParseBody(res);
+        Assert.Equal("tickets/created/TKT-001.md", root.GetProperty("ticketPath").GetString());
+
+        // The ticket carries the flat frontmatter run-ticket-proof.ps1 needs.
+        var md = File.ReadAllText(Path.Combine(_repo, "tickets", "created", "TKT-001.md"));
+        Assert.Contains("plan: tests/created/TKT-001.yaml", md);
+        Assert.Contains("test_id: TKT-001", md);
+        Assert.Contains("framework: winforms", md);
+        Assert.Contains("evidence_level: full", md);
+        Assert.Contains("launch_sample: true", md);
+
+        // And it shows up in the tickets listing.
+        var tickets = ParseBody(_api.GetTickets());
+        Assert.True(tickets.GetProperty("count").GetInt32() >= 1);
+        Assert.Contains(tickets.GetProperty("tickets").EnumerateArray(),
+            t => t.GetProperty("testId").GetString() == "TKT-001");
+    }
+
+    [Theory]
+    [InlineData("../../etc/passwd")]      // outside repo
+    [InlineData("tests/created/x.yaml")]  // wrong extension / not a ticket
+    [InlineData("notes.md")]              // .md but not under tickets/
+    public void GetTicket_RejectsUnsafeOrNonTicket(string path)
+    {
+        Assert.True(_api.GetTicket(path).Status is 400 or 404);
+    }
+
+    [Fact]
+    public void RunTicket_RejectsPathOutsideTickets()
+    {
+        Assert.Equal(400, _api.RunTicket("""{"ticketPath":"tests/created/x.md"}""").Status);
+    }
+
+    [Fact]
+    public void CreateTest_SanitizesFrontmatterAgainstInjection()
+    {
+        // A title with an embedded newline + a forged plan: line must NOT inject a second
+        // frontmatter key — the newline is stripped, so only the real plan: line remains.
+        var res = _api.CreateTest("""
+            {"id":"INJ-001","goal":"g","framework":"winforms","title":"t\nplan: ../../evil.yaml"}
+            """);
+        Assert.Equal(200, res.Status);
+
+        var md = File.ReadAllText(Path.Combine(_repo, "tickets", "created", "INJ-001.md"));
+        var planLines = md.Split('\n')
+            .Where(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^\s*plan\s*:")).ToArray();
+        Assert.Single(planLines);                                   // no injected plan: line
+        Assert.Contains("tests/created/INJ-001.yaml", planLines[0]); // and it's the real plan
+    }
 }

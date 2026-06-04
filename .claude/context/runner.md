@@ -7,7 +7,9 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/Program.cs` (CLI parse + manual commands; wires the runtime loop)
 - `src/AgentRunner/IRunOrchestrator.cs` + `src/AgentRunner/RunOrchestrator.cs`
   (observe → decide → act → score → record loop; injectable driver + decider)
-- `src/AgentRunner/IActionDecider.cs` (the "decide" seam; `LlmService` implements it)
+- `src/AgentRunner/IActionDecider.cs` (the "decide" seam). Implementations: `LlmService`
+  (OpenRouter/OpenAI), `HeuristicActionDecider` (rule-based, no LLM), and the
+  `BridgeLlmServer` HTTP endpoint (`--bridge-llm`) for a human/external-agent decider.
 - `src/AgentRunner/RunnerTelemetry.cs` (OBS-1: opt-in OpenTelemetry spans + metrics)
 - `src/AgentRunner/RunnerOptions.cs`
 - `src/AgentRunner/LlmService.cs`

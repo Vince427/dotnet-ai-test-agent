@@ -98,6 +98,45 @@ They may run very small UI smoke scenarios, but serious FlaUI runtime suites
 should use a self-hosted interactive Windows runner so desktop focus, dialogs,
 and screenshots are reliable.
 
+## Running The Loop Without OpenRouter
+
+The "decide" step is behind `IActionDecider` (and the runner speaks the OpenAI
+chat-completions contract), so the real loop + driver + app can be exercised with no
+provider key in three ways:
+
+- **Scripted mock** (`MockLlmServer`, tests): returns a fixed action sequence —
+  deterministic regression E2E.
+- **Heuristic decider** (`HeuristicActionDecider`): rule-based, no LLM — fills configured
+  inputs and clicks a sequence from the live UI state. Automated → CI smoke without a key.
+- **Human/agent bridge** (`--bridge-llm [port]`): an OpenAI-compatible endpoint that writes
+  each prompt to `bridge-io/req-N.txt` and waits for a `resp-N.json` action, so a person or
+  an external agent (e.g. Claude Code) can be the decider. Point a run's `LLM_ENDPOINT` at
+  it. Semi-interactive → exploration/demo, not unattended CI.
+
+Only the production path (`LlmService`) needs OpenRouter or another OpenAI-compatible LLM.
+
+## LLM Provider Options And CI/CD
+
+The runtime LLM is **any OpenAI-compatible endpoint**, selected purely by `LLM_ENDPOINT`
+(no code change to switch):
+
+- **Direct LLM** — OpenRouter (`https://openrouter.ai/api/v1`), Anthropic-compatible, etc.
+- **API gateway / proxy** — a local OpenAI-compatible proxy such as LiteLLM at
+  `http://localhost:4000`, or a local model server.
+- **Bridge** — `--bridge-llm` (a person or external agent as the decider, no key).
+
+Full CI/CD does **not** require a paid provider:
+
+- `--validate-plan`, `--list-tests`, `--render-ui`, `--to-junit`, and `--dashboard` need
+  no LLM at all.
+- Automated agentic UI smoke can run **key-free** with the heuristic decider on an
+  interactive Windows runner; the scripted mock covers non-UI regression.
+- The **bridge is a local dev tool only** — loopback-only, no auth, semi-interactive. Never
+  run it in CI and never expose it beyond `localhost`.
+
+So a complete pipeline (build → validate → list → unit/E2E → JUnit report) is possible at
+zero provider cost; a real LLM is opt-in for richer, dynamic exploration.
+
 ## Recording Mode
 
 Recording mode should remain visible on the roadmap because it is important for

@@ -7,6 +7,36 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Dashboard ↔ Symphony tickets**: the dashboard now speaks the same ticket contract CI
+  uses. **Create** writes a `tests/created/<id>.yaml` test **and** a `tickets/created/<id>.md`
+  Symphony ticket (frontmatter `ticket_id/plan/test_id/framework/target_window/evidence_level/
+  launch_sample/expected_artifacts` + body) referencing it. A new **Tickets** tab lists/views
+  `tickets/*.md` and **Run**s one via `scripts/run-ticket-proof.ps1` — the exact adapter CI
+  runs — so a dashboard-authored ticket is CI-functional unchanged (verified end-to-end with
+  `run-ticket-proof.ps1 -DryRun`). Orchestration stays in the script, not C# core.
+- **Usability**: a `docs/getting-started.md` walkthrough (mental model → no-key commands →
+  run with one of the three brains → view results → write your first YAML), linked from the
+  README. Tooltips on the WinForms/WPF/Avalonia sample controls showing each control's role
+  **and its AutomationId** (so the demo apps self-document what to reference in YAML;
+  hover-only, automation ids/behaviour unchanged). Explanatory tooltips across the dashboard
+  (rail tabs, result badges with their meaning, Launch button, Live run/pid/elapsed chips,
+  run rows). New
+  testing-strategy section "LLM Provider Options And CI/CD" clarifying that the runtime LLM
+  is any OpenAI-compatible endpoint (direct / proxy / bridge) and that a full CI/CD pipeline
+  needs no paid provider (manual commands + heuristic decider are key-free; the bridge is
+  dev-only, loopback-only).
+- **Run the real agent loop without OpenRouter** — two key-free "brains" behind the
+  existing `IActionDecider` / OpenAI-endpoint seam:
+  - `HeuristicActionDecider`: a rule-based, no-LLM decider that drives simple form +
+    submit flows from the live UI snapshot (fill configured inputs, click a sequence with
+    an enabled-check, then Done). Automated + deterministic → CI smoke without a key.
+  - `--bridge-llm [port]`: an OpenAI-compatible bridge endpoint (drop-in via `LLM_ENDPOINT`)
+    that writes each prompt to `bridge-io/req-N.txt` and waits for a `resp-N.json` action —
+    so a human or an external agent (e.g. Claude Code) can *be* the decider with no provider
+    key. Times out to a safe `Wait`. Manual-first (starts without `.env`). Only POSTs to
+    the chat-completions path are treated as decisions (health probes don't consume a step).
+    Verified end-to-end live: Claude Code drove the real WinForms sample to "Login successful"
+    through this bridge with no provider key.
 - **V2-D: Avalonia sample (the 4th first-class desktop target)**. New
   `Sample.AvaloniaApp` (Avalonia 11.3) at login + gated-action parity with the WinForms
   and WPF samples — same automation ids (`txtUsername`/`txtPassword`/`btnLogin`/`lblStatus`,
@@ -112,6 +142,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
 ### Fixed
+- Dashboard ticket hardening (post-QA): ticket frontmatter scalars (`title`/`framework`/
+  `target_window`) are now stripped of control chars/newlines so a crafted Create value
+  can't inject a forged `plan:` line into the generated ticket; and `run-ticket-proof.ps1`
+  now refuses a plan path that resolves outside the repository (defense in depth). Regression
+  test added. (Localhost/own-input integrity issue, not RCE — the spawn layer was already safe.)
 - JUnit report: a `"Passed"` run (test runs report "Passed", not "Succeeded") was
   wrongly emitted as an `<error>` instead of a pass — `--to-junit` now treats both
   `Passed` and `Succeeded` as passing. (Found during V4-A; regression test added.)
@@ -128,8 +163,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 156 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
-  Avalonia (skipped unless `RUN_E2E_UI=1`; 162/162 with it). Build clean across
+- Test suite: 168 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 174/174 with it). Build clean across
   net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

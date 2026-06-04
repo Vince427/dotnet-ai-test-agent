@@ -2,11 +2,16 @@ namespace DesktopAiTestAgent.Core;
 
 using System.Collections.Generic;
 
+/// <summary>The style of a test. See docs/ai-authoring.md "Category taxonomy".</summary>
 public enum TestCategory
 {
+    /// <summary>Quick "does it open / basic path works" check.</summary>
     Smoke,
+    /// <summary>Exploratory / stress poking to surface crashes or dead ends.</summary>
     Monkey,
+    /// <summary>Inspect UI / accessibility metadata; no mutation.</summary>
     Audit,
+    /// <summary>A directed business flow with a clear goal + success condition (default, most tests).</summary>
     Scenario
 }
 

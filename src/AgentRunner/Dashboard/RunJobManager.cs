@@ -27,9 +27,8 @@ public sealed class RunJobManager(string repoRoot) : IDisposable
     private readonly string _repoRoot = repoRoot;
     private readonly ConcurrentDictionary<string, RunJob> _jobs = new();
 
-    public RunJob Launch(string planPath, string testId, string? window)
-    {
-        var job = new RunJob
+    public RunJob Launch(string planPath, string testId, string? window) =>
+        StartTracked(new RunJob
         {
             JobId = Guid.NewGuid().ToString("N")[..12],
             PlanPath = planPath,
@@ -37,11 +36,26 @@ public sealed class RunJobManager(string repoRoot) : IDisposable
             Window = window,
             Status = "running",
             StartedAt = DateTime.UtcNow
-        };
+        }, BuildStartInfo(planPath, testId, window));
 
-        var psi = BuildStartInfo(planPath, testId, window);
+    /// <summary>
+    /// Run a Symphony ticket via scripts/run-ticket-proof.ps1 — the SAME adapter CI uses,
+    /// so the dashboard and CI share one path. The script invokes the CLI, whose logs carry
+    /// the session id we correlate to a runId.
+    /// </summary>
+    public RunJob LaunchTicket(string ticketPath) =>
+        StartTracked(new RunJob
+        {
+            JobId = Guid.NewGuid().ToString("N")[..12],
+            PlanPath = ticketPath,
+            TestId = Path.GetFileNameWithoutExtension(ticketPath),
+            Status = "running",
+            StartedAt = DateTime.UtcNow
+        }, BuildTicketStartInfo(ticketPath));
+
+    private RunJob StartTracked(RunJob job, ProcessStartInfo psi)
+    {
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
-
         process.OutputDataReceived += (_, e) => OnLine(job, e.Data);
         process.ErrorDataReceived += (_, e) => OnLine(job, e.Data);
         process.Exited += (_, _) =>
@@ -58,6 +72,24 @@ public sealed class RunJobManager(string repoRoot) : IDisposable
 
         _jobs[job.JobId] = job;
         return job;
+    }
+
+    private ProcessStartInfo BuildTicketStartInfo(string ticketPath)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "powershell",
+            WorkingDirectory = _repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        var script = Path.Combine(_repoRoot, "scripts", "run-ticket-proof.ps1");
+        // launch_sample is read from the ticket frontmatter by the script, so we don't force it.
+        var parts = new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-TicketPath", ticketPath };
+        psi.Arguments = string.Join(" ", parts.Select(QuoteArg));
+        return psi;
     }
 
     public RunJob? Get(string jobId) => _jobs.TryGetValue(jobId, out var j) ? j : null;

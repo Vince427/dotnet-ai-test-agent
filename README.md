@@ -14,21 +14,29 @@ agent-specific packages, helper classes, or production-only test hooks.
 
 ## What It Does
 
-- Drives WinForms, WPF, and later MAUI Windows/Avalonia desktop apps from the
-  outside with FlaUI and Windows UI Automation.
+- Drives WinForms, WPF, and Avalonia desktop apps from the outside with FlaUI and
+  Windows UI Automation (MAUI Windows sample exists; its E2E wiring is in progress).
 - Describes business/runtime tests in YAML under `tests/`.
 - Validates and lists tests without `.env`, OpenRouter, or a live desktop app.
 - Runs selected desktop tests and writes portable evidence: `report.json`,
-  `summary.md`, screenshots, and optional UI tree snapshots.
+  `summary.md`, screenshots (secret-field regions masked at capture), and optional
+  UI tree snapshots.
 - Renders a static AgentLoop Workbench over YAML plans and run artifacts.
+- Exports results to JUnit XML for CI dashboards (`--to-junit`), with links to
+  existing TRX/JUnit tests, source issue/PR, and the trace id.
+- Emits optional OpenTelemetry traces + metrics (opt-in via
+  `OTEL_EXPORTER_OTLP_ENDPOINT`; view live in a standalone Aspire dashboard).
+- Serves a local-only interactive dashboard (`--dashboard`): catalog, ticket
+  creation (form → validated YAML), launch, live logs + screenshots, and a Files
+  explorer over the on-disk sources.
 
 ## Current Focus
 
-- WinForms and WPF first.
+- WinForms, WPF, and Avalonia stable; MAUI Windows E2E wiring next.
 - Small YAML files, one user-facing scenario per file.
 - Manual-first workflows before MCP/plugins.
 - GitHub Pages as lightweight public documentation.
-- DocFX, recording mode, vision fallback, and richer CI outputs come later.
+- DocFX, recording mode, and vision (VLM) fallback come later.
 
 ## Quickstart
 
@@ -73,6 +81,19 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- `
     --evidence-level standard
 ```
 
+Convert captured run artifacts to JUnit XML for CI (no `.env`/LLM needed):
+
+```powershell
+dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --to-junit artifacts\junit-results.xml
+```
+
+Serve the local-only interactive dashboard (developer tool, never in CI):
+
+```powershell
+dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --dashboard 8090
+# then open http://localhost:8090/  (Ctrl+C to stop)
+```
+
 ## Runtime LLM Configuration
 
 Only runtime desktop execution needs an LLM endpoint. Validation, listing,
@@ -90,20 +111,25 @@ The real `.env` file is ignored by git.
 
 ## Documentation
 
+- [Getting started](docs/getting-started.md) — start here
+- [Project status](docs/status.md) — where we are now
 - [MVP path](docs/mvp.md)
 - [Product spec](docs/spec.md)
-- [Architecture](docs/architecture.md)
+- [Architecture](docs/architecture.md) · [diagram](docs/architecture-diagram.md)
+- [Architecture decisions](docs/architecture-decisions.md) — the load-bearing *why*
 - [Testing strategy](docs/testing-strategy.md)
 - [TestZoo status](docs/testzoo.md)
 - [GitHub Pages](docs/github-pages.md)
 - [Roadmap](docs/roadmap.md)
+- [Changelog](CHANGELOG.md)
 
 ## Repository Map
 
 - `src/Core`: shared models and driver interfaces.
-- `src/UIAutomation`: FlaUI desktop automation.
-- `src/AgentRunner`: CLI, AgentLoop runtime, artifacts, validation, Workbench.
-- `src/Samples`: WinForms/WPF/MAUI demo targets.
+- `src/UIAutomation`: FlaUI desktop automation + screenshot masking.
+- `src/AgentRunner`: CLI, `RunOrchestrator` runtime, artifacts, validation,
+  telemetry, Workbench, and the local Dashboard (`Dashboard/`).
+- `src/Samples`: WinForms/WPF/MAUI/Avalonia demo targets.
 - `tests`: YAML business/runtime plans.
 - `scripts`: local validation, proof, and demo commands.
 - `docs`: public docs and generated static Workbench output.

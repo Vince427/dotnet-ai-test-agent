@@ -174,7 +174,138 @@ public sealed class DashboardApi
         var path = Path.Combine(dir, req.Id + ".yaml");
         File.WriteAllText(path, yaml);
 
-        return ApiResponse.Json(new { ok = true, planPath = Relative(path), id = req.Id, yaml });
+        // Also emit a Symphony-style ticket (.md) referencing this plan, so the SAME
+        // contract that CI runs via scripts/run-ticket-proof.ps1 is produced here.
+        var ticketDir = Path.Combine(_repoRoot, "tickets", "created");
+        Directory.CreateDirectory(ticketDir);
+        var ticketPath = Path.Combine(ticketDir, req.Id + ".md");
+        File.WriteAllText(ticketPath, BuildTicketMarkdown(req, Relative(path)));
+
+        return ApiResponse.Json(new
+        {
+            ok = true, id = req.Id, planPath = Relative(path), ticketPath = Relative(ticketPath), yaml
+        });
+    }
+
+    /// <summary>List the Symphony tickets under tickets/ (frontmatter parsed).</summary>
+    public ApiResponse GetTickets()
+    {
+        var ticketsRoot = Path.Combine(_repoRoot, "tickets");
+        var tickets = new List<object>();
+        if (Directory.Exists(ticketsRoot))
+        {
+            IEnumerable<string> files;
+            try { files = Directory.EnumerateFiles(ticketsRoot, "*.md", SearchOption.AllDirectories)
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase); }
+            catch { files = []; }
+            foreach (var f in files)
+            {
+                var fm = ParseFrontMatter(f);
+                string? G(string k) => fm.TryGetValue(k, out var v) ? v : null;
+                tickets.Add(new
+                {
+                    path = Relative(f),
+                    ticketId = G("ticket_id"),
+                    title = G("title"),
+                    framework = G("framework"),
+                    plan = G("plan"),
+                    testId = G("test_id"),
+                    targetWindow = G("target_window"),
+                    evidenceLevel = G("evidence_level")
+                });
+            }
+        }
+        return ApiResponse.Json(new { count = tickets.Count, tickets });
+    }
+
+    /// <summary>Raw markdown of one ticket under tickets/ (path-safe).</summary>
+    public ApiResponse GetTicket(string relPath)
+    {
+        if (string.IsNullOrWhiteSpace(relPath) || Path.GetExtension(relPath) is not (".md" or ".markdown"))
+            return ApiResponse.Error(400, "A ticket .md path is required.");
+        var full = ResolveUnderRoot(_repoRoot, relPath);
+        if (full == null || !IsUnderRoot(full, "tickets") || !File.Exists(full))
+            return ApiResponse.Error(404, "Ticket not found under tickets/.");
+        return ApiResponse.Text(File.ReadAllText(full), 200, "text/markdown; charset=utf-8");
+    }
+
+    /// <summary>
+    /// Run a ticket through the SAME adapter CI uses (scripts/run-ticket-proof.ps1):
+    /// validate → optional sample launch → CLI run → artifacts. Spawned and tracked
+    /// like any job so it streams into the Live view.
+    /// </summary>
+    public ApiResponse RunTicket(string body)
+    {
+        string? rel;
+        try { rel = JsonSerializer.Deserialize<TicketRunRequest>(body, ApiResponse.JsonOptions)?.TicketPath; }
+        catch (Exception ex) { return ApiResponse.Error(400, "Invalid JSON: " + ex.Message); }
+
+        if (string.IsNullOrWhiteSpace(rel) || Path.GetExtension(rel) is not (".md" or ".markdown"))
+            return ApiResponse.Error(400, "ticketPath (.md) is required.");
+        var full = ResolveUnderRoot(_repoRoot, rel!);
+        if (full == null || !IsUnderRoot(full, "tickets") || !File.Exists(full))
+            return ApiResponse.Error(400, "Ticket not found under tickets/.");
+
+        try { return ApiResponse.Json(_jobs.LaunchTicket(full), 202); }
+        catch (Exception ex) { return ApiResponse.Error(500, "Failed to launch ticket: " + ex.Message); }
+    }
+
+    public sealed class TicketRunRequest { public string? TicketPath { get; set; } }
+
+    /// <summary>Minimal flat `key: value` front-matter reader (matches run-ticket-proof.ps1).</summary>
+    private static Dictionary<string, string> ParseFrontMatter(string path)
+    {
+        var fm = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var lines = File.ReadAllLines(path);
+            if (lines.Length == 0 || lines[0].Trim() != "---") return fm;
+            for (var i = 1; i < lines.Length; i++)
+            {
+                if (lines[i].Trim() == "---") break;
+                var m = System.Text.RegularExpressions.Regex.Match(lines[i], @"^([A-Za-z0-9_-]+)\s*:\s*(.*)$");
+                if (m.Success && m.Groups[2].Value.Trim().Length > 0)
+                    fm[m.Groups[1].Value] = m.Groups[2].Value.Trim();
+            }
+        }
+        catch { /* unreadable → empty */ }
+        return fm;
+    }
+
+    /// <summary>Emit a Symphony ticket markdown referencing the just-created plan.</summary>
+    internal static string BuildTicketMarkdown(CreateTestRequest req, string planRelPath)
+    {
+        var ev = req.EvidenceLevel is "minimal" or "standard" or "full" ? req.EvidenceLevel : "standard";
+        var sb = new StringBuilder();
+        sb.AppendLine("---");
+        sb.AppendLine($"ticket_id: TICKET-{req.Id}");
+        if (!string.IsNullOrWhiteSpace(req.Title)) sb.AppendLine($"title: {req.Title}");
+        if (!string.IsNullOrWhiteSpace(req.Framework)) sb.AppendLine($"framework: {req.Framework}");
+        sb.AppendLine($"launch_sample: {(req.LaunchSample ? "true" : "false")}");
+        sb.AppendLine($"plan: {planRelPath}");
+        sb.AppendLine($"test_id: {req.Id}");
+        if (!string.IsNullOrWhiteSpace(req.TargetWindow)) sb.AppendLine($"target_window: {req.TargetWindow}");
+        sb.AppendLine($"evidence_level: {ev}");
+        sb.AppendLine("authoring_agent: dashboard");
+        sb.AppendLine("expected_artifacts:");
+        sb.AppendLine("  - report.json");
+        sb.AppendLine("  - summary.md");
+        if (ev != "minimal") sb.AppendLine("  - screenshots");
+        if (ev == "full") sb.AppendLine("  - ui-tree");
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine($"# {(string.IsNullOrWhiteSpace(req.Title) ? req.Id : req.Title)}");
+        sb.AppendLine();
+        sb.AppendLine("## Goal");
+        sb.AppendLine();
+        sb.AppendLine(req.Goal);
+        sb.AppendLine();
+        sb.AppendLine("## Agent Work");
+        sb.AppendLine();
+        sb.AppendLine($"- Run the plan `{planRelPath}` test `{req.Id}` via the portable CLI contract.");
+        sb.AppendLine("- Keep the target app non-intrusive (no agent packages or test-only code paths).");
+        sb.AppendLine("- Prefer YAML-only edits; trace authoring back to this ticket id.");
+        return sb.ToString();
     }
 
     /// <summary>Launch a run for a test by spawning the CLI (parallel-friendly).</summary>
@@ -411,6 +542,8 @@ public sealed class DashboardApi
         public int? MaxSteps { get; set; }
         public List<string>? AllowedActions { get; set; }
         public List<string>? Tags { get; set; }
+        public string? EvidenceLevel { get; set; }   // minimal | standard | full (ticket)
+        public bool LaunchSample { get; set; }        // ticket: start the built-in sample around the run
     }
 
     public sealed class LaunchRequest

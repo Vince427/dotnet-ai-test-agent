@@ -47,6 +47,29 @@ Keep reusable public guidance short and product-focused; use local ignored files
 such as `*.prompt.local.md` or `.private-prompts/` for team-specific agent
 prompts.
 
+## Fields To Fill
+
+The smallest valid test is just a `goal`. A copy-paste, fully-commented template with
+every field is at [`docs/test-template.yaml`](test-template.yaml). Core fields:
+
+| Field | Required | What to put |
+|---|---|---|
+| `goal` | yes | Plain-language intent; name the exact values (e.g. "Enter admin / password123…") |
+| `success_condition` | no | Text the app shows when done; omit and verify with an `Assert` |
+| `framework` | no | `winforms` \| `wpf` \| `avalonia` \| `maui` |
+| `target_window` | no | Exact window title to attach to |
+| `max_steps` | no | Safety cap on iterations (typical 6-12) |
+| `allowed_actions` | no | Subset of `EnterText, Click, DoubleClick, Scroll, Wait, Assert, Done, Explore` |
+| `category` | no | Test style — see below (default `Scenario`) |
+| `priority` | no | `P0`-`P3` · `risk` `low`-`critical` · `tags` free-form |
+
+### Category taxonomy
+
+- **Scenario** — a directed business flow (most tests). Has a clear goal + success.
+- **Smoke** — a quick "does it open / does the basic path work" check.
+- **Audit** — inspect UI / accessibility metadata (AutomationId coverage, labels); no mutation.
+- **Monkey** — exploratory / stress poking to surface crashes or dead ends.
+
 ## YAML Metadata
 
 - `existing_tests`: ids of existing automated tests this run complements (e.g. a TRX/JUnit

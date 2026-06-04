@@ -122,6 +122,32 @@ parallel work.
   `[InteractiveUiTheory]`. Needs an exe-locate step (win10 RID output path) + interactive
   packaged/unpackaged launch verification — environment-bound, not yet done.
 
+## Strategy Backlog (from `docs/competitive-analysis.md`, 2026-06)
+
+Sequenced by what unlocks the next unit of credibility. The competitive wedge is
+*desktop + open + AI-optional + offline + legacy .NET 4.8*; the analysis argues the value
+prop hinges on **vision (V3)** + **adoption ergonomics (V9.5/V8)**.
+
+- **[P0] V3 Tier-2 vision fallback** — THE moat. Increment 1 (this branch
+  `claude/v3-vision-overlay`): deterministic no-key overlay artifact contract
+  (`ScreenshotOverlay` + `ScreenshotAnnotator` → `overlay/step_NNN.{png,json}` at `full`
+  evidence). Increment 2: a VLM decider that consumes the annotated shot + index when UIA
+  resolution is ambiguous ("pick box N" → element/action). Cost-aware, fallback-only.
+- **[P0] MAUI gated E2E + runtime cross-framework proof** — close the samples-only gap;
+  MAUI/Avalonia custom controls are where vision pays off. (Also the remaining half of A6.)
+- **[P1] V9.5 Recording mode** — manual session → first YAML draft (editable, validated).
+  Biggest top-of-funnel lever; table-stakes vs Ranorex/TestComplete/testRigor.
+- **[P1] V8 Controlled self-healing** — selector drift → semantic/vision suggestion *with
+  evidence*; CI never auto-edits, local applies only with an explicit flag.
+- **[P1] MCP adapter over the CLI** — agents (Claude Desktop/Copilot) drive list/author/
+  validate/run natively. Cheap, on-brand (adapter, not core), high 2026 visibility.
+- **[P2] Real legacy-app case study** (ideally .NET Framework 4.8) — one credible proof beats
+  ten features. **[P2] One-line install** (`dotnet tool install -g`) + signed release + Pages
+  demo. **[P2] V11 analytics** from run history (flaky/selector-drift/cost/duration).
+- **[P3] Demand-pulled only:** cross-platform via Appium (MAUI Android/iOS/Mac). Keep
+  deferring SaaS cockpit / auth / VM provisioning / multi-agent chat — they'd dilute
+  portable-first.
+
 ## Human-Orchestrated Items
 
 - [ ] Run real OpenRouter runtime validation against local `.env`.

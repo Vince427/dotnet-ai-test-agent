@@ -7,6 +7,19 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Dashboard Catalog: filters, batch runs, category visibility, edit/archive**. The Catalog
+  now has a filter bar (search + category/framework/priority/suite) and shows each test's
+  **category** (was hidden). Multi-select + **Run selected** / **Run filtered** queue many runs
+  through a new **bounded run queue** — at most *max parallel* (default 2, clamped [1,16],
+  adjustable inline; `GET /api/config` + `POST /api/jobs/concurrency`) execute at once, the rest
+  show as `queued` in Live. Per the doctrine (YAML = source of truth, dashboard = view+launcher,
+  everything CI-replayable), mutation is bounded: **Edit** re-writes a single-test
+  `tests/created/` file through the same validator; **Archive** *moves* a single-test YAML to
+  `tests/archived/` (excluded from catalog + CLI `--list-tests`/`--suite` + CI; reversible, shows
+  in Git) — **no hard delete**; multi-test files stay edit-on-disk. Archiving is symmetric: an
+  **Archived** section in the Catalog lists archived tests with a **Restore** button
+  (`GET /api/archived` + `POST /api/tests/unarchive`) that moves the YAML back. Backed by a `BeginProcess`
+  seam so the queue is unit-tested without spawning. +8 tests.
 - **V3 Tier-2 overlay artifact contract (the vision moat, increment 1 — no key needed)**: at
   `full` evidence each step now also emits `overlay/step_NNN.png` — the (masked) screenshot with
   numbered boxes over every visible, locatable element — plus `overlay/step_NNN.json`, the index

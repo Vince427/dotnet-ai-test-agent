@@ -88,6 +88,80 @@ public sealed class DashboardApiTests : IDisposable
     }
 
     [Fact]
+    public void GetTests_ExposesCategoryAndArchivableEditableFlags()
+    {
+        var first = ParseBody(_api.GetTests()).GetProperty("tests")[0];
+        Assert.Equal("Scenario", first.GetProperty("category").GetString()); // default category surfaced
+        Assert.True(first.GetProperty("archivable").GetBoolean());           // single-test file
+        Assert.False(first.GetProperty("editable").GetBoolean());            // not under tests/created
+    }
+
+    [Fact]
+    public void CreatedTest_IsEditable()
+    {
+        _api.CreateTest("""{"id":"ED-001","goal":"do a thing and confirm","framework":"wpf","allowedActions":["Click","Done"]}""");
+
+        var created = ParseBody(_api.GetTests()).GetProperty("tests").EnumerateArray()
+            .First(t => t.GetProperty("id").GetString() == "ED-001");
+        Assert.True(created.GetProperty("editable").GetBoolean());
+    }
+
+    [Fact]
+    public void ArchiveTest_MovesYamlUnderArchivedAndOutOfTheCatalog()
+    {
+        var res = _api.ArchiveTest("""{"planPath":"tests/smoke.yaml"}""");
+        Assert.Equal(200, res.Status);
+        Assert.True(ParseBody(res).GetProperty("ok").GetBoolean());
+
+        Assert.False(File.Exists(Path.Combine(_repo, "tests", "smoke.yaml")));
+        Assert.True(File.Exists(Path.Combine(_repo, "tests", "archived", "smoke.yaml")));
+        Assert.Equal(0, ParseBody(_api.GetTests()).GetProperty("count").GetInt32()); // excluded from discovery
+    }
+
+    [Fact]
+    public void Archive_ThenUnarchive_RoundTripsTheTestBackIntoTheCatalog()
+    {
+        Assert.Equal(200, _api.ArchiveTest("""{"planPath":"tests/smoke.yaml"}""").Status);
+
+        // It now shows under archived, and not in the catalog.
+        var archived = ParseBody(_api.GetArchived());
+        Assert.Equal(1, archived.GetProperty("count").GetInt32());
+        var archPath = archived.GetProperty("tests")[0].GetProperty("planPath").GetString();
+        Assert.Equal("tests/archived/smoke.yaml", archPath);
+        Assert.Equal(0, ParseBody(_api.GetTests()).GetProperty("count").GetInt32());
+
+        // Restore moves it back to its original path and into the catalog.
+        var res = _api.UnarchiveTest($$"""{"planPath":"{{archPath}}"}""");
+        Assert.Equal(200, res.Status);
+        Assert.True(File.Exists(Path.Combine(_repo, "tests", "smoke.yaml")));
+        Assert.Equal(1, ParseBody(_api.GetTests()).GetProperty("count").GetInt32());
+        Assert.Equal(0, ParseBody(_api.GetArchived()).GetProperty("count").GetInt32());
+    }
+
+    [Fact]
+    public void UnarchiveTest_RejectsPathNotUnderArchived()
+    {
+        Assert.Equal(400, _api.UnarchiveTest("""{"planPath":"tests/smoke.yaml"}""").Status);
+    }
+
+    [Fact]
+    public void ArchiveTest_RejectsPathOutsideTests()
+    {
+        File.WriteAllText(Path.Combine(_repo, "WORKFLOW.md"), "# workflow");
+        Assert.Equal(400, _api.ArchiveTest("""{"planPath":"WORKFLOW.md"}""").Status);
+        Assert.True(File.Exists(Path.Combine(_repo, "WORKFLOW.md"))); // untouched
+    }
+
+    [Fact]
+    public void SetConcurrency_RejectsZeroAndUpdatesValue()
+    {
+        Assert.Equal(400, _api.SetConcurrency("""{"max":0}""").Status);
+
+        Assert.Equal(200, _api.SetConcurrency("""{"max":4}""").Status);
+        Assert.Equal(4, _api.MaxConcurrency);
+    }
+
+    [Fact]
     public void CreateTest_RejectsUnsafeId()
     {
         var res = _api.CreateTest("""{"id":"../evil","goal":"x"}""");

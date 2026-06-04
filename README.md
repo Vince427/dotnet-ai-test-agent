@@ -114,7 +114,7 @@ The real `.env` file is ignored by git.
 - [Getting started](docs/getting-started.md) — start here
 - [MVP path](docs/mvp.md)
 - [Product spec](docs/spec.md)
-- [Architecture](docs/architecture.md)
+- [Architecture](docs/architecture.md) · [diagram](docs/architecture-diagram.md)
 - [Architecture decisions](docs/architecture-decisions.md) — the load-bearing *why*
 - [Testing strategy](docs/testing-strategy.md)
 - [TestZoo status](docs/testzoo.md)

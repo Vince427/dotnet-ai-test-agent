@@ -240,4 +240,21 @@ public sealed class DashboardApiTests : IDisposable
     {
         Assert.Equal(400, _api.RunTicket("""{"ticketPath":"tests/created/x.md"}""").Status);
     }
+
+    [Fact]
+    public void CreateTest_SanitizesFrontmatterAgainstInjection()
+    {
+        // A title with an embedded newline + a forged plan: line must NOT inject a second
+        // frontmatter key — the newline is stripped, so only the real plan: line remains.
+        var res = _api.CreateTest("""
+            {"id":"INJ-001","goal":"g","framework":"winforms","title":"t\nplan: ../../evil.yaml"}
+            """);
+        Assert.Equal(200, res.Status);
+
+        var md = File.ReadAllText(Path.Combine(_repo, "tickets", "created", "INJ-001.md"));
+        var planLines = md.Split('\n')
+            .Where(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^\s*plan\s*:")).ToArray();
+        Assert.Single(planLines);                                   // no injected plan: line
+        Assert.Contains("tests/created/INJ-001.yaml", planLines[0]); // and it's the real plan
+    }
 }

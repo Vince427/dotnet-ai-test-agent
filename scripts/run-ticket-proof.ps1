@@ -428,6 +428,14 @@ try {
     if (-not $resolvedTestId) {
         throw "Ticket frontmatter or parameters must provide 'test_id'."
     }
+    if ($resolvedPlan) {
+        # Defense in depth: a forged/hand-edited ticket must not point the plan outside the repo.
+        $repoFull = [System.IO.Path]::GetFullPath($repoRoot)
+        $sep = [System.IO.Path]::DirectorySeparatorChar
+        if (-not $resolvedPlan.StartsWith($repoFull + $sep, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Plan path must stay under the repository: $resolvedPlan"
+        }
+    }
     if ($shouldLaunchSample -and -not $resolvedFramework) {
         throw "Sample launch requires a ticket frontmatter 'framework' value."
     }

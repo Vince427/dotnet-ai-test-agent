@@ -36,6 +36,11 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          # Enable Pages (build source = GitHub Actions) if it isn't already, using the
+          # workflow's pages:write permission — so the first run no longer fails at this step
+          # with "Get Pages site failed" when Pages was never turned on in repo settings.
+          enablement: true
 
       - name: Render AgentLoop Workbench
         shell: pwsh

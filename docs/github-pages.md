@@ -19,6 +19,11 @@ DocFX is intentionally deferred until API reference generation becomes useful.
 - pushes to `main` that touch docs, tests, the AgentRunner, the render script,
   or the workflow itself.
 
+The `Configure Pages` step uses `enablement: true`, so the workflow turns Pages on
+(build source = GitHub Actions) on first run via its `pages: write` permission — no manual
+repo-settings toggle needed. (If an org policy blocks API enablement, enable it once under
+**Settings → Pages → Source: GitHub Actions**.) Published at `https://<owner>.github.io/<repo>/`.
+
 The workflow renders the AgentLoop Workbench with:
 
 ```powershell

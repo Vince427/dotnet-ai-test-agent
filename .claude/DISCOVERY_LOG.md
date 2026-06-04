@@ -95,7 +95,8 @@ heuristic simple. Not urgent; the Assert path already covers it.
 (not just the first label `FindStatusText` returns), and both success-condition checks
 (`RunOrchestrator` early-success + `ActionExecutor.Done`) now use it — so a success condition
 landing in a non-first status region (e.g. `lblControlsStatus` vs. `lblStatus`) is detected.
-`FindStatusText` is unchanged for back-compat. +5 tests (`UiSnapshotStatusTests`). The
+`FindStatusText` still returns the first status region (now skipping empty labels — a
+logging-only refinement; success checks no longer depend on it). +5 tests (`UiSnapshotStatusTests`). The
 explicit `Assert` pattern stays valid and is still the recommendation when an app reuses one
 status string across regions.
 

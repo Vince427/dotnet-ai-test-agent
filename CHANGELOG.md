@@ -161,8 +161,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   *first* status label, so a flow whose result lands in a different status region (e.g.
   `lblControlsStatus` vs. the login `lblStatus`) could never satisfy `success_condition`. New
   `UiSnapshot.StatusContains` scans every status region; both the early-success check
-  (`RunOrchestrator`) and the `Done` gate (`ActionExecutor`) use it. `FindStatusText` is
-  unchanged (still returns the first region). +5 tests. (MAUI gated E2E wiring remains deferred
+  (`RunOrchestrator`) and the `Done` gate (`ActionExecutor`) use it. `FindStatusText` still
+  returns the first region (now skipping empty labels — logging-only). +5 tests. (MAUI gated E2E wiring remains deferred
   — its packaged/unpackaged launch needs interactive verification.)
 - Dashboard CSRF (post global-audit): POST routes (`/api/runs`, `/api/tickets/run`,
   `/api/tests`) now require a same-origin request (Origin == the dashboard URL, or, for

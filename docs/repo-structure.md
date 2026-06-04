@@ -2,53 +2,50 @@
 
 ```text
 src/
-  AgentRunner/
-    Program.cs                    - AgentLoop orchestrator loop
-    LlmService.cs                 - LLM integration
-    AgentMemory.cs                - history, facts, and visited screens
-    LoopDetector.cs               - anti-loop sliding window
-    ScoringEngine.cs              - reward and penalty scoring
-    StructuredLogger.cs           - structured console logging
-    RunArtifact.cs                - run report model
-    ArtifactWriter.cs             - JSON, screenshots, and Markdown artifacts
-    GuardFailureDemoFactory.cs    - deterministic guard demo artifacts
-    WorkflowConfig.cs             - typed config from WORKFLOW.md
-  Core/
-    AgentAction.cs                - action model
-    AgentGoal.cs                  - goal model
-    IAutomationDriver.cs          - driver interface
-    UiElement.cs                  - UI element model
-    UiSnapshot.cs                 - UI state snapshot
-  UIAutomation/
-    FlaUiDesktopDriver.cs         - FlaUI implementation
-  Samples/
-    Sample.WinFormsApp.Net8/
-    Sample.WinFormsApp.Net48/
+  Core/                            - shared models + driver interface (no dependencies)
+    AgentAction.cs  AgentGoal.cs  IAutomationDriver.cs  UiElement.cs  UiSnapshot.cs
+  UIAutomation/                    - FlaUI/UIA3 desktop driver
+    FlaUiDesktopDriver.cs          - attach, capture snapshot, act, screenshot
+    ScreenshotMasker.cs            - mask secret-field regions in screenshots
+  AgentRunner/                     - CLI + the agent loop + artifacts
+    Program.cs                     - CLI parse + manual commands + runtime wiring
+    RunOrchestrator.cs             - the observe->decide->act->score->record loop (injectable)
+    IActionDecider.cs              - the "decide" seam
+    LlmService.cs                  - LLM decider (any OpenAI-compatible endpoint)
+    HeuristicActionDecider.cs      - rule-based, no-LLM decider
+    BridgeLlmServer.cs             - --bridge-llm: human/agent-in-the-loop endpoint (no key)
+    RunnerTelemetry.cs             - opt-in OpenTelemetry (spans + metrics)
+    ScreenshotRedaction.cs         - compute secret regions to mask
+    PromptBuilder.cs  LlmResponseParser.cs  SecretRedactor.cs  AgentMemory.cs
+    ScoringEngine.cs  LoopDetector.cs  QualityGuards.cs  AgentActionValidator.cs
+    ArtifactWriter.cs  RunArtifact.cs  RunArtifactLoader.cs  GuardFailureDemoFactory.cs
+    JUnitReportWriter.cs           - --to-junit CI report
+    SymphonyWorkbenchGenerator.cs  - static AgentLoop Workbench (HTML)
+    TestPlanLoader.cs  TestPlanValidator.cs  TestDefinition.cs  RunnerOptions.cs  WorkflowConfig.cs
+    Dashboard/                     - local-only interactive dashboard (--dashboard)
+      DashboardServer.cs  DashboardApi.cs  RunJobManager.cs  DashboardHtml.cs
+  AgentRunner.Tests/               - xUnit tests (incl. MockLlmServer + gated UI E2E)
+  Samples/                         - demo target apps (never reference agent code)
+    Sample.WinFormsApp.Net8/  Sample.WinFormsApp.Net48/
+    Sample.WpfApp/  Sample.WpfApp.Net48/
+    Sample.AvaloniaApp/  Sample.MauiApp/
 
-docs/
-  spec.md
-  architecture.md
-  repo-structure.md
-  roadmap.md
-
-scripts/
-  run-net8.ps1
-  run-net48.ps1
-  check.ps1
-  run-demo.ps1
-  write-guard-demos.ps1
-
-WORKFLOW.md
-README.md
-LICENSE
+tests/        - YAML test plans (source of truth); examples/, testzoo, created/
+schemas/      - test-plan.schema.json (editor hints + validation)
+docs/         - public docs; getting-started, ai-authoring, testing-strategy, roadmap, …
+scripts/      - local validation, render, demo, guard-demo commands
+.claude/      - agent context: per-domain contracts, plans, discovery log, hooks
+runs/         - generated per-run artifacts (gitignored); bridge-io/ likewise
 ```
 
 ## Folder Roles
 
-- `src/Core`: models, interfaces, and lightweight abstractions.
-- `src/UIAutomation`: FlaUI integration layer with generic tree walking.
-- `src/AgentRunner`: AgentLoop orchestrator and manual CLI modes.
-- `src/Samples`: demo target applications.
-- `docs/`: project source-of-truth documents.
-- `scripts/`: local demo and verification scripts.
-- `runs/`: generated per-run artifact directories, ignored by git.
+- `src/Core`: models, the `IAutomationDriver` interface, lightweight abstractions.
+- `src/UIAutomation`: FlaUI/UIA3 driver + screenshot masking.
+- `src/AgentRunner`: the `RunOrchestrator` loop, the three deciders (LLM / heuristic /
+  bridge), artifacts, telemetry, JUnit, the static Workbench, and the `Dashboard/`.
+- `src/AgentRunner.Tests`: unit tests + gated interactive UI E2E (`RUN_E2E_UI=1`).
+- `src/Samples`: demo targets (WinForms, WPF, Avalonia, MAUI) — non-intrusive, no agent deps.
+- `tests/`, `schemas/`, `docs/`, `scripts/`: YAML plans, schema, public docs, helper scripts.
+- `.claude/`: agent working context (domain contracts, plan, discovery log, dev-loop hooks).
+- `runs/` and `bridge-io/`: generated runtime output, ignored by git.

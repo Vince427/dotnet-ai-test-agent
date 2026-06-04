@@ -69,6 +69,19 @@ public sealed class BridgeLlmServer : IDisposable
     {
         try
         {
+            // Only POSTs to the chat-completions path are agent decisions; answer anything
+            // else (health probes, favicon, GET /) cheaply so they don't consume a step.
+            var path = context.Request.Url?.AbsolutePath ?? "/";
+            if (context.Request.HttpMethod != "POST" || !path.Contains("chat/completions"))
+            {
+                var ok = Encoding.UTF8.GetBytes("AgentLoop bridge LLM. POST /v1/chat/completions.");
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "text/plain; charset=utf-8";
+                context.Response.OutputStream.Write(ok, 0, ok.Length);
+                context.Response.OutputStream.Close();
+                return;
+            }
+
             string body;
             using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding ?? Encoding.UTF8))
                 body = reader.ReadToEnd();

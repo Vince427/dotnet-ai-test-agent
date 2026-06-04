@@ -39,3 +39,6 @@ prompts/
 .claude/worktrees/
 .claude/local/
 .claude/*.local.md
+
+# Bridge LLM (human/agent decider) runtime IO
+bridge-io/

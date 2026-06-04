@@ -10,6 +10,13 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/IActionDecider.cs` (the "decide" seam). Implementations: `LlmService`
   (OpenRouter/OpenAI), `HeuristicActionDecider` (rule-based, no LLM), and the
   `BridgeLlmServer` HTTP endpoint (`--bridge-llm`) for a human/external-agent decider.
+- `src/AgentRunner/ActionExecutor.cs` (the "act" seam: `IActionExecutor` +
+  `ActionExecutionResult`). Validates the action (allow-list + target existence) then
+  dispatches the verb to the driver; returns the outcome the loop records. Extracted out of
+  `RunOrchestrator` so the dispatch is unit-testable in isolation (`ActionExecutorTests`).
+- `src/Core/ActionVocabulary.cs` (single source of truth for the action verbs). The dispatch,
+  `PromptBuilder`'s default "Allowed actions" line, `TestPlanValidator`, and
+  `AgentActionValidator` all derive their verb set from it — they cannot drift apart.
 - `src/AgentRunner/RunnerTelemetry.cs` (OBS-1: opt-in OpenTelemetry spans + metrics)
 - `src/AgentRunner/RunnerOptions.cs`
 - `src/AgentRunner/LlmService.cs`
@@ -34,6 +41,9 @@ Owns the executable orchestration loop and manual CLI surface.
   the test has no success condition by design.
 - Unsupported actions and missing targets must fail visibly, not become no-op
   successes.
+- The act dispatch lives in `ActionExecutor`, not inline in the loop. New verbs are added
+  to `ActionVocabulary.All` (which feeds plan/prompt/target validation) and given a branch
+  in `ActionExecutor.ExecuteAsync` — never by hardcoding the verb string in a fourth place.
 - Loop detection records real actions, not synthetic pending markers.
 - Runtime artifacts stay human-readable and machine-readable.
 - `RunArtifact` carries the YAML's `ExistingTests`/`SourceIssue`/`SourcePr` so

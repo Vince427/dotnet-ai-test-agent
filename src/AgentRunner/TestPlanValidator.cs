@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DesktopAiTestAgent.Core;
 
 namespace DesktopAiTestAgent.AgentRunner;
 
@@ -11,18 +12,6 @@ public sealed class TestPlanValidationResult
 
 public static class TestPlanValidator
 {
-    private static readonly HashSet<string> KnownActions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Assert",
-        "Click",
-        "Done",
-        "DoubleClick",
-        "EnterText",
-        "Explore",
-        "Scroll",
-        "Wait"
-    };
-
     public static TestPlanValidationResult Validate(TestPlan plan, string sourceName)
     {
         if (plan == null) throw new ArgumentNullException(nameof(plan));
@@ -57,7 +46,7 @@ public static class TestPlanValidator
 
             foreach (var action in test.AllowedActions)
             {
-                if (!KnownActions.Contains(action))
+                if (!ActionVocabulary.IsKnown(action))
                     result.Errors.Add($"{sourceName}:{label}: unsupported allowed action '{action}'.");
             }
         }

@@ -141,6 +141,16 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   run a test → render → open the Workbench).
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
+### Changed
+- **Act-stage refactor (post global-audit, A4)**: the action dispatch is extracted out of
+  `RunOrchestrator.RunCoreAsync` into a testable `ActionExecutor` (`IActionExecutor` +
+  `ActionExecutionResult`), and the action verbs now come from one `ActionVocabulary` source
+  of truth instead of being duplicated across the dispatch, `PromptBuilder`'s default
+  "Allowed actions" line, `TestPlanValidator`, and `AgentActionValidator`. Behaviour is
+  unchanged (same outcomes/failure codes/Done semantics); the dispatch gained 11 direct unit
+  tests (`ActionExecutorTests`). Adding a verb is now a one-line `ActionVocabulary.All` edit
+  plus an executor branch.
+
 ### Fixed
 - Dashboard CSRF (post global-audit): POST routes (`/api/runs`, `/api/tickets/run`,
   `/api/tests`) now require a same-origin request (Origin == the dashboard URL, or, for

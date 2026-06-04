@@ -51,14 +51,7 @@ public static class AgentActionValidator
             $"Action target '{validatedTarget}' was not present in the latest UI snapshot.");
     }
 
-    private static bool RequiresTarget(string? actionType)
-    {
-        return string.Equals(actionType, "EnterText", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(actionType, "Click", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(actionType, "DoubleClick", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(actionType, "Scroll", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(actionType, "Assert", StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool RequiresTarget(string? actionType) => ActionVocabulary.RequiresTarget(actionType);
 
     private static bool MatchesIdentifier(string? candidate, string target)
     {

@@ -16,8 +16,13 @@ public static class TestPlanLoader
         if (!Directory.Exists(testsDir))
             return [];
 
+        // Archived tests live under tests/archived/ and are excluded everywhere (catalog, CLI
+        // --list-tests/--suite, CI) — archiving from the dashboard simply moves a YAML there.
+        var archivedPrefix = Path.Combine(testsDir, "archived") + Path.DirectorySeparatorChar;
+
         return Directory.EnumerateFiles(testsDir, "*.yaml", SearchOption.AllDirectories)
             .Concat(Directory.EnumerateFiles(testsDir, "*.yml", SearchOption.AllDirectories))
+            .Where(path => !path.StartsWith(archivedPrefix, StringComparison.OrdinalIgnoreCase))
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }

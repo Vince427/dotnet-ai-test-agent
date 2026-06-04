@@ -12,31 +12,48 @@ namespace DesktopAiTestAgent.AgentRunner.Dashboard;
 
 /// <summary>
 /// Launches agent runs by spawning the AgentRunner CLI as child processes (so the
-/// dashboard reuses the exact CLI contract) and tracks their live output. Runs are
-/// independent processes, so launching several is naturally parallel.
+/// dashboard reuses the exact CLI contract) and tracks their live output. Each run is an
+/// independent process; launches go through a bounded queue so at most
+/// <see cref="MaxConcurrency"/> run at once (UIA/desktop contention is real when many tests
+/// target the same screen). Excess launches sit in <c>queued</c> status and start as slots free.
 ///
 /// The child generates its own run id; we recover it by scanning stdout for the
 /// logger's <c>session_id=&lt;runId&gt;-&lt;HHmmss&gt;</c> marker, which links a job to its
 /// artifacts under <c>runs/&lt;runId&gt;/</c>.
 /// </summary>
-public sealed class RunJobManager(string repoRoot) : IDisposable
+public class RunJobManager(string repoRoot) : IDisposable
 {
     private static readonly Regex RunIdRegex =
         new(@"session_id=([0-9a-fA-F]{8})-\d{6}", RegexOptions.Compiled);
 
     private readonly string _repoRoot = repoRoot;
     private readonly ConcurrentDictionary<string, RunJob> _jobs = new();
+    private readonly object _gate = new();
+    private readonly Queue<PendingLaunch> _pending = new();
+    private int _maxConcurrency = 2;
+
+    /// <summary>Max runs allowed to execute at once (the rest queue). Clamped to [1, 16].</summary>
+    public int MaxConcurrency
+    {
+        get { lock (_gate) return _maxConcurrency; }
+        set
+        {
+            var v = value < 1 ? 1 : (value > 16 ? 16 : value);
+            lock (_gate) _maxConcurrency = v;
+            Pump(); // a raised cap may let queued jobs start now
+        }
+    }
 
     public RunJob Launch(string planPath, string testId, string? window) =>
-        StartTracked(new RunJob
+        Enqueue(new RunJob
         {
             JobId = Guid.NewGuid().ToString("N")[..12],
             PlanPath = planPath,
             TestId = testId,
             Window = window,
-            Status = "running",
+            Status = "queued",
             StartedAt = DateTime.UtcNow
-        }, BuildStartInfo(planPath, testId, window));
+        }, () => BuildStartInfo(planPath, testId, window));
 
     /// <summary>
     /// Run a Symphony ticket via scripts/run-ticket-proof.ps1 — the SAME adapter CI uses,
@@ -44,34 +61,88 @@ public sealed class RunJobManager(string repoRoot) : IDisposable
     /// the session id we correlate to a runId.
     /// </summary>
     public RunJob LaunchTicket(string ticketPath) =>
-        StartTracked(new RunJob
+        Enqueue(new RunJob
         {
             JobId = Guid.NewGuid().ToString("N")[..12],
             PlanPath = ticketPath,
             TestId = Path.GetFileNameWithoutExtension(ticketPath),
-            Status = "running",
+            Status = "queued",
             StartedAt = DateTime.UtcNow
-        }, BuildTicketStartInfo(ticketPath));
+        }, () => BuildTicketStartInfo(ticketPath));
 
-    private RunJob StartTracked(RunJob job, ProcessStartInfo psi)
+    private RunJob Enqueue(RunJob job, Func<ProcessStartInfo> psiFactory)
+    {
+        _jobs[job.JobId] = job;
+        lock (_gate) _pending.Enqueue(new PendingLaunch(job, psiFactory));
+        Pump();
+        return job;
+    }
+
+    /// <summary>Starts queued jobs while a concurrency slot is free. Re-entrant-safe.</summary>
+    private void Pump()
+    {
+        while (true)
+        {
+            PendingLaunch next;
+            lock (_gate)
+            {
+                if (_pending.Count == 0) return;
+                if (RunningCount() >= _maxConcurrency) return;
+                next = _pending.Dequeue();
+                next.Job.Status = "running"; // count it as running before we release the lock
+            }
+
+            try
+            {
+                BeginProcess(next.Job, next.PsiFactory());
+            }
+            catch (Exception ex)
+            {
+                next.Job.AppendLine("Failed to launch: " + ex.Message);
+                next.Job.ExitCode = -1;
+                next.Job.Status = "exited";
+                // keep draining the queue
+            }
+        }
+    }
+
+    private int RunningCount() // call under _gate
+    {
+        var count = 0;
+        foreach (var j in _jobs.Values)
+            if (j.Status == "running") count++;
+        return count;
+    }
+
+    /// <summary>
+    /// Spawns the OS process for a dequeued job and wires its lifecycle. Overridable so the
+    /// queue/concurrency logic can be unit-tested without spawning real processes.
+    /// </summary>
+    internal virtual void BeginProcess(RunJob job, ProcessStartInfo psi)
     {
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         process.OutputDataReceived += (_, e) => OnLine(job, e.Data);
         process.ErrorDataReceived += (_, e) => OnLine(job, e.Data);
         process.Exited += (_, _) =>
         {
-            job.Status = "exited";
-            try { job.ExitCode = process.ExitCode; } catch { /* race on fast exit */ }
+            int? code = null;
+            try { code = process.ExitCode; } catch { /* race on fast exit */ }
             process.Dispose();
+            OnProcessExited(job, code);
         };
 
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         job.Pid = process.Id;
+    }
 
-        _jobs[job.JobId] = job;
-        return job;
+    /// <summary>Marks a job finished and starts the next queued one. Test-visible.</summary>
+    internal void OnProcessExited(RunJob job, int? exitCode)
+    {
+        if (exitCode.HasValue) job.ExitCode = exitCode;
+        job.Status = "exited";
+        Pump();
     }
 
     private ProcessStartInfo BuildTicketStartInfo(string ticketPath)
@@ -176,6 +247,13 @@ public sealed class RunJobManager(string repoRoot) : IDisposable
         // we only drop our references.
         _jobs.Clear();
     }
+}
+
+/// <summary>A job waiting in the queue, with the factory that builds its process when a slot frees.</summary>
+internal sealed class PendingLaunch(RunJob job, Func<ProcessStartInfo> psiFactory)
+{
+    public RunJob Job { get; } = job;
+    public Func<ProcessStartInfo> PsiFactory { get; } = psiFactory;
 }
 
 /// <summary>A tracked launch job. Serialized to the dashboard as-is (camelCase).</summary>

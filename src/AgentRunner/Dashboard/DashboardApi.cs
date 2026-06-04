@@ -71,23 +71,33 @@ public sealed class DashboardApi
             try { plan = TestPlanLoader.Load(planPath); }
             catch { continue; } // skip unparseable plans; validation surfaces elsewhere
 
+            var relPlan = Relative(planPath);
+            // A single-test file is safe to move wholesale; one under tests/created/ is one the
+            // dashboard authored, so it is safe to re-write in place (Edit). Multi-test files are
+            // "edit on disk" only — we never rewrite a file and risk clobbering sibling tests.
+            var singleTest = plan.Tests.Count == 1;
+            var editable = singleTest && relPlan.StartsWith("tests/created/", StringComparison.OrdinalIgnoreCase);
+
             foreach (var t in plan.Tests)
             {
                 tests.Add(new
                 {
-                    planPath = Relative(planPath),
+                    planPath = relPlan,
                     suite = plan.Suite,
                     id = t.Id,
                     title = t.Title,
                     framework = t.Framework,
                     priority = t.Priority,
+                    category = t.Category,
                     targetWindow = t.TargetWindow,
                     risk = t.Risk,
                     goal = t.Goal,
                     successCondition = t.SuccessCondition,
                     maxSteps = t.MaxSteps,
                     allowedActions = t.AllowedActions,
-                    tags = t.Tags
+                    tags = t.Tags,
+                    editable,
+                    archivable = singleTest
                 });
             }
         }
@@ -340,6 +350,66 @@ public sealed class DashboardApi
         }
     }
 
+    /// <summary>
+    /// Archive a test by moving its YAML under tests/archived/ (excluded from the catalog, the
+    /// CLI, and CI). Restricted to single-test files so we never hide a test's siblings; multi-
+    /// test files stay "edit on disk". Reversible — the file is moved, not deleted, and shows in
+    /// Git. The dashboard never hard-deletes source-of-truth YAML.
+    /// </summary>
+    public ApiResponse ArchiveTest(string body)
+    {
+        ArchiveRequest req;
+        try { req = JsonSerializer.Deserialize<ArchiveRequest>(body, ApiResponse.JsonOptions) ?? new(); }
+        catch (Exception ex) { return ApiResponse.Error(400, "Invalid JSON: " + ex.Message); }
+
+        if (string.IsNullOrWhiteSpace(req.PlanPath))
+            return ApiResponse.Error(400, "planPath is required.");
+
+        var resolved = ResolveUnderRepo(req.PlanPath!);
+        if (resolved == null || !File.Exists(resolved))
+            return ApiResponse.Error(400, "planPath not found under the repository.");
+        if (!IsUnderRoot(resolved, "tests"))
+            return ApiResponse.Error(400, "Only tests under tests/ can be archived.");
+        if (Path.GetExtension(resolved) is not (".yaml" or ".yml"))
+            return ApiResponse.Error(400, "Only a .yaml/.yml test file can be archived.");
+
+        var testsDir = Path.GetFullPath(Path.Combine(_repoRoot, "tests"));
+        var archivedRoot = Path.Combine(testsDir, "archived");
+        if (resolved.StartsWith(archivedRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            return ApiResponse.Error(409, "Already archived.");
+
+        TestPlan plan;
+        try { plan = TestPlanLoader.Load(resolved); }
+        catch (Exception ex) { return ApiResponse.Error(422, "Plan is invalid: " + ex.Message); }
+        if (plan.Tests.Count != 1)
+            return ApiResponse.Error(409, "Only single-test files can be archived from the dashboard (edit multi-test files on disk).");
+
+        var rel = resolved[testsDir.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var dest = Path.Combine(archivedRoot, rel);
+        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+        if (File.Exists(dest)) File.Delete(dest); // re-archiving replaces the prior copy (net48 has no Move overwrite)
+        File.Move(resolved, dest);
+
+        return ApiResponse.Json(new { ok = true, archivedPath = Relative(dest) });
+    }
+
+    /// <summary>Current max concurrent runs (the rest queue).</summary>
+    public int MaxConcurrency => _jobs.MaxConcurrency;
+
+    /// <summary>Set the run queue's max concurrency (clamped to [1, 16] by the job manager).</summary>
+    public ApiResponse SetConcurrency(string body)
+    {
+        ConcurrencyRequest req;
+        try { req = JsonSerializer.Deserialize<ConcurrencyRequest>(body, ApiResponse.JsonOptions) ?? new(); }
+        catch (Exception ex) { return ApiResponse.Error(400, "Invalid JSON: " + ex.Message); }
+
+        if (req.Max < 1)
+            return ApiResponse.Error(400, "max must be >= 1.");
+
+        _jobs.MaxConcurrency = req.Max;
+        return ApiResponse.Json(new { ok = true, maxConcurrency = _jobs.MaxConcurrency });
+    }
+
     /// <summary>List screenshot step files for a run (paths the UI then fetches).</summary>
     public ApiResponse GetScreenshotList(string runId)
     {
@@ -557,5 +627,15 @@ public sealed class DashboardApi
         public string? PlanPath { get; set; }
         public string? TestId { get; set; }
         public string? Window { get; set; }
+    }
+
+    public sealed class ArchiveRequest
+    {
+        public string? PlanPath { get; set; }
+    }
+
+    public sealed class ConcurrencyRequest
+    {
+        public int Max { get; set; }
     }
 }

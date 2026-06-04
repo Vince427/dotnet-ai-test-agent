@@ -97,7 +97,7 @@ public sealed class DashboardServer : IDisposable
                 case "/index.html":
                     return ApiResponse.Text(DashboardHtml.Page, 200, "text/html; charset=utf-8");
                 case "/api/config":
-                    return ApiResponse.Json(new { traceUiTemplate = _traceUiTemplate });
+                    return ApiResponse.Json(new { traceUiTemplate = _traceUiTemplate, maxConcurrency = _api.MaxConcurrency });
                 case "/api/tests":
                     return _api.GetTests();
                 case "/api/runs":
@@ -143,8 +143,10 @@ public sealed class DashboardServer : IDisposable
             return path switch
             {
                 "/api/tests" => _api.CreateTest(body),
+                "/api/tests/archive" => _api.ArchiveTest(body),
                 "/api/runs" => _api.LaunchRun(body),
                 "/api/tickets/run" => _api.RunTicket(body),
+                "/api/jobs/concurrency" => _api.SetConcurrency(body),
                 _ => ApiResponse.Error(404, "Not found.")
             };
         }

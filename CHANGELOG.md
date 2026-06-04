@@ -7,8 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
-- **Usability**: explanatory tooltips across the dashboard (rail tabs, result badges with
-  their meaning, Launch button, Live run/pid/elapsed chips, run rows). New
+- **Usability**: a `docs/getting-started.md` walkthrough (mental model → no-key commands →
+  run with one of the three brains → view results → write your first YAML), linked from the
+  README. Tooltips on the WinForms/WPF/Avalonia sample controls showing each control's role
+  **and its AutomationId** (so the demo apps self-document what to reference in YAML;
+  hover-only, automation ids/behaviour unchanged). Explanatory tooltips across the dashboard
+  (rail tabs, result badges with their meaning, Launch button, Live run/pid/elapsed chips,
+  run rows). New
   testing-strategy section "LLM Provider Options And CI/CD" clarifying that the runtime LLM
   is any OpenAI-compatible endpoint (direct / proxy / bridge) and that a full CI/CD pipeline
   needs no paid provider (manual commands + heuristic decider are key-free; the bridge is

@@ -9,20 +9,27 @@
       <TextBlock Text="Avalonia sample" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
 
       <TextBlock Text="Username"/>
-      <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Width="260" HorizontalAlignment="Left"/>
+      <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Width="260" HorizontalAlignment="Left"
+               ToolTip.Tip="Username field — AutomationId: txtUsername (use 'admin')."/>
       <TextBlock Text="Password"/>
       <!-- PasswordChar masks the value visually (parallels WinForms UseSystemPasswordChar);
            secret redaction itself is identifier-based (id contains "password"). -->
-      <TextBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" PasswordChar="*" Width="260" HorizontalAlignment="Left"/>
-      <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" HorizontalAlignment="Left" Margin="0,6,0,0" Click="OnLoginClicked"/>
-      <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Waiting" Foreground="Gray"/>
+      <TextBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" PasswordChar="*" Width="260" HorizontalAlignment="Left"
+               ToolTip.Tip="Password field — AutomationId: txtPassword (use 'password123')."/>
+      <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" HorizontalAlignment="Left" Margin="0,6,0,0" Click="OnLoginClicked"
+              ToolTip.Tip="Submit login — AutomationId: btnLogin. Sets status to 'Login successful'."/>
+      <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Waiting" Foreground="Gray"
+                 ToolTip.Tip="Login status — AutomationId: lblStatus. Success condition: 'Login successful'."/>
 
       <TextBlock Text="Test controls" FontWeight="Bold" FontSize="14" Margin="0,16,0,4"/>
       <StackPanel Orientation="Horizontal" Spacing="10">
-        <Button x:Name="btnEnableProtectedAction" AutomationProperties.AutomationId="btnEnableProtectedAction" Content="Enable Action" Click="OnEnableProtectedActionClicked"/>
-        <Button x:Name="btnProtectedAction" AutomationProperties.AutomationId="btnProtectedAction" Content="Protected Action" IsEnabled="False" Click="OnProtectedActionClicked"/>
+        <Button x:Name="btnEnableProtectedAction" AutomationProperties.AutomationId="btnEnableProtectedAction" Content="Enable Action" Click="OnEnableProtectedActionClicked"
+                ToolTip.Tip="Enables the gated button — AutomationId: btnEnableProtectedAction."/>
+        <Button x:Name="btnProtectedAction" AutomationProperties.AutomationId="btnProtectedAction" Content="Protected Action" IsEnabled="False" Click="OnProtectedActionClicked"
+                ToolTip.Tip="Gated action (disabled until enabled) — AutomationId: btnProtectedAction → 'Protected action completed'."/>
       </StackPanel>
-      <TextBlock x:Name="lblControlsStatus" AutomationProperties.AutomationId="lblControlsStatus" Text="Controls waiting" Foreground="Gray"/>
+      <TextBlock x:Name="lblControlsStatus" AutomationProperties.AutomationId="lblControlsStatus" Text="Controls waiting" Foreground="Gray"
+                 ToolTip.Tip="Test-controls status — AutomationId: lblControlsStatus."/>
     </StackPanel>
   </ScrollViewer>
 </Window>

@@ -12,14 +12,18 @@
                 <TextBlock Text="Welcome to the WPF AI Agent Target" FontSize="16" FontWeight="Bold" Margin="0,0,0,20"/>
 
                 <TextBlock Text="Username:" Margin="0,0,0,5"/>
-                <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Margin="0,0,0,15" Padding="5"/>
+                <TextBox x:Name="txtUsername" AutomationProperties.AutomationId="txtUsername" Margin="0,0,0,15" Padding="5"
+                         ToolTip="Username field — AutomationId: txtUsername (use 'admin')."/>
 
                 <TextBlock Text="Password:" Margin="0,0,0,5"/>
-                <PasswordBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" Margin="0,0,0,20" Padding="5"/>
+                <PasswordBox x:Name="txtPassword" AutomationProperties.AutomationId="txtPassword" Margin="0,0,0,20" Padding="5"
+                             ToolTip="Password field — AutomationId: txtPassword (use 'password123')."/>
 
                 <DockPanel Margin="0,0,0,28">
-                    <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnLogin_Click"/>
-                    <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Ready" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <Button x:Name="btnLogin" AutomationProperties.AutomationId="btnLogin" Content="Login" Width="100" Height="30" HorizontalAlignment="Left" Click="BtnLogin_Click"
+                            ToolTip="Submit login — AutomationId: btnLogin. Sets status to 'Login successful'."/>
+                    <TextBlock x:Name="lblStatus" AutomationProperties.AutomationId="lblStatus" Text="Ready" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center"
+                               ToolTip="Login status — AutomationId: lblStatus. Success condition: 'Login successful'."/>
                 </DockPanel>
 
                 <TextBlock Text="Profile form" FontSize="14" FontWeight="Bold" Margin="0,0,0,14"/>
@@ -77,11 +81,14 @@
                     <Button x:Name="btnSaveControls" AutomationProperties.AutomationId="btnSaveControls" Content="Save Controls" Width="120" Height="30" Margin="0,0,10,8" Click="BtnSaveControls_Click"/>
                     <Button x:Name="btnOpenConfirmation" AutomationProperties.AutomationId="btnOpenConfirmation" Content="Open Confirmation" Width="150" Height="30" Margin="0,0,10,8" Click="BtnOpenConfirmation_Click"/>
                     <Button x:Name="btnLoadCases" AutomationProperties.AutomationId="btnLoadCases" Content="Load Cases" Width="110" Height="30" Margin="0,0,10,8" Click="BtnLoadCases_Click"/>
-                    <Button x:Name="btnEnableProtectedAction" AutomationProperties.AutomationId="btnEnableProtectedAction" Content="Enable Action" Width="120" Height="30" Margin="0,0,10,8" Click="BtnEnableProtectedAction_Click"/>
-                    <Button x:Name="btnProtectedAction" AutomationProperties.AutomationId="btnProtectedAction" Content="Protected Action" Width="140" Height="30" Margin="0,0,10,8" IsEnabled="False" Click="BtnProtectedAction_Click"/>
+                    <Button x:Name="btnEnableProtectedAction" AutomationProperties.AutomationId="btnEnableProtectedAction" Content="Enable Action" Width="120" Height="30" Margin="0,0,10,8" Click="BtnEnableProtectedAction_Click"
+                            ToolTip="Enables the gated button — AutomationId: btnEnableProtectedAction."/>
+                    <Button x:Name="btnProtectedAction" AutomationProperties.AutomationId="btnProtectedAction" Content="Protected Action" Width="140" Height="30" Margin="0,0,10,8" IsEnabled="False" Click="BtnProtectedAction_Click"
+                            ToolTip="Gated action (disabled until enabled) — AutomationId: btnProtectedAction → 'Protected action completed'."/>
                 </WrapPanel>
 
-                <TextBlock x:Name="lblControlsStatus" AutomationProperties.AutomationId="lblControlsStatus" Text="Controls waiting" Foreground="Gray"/>
+                <TextBlock x:Name="lblControlsStatus" AutomationProperties.AutomationId="lblControlsStatus" Text="Controls waiting" Foreground="Gray"
+                           ToolTip="Test-controls status — AutomationId: lblControlsStatus."/>
             </StackPanel>
         </ScrollViewer>
 

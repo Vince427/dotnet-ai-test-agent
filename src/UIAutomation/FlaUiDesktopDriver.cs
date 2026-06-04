@@ -84,6 +84,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
                     ControlType = SafeGet(() => el.ControlType.ToString()) ?? "Unknown",
                     IsEnabled = SafeGetBool(() => el.IsEnabled, true),
                     IsOffscreen = SafeGetBool(() => el.IsOffscreen, false),
+                    IsPassword = SafeGetBool(() => el.Properties.IsPassword.Value, false),
                 };
 
                 // Try to read value for text-like controls

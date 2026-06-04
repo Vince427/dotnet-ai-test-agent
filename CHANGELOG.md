@@ -142,6 +142,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
 ### Fixed
+- Dashboard CSRF (post global-audit): POST routes (`/api/runs`, `/api/tickets/run`,
+  `/api/tests`) now require a same-origin request (Origin == the dashboard URL, or, for
+  non-browser clients, a loopback Host) — a random web page the dev visits can no longer
+  trigger a run/process spawn cross-origin. + 3 tests.
+- Secret masking now also keys off the UIA **password** flag, not just the identifier:
+  `UiElement.IsPassword` (populated by the driver) is OR'd into `SecretRedactor` and
+  `ScreenshotRedaction`, so a password field with a benign id (`txt1`) is still redacted in
+  prompts/logs/snapshots and masked in screenshots. Closes the DISCOVERY_LOG identifier-only gap.
 - Dashboard ticket hardening (post-QA): ticket frontmatter scalars (`title`/`framework`/
   `target_window`) are now stripped of control chars/newlines so a crafted Create value
   can't inject a forged `plan:` line into the generated ticket; and `run-ticket-proof.ps1`
@@ -163,8 +171,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 168 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
-  Avalonia (skipped unless `RUN_E2E_UI=1`; 174/174 with it). Build clean across
+- Test suite: 173 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 179/179 with it). Build clean across
   net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

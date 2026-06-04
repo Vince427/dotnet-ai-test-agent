@@ -47,6 +47,15 @@ public sealed class SecretRedactor
         _normalizedSensitivePatterns = normalized.ToArray();
     }
 
+    /// <summary>
+    /// True if an element is sensitive: a UIA password control (any id), or an
+    /// AutomationId/Name matching a sensitive pattern.
+    /// </summary>
+    public bool IsSensitiveElement(UiElement element) =>
+        element.IsPassword ||
+        IsSensitiveIdentifier(element.AutomationId) ||
+        IsSensitiveIdentifier(element.Name);
+
     public bool IsSensitiveIdentifier(string? identifier)
     {
         if (string.IsNullOrWhiteSpace(identifier))
@@ -100,6 +109,7 @@ public sealed class SecretRedactor
                 Value = RedactElementValue(element),
                 IsEnabled = element.IsEnabled,
                 IsOffscreen = element.IsOffscreen,
+                IsPassword = element.IsPassword,
                 BoundingBox = element.BoundingBox
             });
         }
@@ -130,11 +140,8 @@ public sealed class SecretRedactor
         if (element.Value is null)
             return null;
 
-        if (IsSensitiveIdentifier(element.AutomationId) ||
-            IsSensitiveIdentifier(element.Name))
-        {
+        if (IsSensitiveElement(element))
             return RedactedValue;
-        }
 
         return RedactText(element.Value);
     }

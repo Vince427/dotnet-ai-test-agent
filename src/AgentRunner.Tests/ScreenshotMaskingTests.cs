@@ -31,6 +31,21 @@ public sealed class ScreenshotMaskingTests
     }
 
     [Fact]
+    public void SecretRegions_MasksPasswordControlWithBenignId()
+    {
+        // A UIA password control with a NON-sensitive id must still be masked (IsPassword).
+        var snapshot = new UiSnapshot("Login", new List<UiElement>
+        {
+            new() { AutomationId = "txt1", IsPassword = true, BoundingBox = "130,97,220,24" }
+        }, statusText: null, windowBounds: "100,50,760,820");
+
+        var regions = ScreenshotRedaction.SecretRegions(snapshot, new SecretRedactor());
+
+        Assert.Single(regions);
+        Assert.Equal((30, 47, 220, 24), regions[0]);
+    }
+
+    [Fact]
     public void SecretRegions_EmptyWhenNoWindowBounds()
     {
         var snapshot = new UiSnapshot("Login", new List<UiElement>

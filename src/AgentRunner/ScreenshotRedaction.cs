@@ -19,8 +19,7 @@ internal static class ScreenshotRedaction
 
         foreach (var element in snapshot.Elements)
         {
-            if (!redactor.IsSensitiveIdentifier(element.AutomationId) &&
-                !redactor.IsSensitiveIdentifier(element.Name))
+            if (!redactor.IsSensitiveElement(element))
                 continue;
             if (!TryParseRect(element.BoundingBox, out var el))
                 continue;

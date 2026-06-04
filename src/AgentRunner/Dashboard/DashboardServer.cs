@@ -134,6 +134,11 @@ public sealed class DashboardServer : IDisposable
 
         if (method == "POST")
         {
+            // CSRF guard: POSTs spawn processes / write files, so only accept them from the
+            // dashboard's own page. A cross-origin page (or a forged Origin) is rejected.
+            if (!IsSameOriginPost(request))
+                return ApiResponse.Error(403, "Cross-origin POST blocked (localhost dev tool).");
+
             var body = ReadBody(request);
             return path switch
             {
@@ -145,6 +150,22 @@ public sealed class DashboardServer : IDisposable
         }
 
         return ApiResponse.Error(405, "Method not allowed.");
+    }
+
+    /// <summary>
+    /// True if a POST is same-origin: the browser-sent Origin must equal our URL, or (for
+    /// non-browser clients like curl that send no Origin) the Host must be our loopback
+    /// authority. Browsers attach Origin to cross-origin POSTs, so a malicious page is rejected.
+    /// </summary>
+    private bool IsSameOriginPost(HttpListenerRequest request)
+    {
+        var origin = request.Headers["Origin"];
+        if (!string.IsNullOrEmpty(origin))
+            return string.Equals(origin.TrimEnd('/'), Url, StringComparison.OrdinalIgnoreCase);
+
+        var host = request.Headers["Host"];
+        return !string.IsNullOrEmpty(host) &&
+               string.Equals(host, new Uri(Url).Authority, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ReadBody(HttpListenerRequest request)

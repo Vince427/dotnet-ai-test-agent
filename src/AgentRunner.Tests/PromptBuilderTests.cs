@@ -24,6 +24,22 @@ public sealed class PromptBuilderTests
     };
 
     [Fact]
+    public void BuildRedactsPasswordControlValueEvenWithBenignId()
+    {
+        // The prompt is what the bridge persists to req-N.txt and what an LLM sees — a
+        // password control's value must not appear, even when its id isn't "password".
+        var snapshot = new UiSnapshot("Login", new List<UiElement>
+        {
+            new() { AutomationId = "txt1", ControlType = "Edit", IsPassword = true, Value = "hunter2-secret" }
+        }, statusText: "Ready");
+
+        var prompt = NewBuilder().Build(snapshot, SampleGoal(), memoryContext: "");
+
+        Assert.DoesNotContain("hunter2-secret", prompt);
+        Assert.Contains("[REDACTED]", prompt);
+    }
+
+    [Fact]
     public void BuildIncludesGoalDescription()
     {
         var prompt = NewBuilder().Build(SampleSnapshot(), SampleGoal(), memoryContext: "");

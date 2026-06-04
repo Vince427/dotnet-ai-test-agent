@@ -53,7 +53,22 @@ mirrors existing text-redaction behavior, documented as best-effort).
 with the password style, independent of the identifier. Needs a new `UiElement.IsPassword`
 populated by the driver. Small, deferred.
 
-**Status**: `OPEN`
+**Status**: `CLOSED - done`. `UiElement.IsPassword` is populated by `FlaUiDesktopDriver` from
+the UIA password property and OR'd into `SecretRedactor.IsSensitiveElement` +
+`ScreenshotRedaction`, so password controls are redacted/masked regardless of identifier.
+
+## 2026-06-04 - main - dashboard / security (global audit)
+
+**Observation**: the dashboard's `HttpListener` POST routes had no Origin/Host check, so any
+web page the developer visited while `--dashboard` ran could cross-origin `POST /api/runs`
+or `/api/tickets/run` and spawn processes (simple-request CSRF).
+
+**Why it matters**: a localhost dev tool that launches processes is CSRF-triggerable.
+
+**Suggestion**: same-origin allow-list on POST.
+
+**Status**: `CLOSED - done`. `DashboardServer.IsSameOriginPost` requires Origin == the
+dashboard URL (or a loopback Host when no Origin); cross-origin POSTs get 403. + 3 tests.
 
 ## 2026-06-02 - claude/runner-orchestrator - automation
 

@@ -142,6 +142,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
 ### Fixed
+- Dashboard ticket hardening (post-QA): ticket frontmatter scalars (`title`/`framework`/
+  `target_window`) are now stripped of control chars/newlines so a crafted Create value
+  can't inject a forged `plan:` line into the generated ticket; and `run-ticket-proof.ps1`
+  now refuses a plan path that resolves outside the repository (defense in depth). Regression
+  test added. (Localhost/own-input integrity issue, not RCE — the spawn layer was already safe.)
 - JUnit report: a `"Passed"` run (test runs report "Passed", not "Succeeded") was
   wrongly emitted as an `<error>` instead of a pass — `--to-junit` now treats both
   `Passed` and `Succeeded` as passing. (Found during V4-A; regression test added.)
@@ -158,8 +163,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 167 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
-  Avalonia (skipped unless `RUN_E2E_UI=1`; 173/173 with it). Build clean across
+- Test suite: 168 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 174/174 with it). Build clean across
   net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

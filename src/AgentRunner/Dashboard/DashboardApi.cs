@@ -252,6 +252,10 @@ public sealed class DashboardApi
 
     public sealed class TicketRunRequest { public string? TicketPath { get; set; } }
 
+    /// <summary>Flatten a value to a single safe frontmatter line (strip control chars/newlines).</summary>
+    private static string Scalar(string? value) =>
+        value is null ? "" : new string(value.Where(c => !char.IsControl(c)).ToArray()).Trim();
+
     /// <summary>Minimal flat `key: value` front-matter reader (matches run-ticket-proof.ps1).</summary>
     private static Dictionary<string, string> ParseFrontMatter(string path)
     {
@@ -279,12 +283,14 @@ public sealed class DashboardApi
         var sb = new StringBuilder();
         sb.AppendLine("---");
         sb.AppendLine($"ticket_id: TICKET-{req.Id}");
-        if (!string.IsNullOrWhiteSpace(req.Title)) sb.AppendLine($"title: {req.Title}");
-        if (!string.IsNullOrWhiteSpace(req.Framework)) sb.AppendLine($"framework: {req.Framework}");
+        // Scalar() strips control chars/newlines so a crafted value can't inject extra
+        // frontmatter lines (e.g. a forged plan:) that the ticket runner would then parse.
+        if (!string.IsNullOrWhiteSpace(req.Title)) sb.AppendLine($"title: {Scalar(req.Title)}");
+        if (!string.IsNullOrWhiteSpace(req.Framework)) sb.AppendLine($"framework: {Scalar(req.Framework)}");
         sb.AppendLine($"launch_sample: {(req.LaunchSample ? "true" : "false")}");
         sb.AppendLine($"plan: {planRelPath}");
         sb.AppendLine($"test_id: {req.Id}");
-        if (!string.IsNullOrWhiteSpace(req.TargetWindow)) sb.AppendLine($"target_window: {req.TargetWindow}");
+        if (!string.IsNullOrWhiteSpace(req.TargetWindow)) sb.AppendLine($"target_window: {Scalar(req.TargetWindow)}");
         sb.AppendLine($"evidence_level: {ev}");
         sb.AppendLine("authoring_agent: dashboard");
         sb.AppendLine("expected_artifacts:");
@@ -294,7 +300,7 @@ public sealed class DashboardApi
         if (ev == "full") sb.AppendLine("  - ui-tree");
         sb.AppendLine("---");
         sb.AppendLine();
-        sb.AppendLine($"# {(string.IsNullOrWhiteSpace(req.Title) ? req.Id : req.Title)}");
+        sb.AppendLine($"# {(string.IsNullOrWhiteSpace(req.Title) ? req.Id : Scalar(req.Title))}");
         sb.AppendLine();
         sb.AppendLine("## Goal");
         sb.AppendLine();

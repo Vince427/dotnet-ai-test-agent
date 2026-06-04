@@ -311,6 +311,21 @@ public sealed class RunOrchestrator(
                         screenshotBytes = UIAutomation.ScreenshotMasker.MaskRegions(screenshotBytes, secretRegions);
                     var screenshotPath = artifactWriter.SaveScreenshot(runArtifact.RunId, step, screenshotBytes);
                     runStep.ScreenshotPath = screenshotPath;
+
+                    // V3 Tier-2: at full evidence, also emit the numbered-box overlay + its index
+                    // (the no-key artifact a VLM later consumes to disambiguate). Built on top of
+                    // the already-masked bytes so secrets stay masked under the annotations.
+                    if (options.EvidenceLevel == EvidenceLevel.Full)
+                    {
+                        var overlayIndex = ScreenshotOverlay.BuildIndex(snapshot);
+                        if (overlayIndex.Count > 0)
+                        {
+                            var annotated = UIAutomation.ScreenshotAnnotator.Annotate(
+                                screenshotBytes, ScreenshotOverlay.ToBoxes(overlayIndex));
+                            runStep.OverlayPath = artifactWriter.SaveOverlay(runArtifact.RunId, step, annotated);
+                            runStep.OverlayIndexPath = artifactWriter.SaveOverlayIndex(runArtifact.RunId, step, overlayIndex);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

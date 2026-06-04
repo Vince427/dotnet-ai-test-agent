@@ -38,6 +38,33 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
     }
 
     /// <summary>
+    /// Saves the annotated (numbered-box) overlay screenshot for a step (V3 Tier-2).
+    /// </summary>
+    public string SaveOverlay(string runId, int stepNumber, byte[] pngBytes)
+    {
+        var dir = Path.Combine(GetRunDir(runId), "overlay");
+        Directory.CreateDirectory(dir);
+
+        var path = Path.Combine(dir, $"step_{stepNumber:D3}.png");
+        File.WriteAllBytes(path, pngBytes);
+        return path;
+    }
+
+    /// <summary>
+    /// Saves the overlay index (box number → element identifiers) for a step (V3 Tier-2).
+    /// The index carries identifiers only, never element values, so it is secret-safe.
+    /// </summary>
+    internal string SaveOverlayIndex(string runId, int stepNumber, System.Collections.Generic.IReadOnlyList<OverlayBox> index)
+    {
+        var dir = Path.Combine(GetRunDir(runId), "overlay");
+        Directory.CreateDirectory(dir);
+
+        var path = Path.Combine(dir, $"step_{stepNumber:D3}.json");
+        File.WriteAllText(path, JsonSerializer.Serialize(index, CreateJsonOptions()));
+        return path;
+    }
+
+    /// <summary>
     /// Saves the observed UI tree for a specific step.
     /// </summary>
     public string SaveUiTreeSnapshot(string runId, int stepNumber, UiSnapshot snapshot)
@@ -133,6 +160,8 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
             values.Add("screenshot");
         if (!string.IsNullOrWhiteSpace(step.UiTreePath))
             values.Add("ui-tree");
+        if (!string.IsNullOrWhiteSpace(step.OverlayPath))
+            values.Add("overlay");
 
         return values.Count == 0 ? "-" : string.Join(", ", values);
     }

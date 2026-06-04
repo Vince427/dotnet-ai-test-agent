@@ -2,6 +2,11 @@
 
 This roadmap keeps the project portable-first, black-box, and AgentLoop-driven. The agent must test existing applications from the outside, without requiring application teams to add agent-specific classes, packages, or code paths.
 
+> **Strategy & competitive positioning:** see [`competitive-analysis.md`](competitive-analysis.md).
+> Short version of the priority order it argues for: **V3 vision fallback** (the moat) → MAUI
+> runtime proof → recording (V9.5) + self-healing (V8) → MCP adapter + a real-app case study.
+> The version numbers below are the *what*; the analysis is the *why-now*.
+
 ## Status (current)
 
 Shipped beyond V1.x (see `CHANGELOG.md` and `docs/architecture-decisions.md` for detail;
@@ -99,8 +104,19 @@ interaction/recording (V9/V9.5), analytics (V11), and MCP/plugin adapters.
 
 ## V3 - Hybrid UIA + Vision Resolution
 
+**P0 — this is the moat** (see `competitive-analysis.md`): without vision fallback the agent
+is capped by the target app's UIA quality, and owner-drawn/custom controls (common in
+Avalonia/MAUI, Citrix/RDP, legacy GDI) defeat a pure-UIA agent.
+
 - Tier 1: semantic UIA resolution by AutomationId, Name, control type, and patterns.
 - Tier 2: UIA + screenshot overlay with numbered bounding boxes for VLM disambiguation.
+  - **Tier-2 increment 1 (done / in progress on `claude/v3-vision-overlay`):** the deterministic,
+    **no-key** overlay *artifact contract* — `ScreenshotOverlay` numbers each visible element and
+    maps it to image pixels (via `WindowBounds`), `ScreenshotAnnotator` draws numbered boxes, and
+    the run emits `overlay/step_NNN.png` + `overlay/step_NNN.json` at `full` evidence. This is the
+    prerequisite the VLM decider consumes ("pick box N").
+  - Tier-2 increment 2 (next): a vision decider that, when UIA resolution is ambiguous, sends the
+    annotated screenshot + index to a VLM and maps the chosen number back to an element/action.
 - Tier 3: pure vision mode with strict JSON coordinates and physical mouse execution.
 - Vision is a fallback, not the default, to control cost and latency.
 

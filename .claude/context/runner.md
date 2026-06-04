@@ -48,6 +48,10 @@ Owns the executable orchestration loop and manual CLI surface.
   in `ActionExecutor.ExecuteAsync` — never by hardcoding the verb string in a fourth place.
 - Loop detection records real actions, not synthetic pending markers.
 - Runtime artifacts stay human-readable and machine-readable.
+- At `full` evidence the run also emits `overlay/step_NNN.png` (numbered element boxes) and
+  `overlay/step_NNN.json` (box number → element identifiers) — the V3 Tier-2 artifact contract.
+  Built on the masked screenshot; index is identifiers-only (secret-safe). `RunStep` carries
+  `OverlayPath`/`OverlayIndexPath`; the summary evidence list shows `overlay`.
 - `RunArtifact` carries the YAML's `ExistingTests`/`SourceIssue`/`SourcePr` so
   `--to-junit` can emit them (plus `trace_id`) as `<testcase>` `<property>` links.
   `--to-junit` treats both `Passed` and `Succeeded` as passing (not `<error>`).

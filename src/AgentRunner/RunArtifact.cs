@@ -65,6 +65,12 @@ public class RunStep
     public int CumulativeScore { get; set; }
     public string? ScreenshotPath { get; set; }
     public string? UiTreePath { get; set; }
+
+    /// <summary>Annotated screenshot with numbered element boxes (V3 Tier-2, `full` evidence).</summary>
+    public string? OverlayPath { get; set; }
+
+    /// <summary>JSON index mapping each overlay box number to its element identifiers.</summary>
+    public string? OverlayIndexPath { get; set; }
 }
 
 public enum EvidenceLevel

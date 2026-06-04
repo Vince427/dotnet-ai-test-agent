@@ -7,6 +7,16 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V3 Tier-2 overlay artifact contract (the vision moat, increment 1 — no key needed)**: at
+  `full` evidence each step now also emits `overlay/step_NNN.png` — the (masked) screenshot with
+  numbered boxes over every visible, locatable element — plus `overlay/step_NNN.json`, the index
+  mapping each box number to its element identifiers. `ScreenshotOverlay` (runner) builds the
+  deterministic, image-relative numbered index from the snapshot (same `WindowBounds` mapping as
+  secret masking); `ScreenshotAnnotator` (a pure image op in UIAutomation, never throws away a
+  shot) draws the boxes. The index is identifiers-only — never a control's `Value` — so it stays
+  secret-safe even for password fields. This is the prerequisite a VLM decider consumes ("pick
+  box N") for the next increment. `RunStep` gains `OverlayPath`/`OverlayIndexPath`; the summary
+  evidence list shows `overlay`. +7 tests. See `docs/competitive-analysis.md` for why V3 is P0.
 - **Dashboard ↔ Symphony tickets**: the dashboard now speaks the same ticket contract CI
   uses. **Create** writes a `tests/created/<id>.yaml` test **and** a `tickets/created/<id>.md`
   Symphony ticket (frontmatter `ticket_id/plan/test_id/framework/target_window/evidence_level/

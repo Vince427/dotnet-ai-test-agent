@@ -7,6 +7,12 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Usability**: explanatory tooltips across the dashboard (rail tabs, result badges with
+  their meaning, Launch button, Live run/pid/elapsed chips, run rows). New
+  testing-strategy section "LLM Provider Options And CI/CD" clarifying that the runtime LLM
+  is any OpenAI-compatible endpoint (direct / proxy / bridge) and that a full CI/CD pipeline
+  needs no paid provider (manual commands + heuristic decider are key-free; the bridge is
+  dev-only, loopback-only).
 - **Run the real agent loop without OpenRouter** — two key-free "brains" behind the
   existing `IActionDecider` / OpenAI-endpoint seam:
   - `HeuristicActionDecider`: a rule-based, no-LLM decider that drives simple form +
@@ -140,8 +146,8 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   and runs were silently skipped (`runs=0`). Added the converter + a regression test.
 
 ### Notes
-- Test suite: 161 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
-  Avalonia (skipped unless `RUN_E2E_UI=1`; 167/167 with it). Build clean across
+- Test suite: 162 tests + 2 gated UI E2E theories = 6 cases across WinForms + WPF +
+  Avalonia (skipped unless `RUN_E2E_UI=1`; 168/168 with it). Build clean across
   net48 + net8.0-windows + Avalonia(net8.0) + MAUI.
 - Runtime agent execution still needs a local `.env` (OpenRouter) and a launched
   desktop app; validation, listing, Workbench rendering, and the watch loop do not.

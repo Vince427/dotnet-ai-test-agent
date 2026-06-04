@@ -115,6 +115,28 @@ provider key in three ways:
 
 Only the production path (`LlmService`) needs OpenRouter or another OpenAI-compatible LLM.
 
+## LLM Provider Options And CI/CD
+
+The runtime LLM is **any OpenAI-compatible endpoint**, selected purely by `LLM_ENDPOINT`
+(no code change to switch):
+
+- **Direct LLM** — OpenRouter (`https://openrouter.ai/api/v1`), Anthropic-compatible, etc.
+- **API gateway / proxy** — a local OpenAI-compatible proxy such as LiteLLM at
+  `http://localhost:4000`, or a local model server.
+- **Bridge** — `--bridge-llm` (a person or external agent as the decider, no key).
+
+Full CI/CD does **not** require a paid provider:
+
+- `--validate-plan`, `--list-tests`, `--render-ui`, `--to-junit`, and `--dashboard` need
+  no LLM at all.
+- Automated agentic UI smoke can run **key-free** with the heuristic decider on an
+  interactive Windows runner; the scripted mock covers non-UI regression.
+- The **bridge is a local dev tool only** — loopback-only, no auth, semi-interactive. Never
+  run it in CI and never expose it beyond `localhost`.
+
+So a complete pipeline (build → validate → list → unit/E2E → JUnit report) is possible at
+zero provider cost; a real LLM is opt-in for richer, dynamic exploration.
+
 ## Recording Mode
 
 Recording mode should remain visible on the roadmap because it is important for

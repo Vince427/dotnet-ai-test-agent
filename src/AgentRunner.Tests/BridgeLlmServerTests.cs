@@ -88,6 +88,21 @@ public sealed class BridgeLlmServerTests : IDisposable
     }
 
     [Fact]
+    public async Task ReturnsReplyVerbatim_EvenIfNotValidJson()
+    {
+        // The bridge must not choke on a malformed reply (the runner's LlmResponseParser
+        // degrades a bad response to a safe Wait downstream); it returns the file verbatim.
+        using var bridge = new BridgeLlmServer(_dir, FreePort(), timeoutMs: 5000);
+        bridge.Start();
+        File.WriteAllText(Path.Combine(_dir, "resp-1.json"), "not valid json");
+
+        var completion = await PostAsync(bridge.BaseUrl,
+            "{\"messages\":[{\"role\":\"user\",\"content\":\"go\"}]}");
+
+        Assert.Equal("not valid json", AssistantContent(completion));
+    }
+
+    [Fact]
     public async Task FallsBackToWait_OnTimeout()
     {
         using var bridge = new BridgeLlmServer(_dir, FreePort(), timeoutMs: 500);

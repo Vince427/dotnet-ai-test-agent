@@ -150,11 +150,16 @@ internal static class DashboardHtml
               </div>
             </div>
             <nav class="rail">
-              <button data-tab="catalog" class="active"><span class="ico">▦</span> Catalog</button>
-              <button data-tab="create"><span class="ico">+</span> Create</button>
-              <button data-tab="runs"><span class="ico">≡</span> Runs</button>
-              <button data-tab="live"><span class="ico">◉</span> Live</button>
-              <button data-tab="files"><span class="ico">⌗</span> Files</button>
+              <button data-tab="catalog" class="active" title="Browse the tests found under tests/*.yaml, grouped by suite. Click Launch to run one.">
+                <span class="ico">▦</span> Catalog</button>
+              <button data-tab="create" title="Author a new test as a guided form. It writes a validated YAML file under tests/created/ — you can also edit it by hand.">
+                <span class="ico">+</span> Create</button>
+              <button data-tab="runs" title="Recorded run history from runs/: result, score, steps, screenshots, and the OpenTelemetry trace link.">
+                <span class="ico">≡</span> Runs</button>
+              <button data-tab="live" title="Watch runs in progress: streaming logs, current step, and live screenshots. Launching a test spawns the CLI.">
+                <span class="ico">◉</span> Live</button>
+              <button data-tab="files" title="The on-disk files the dashboard reflects (tests/, runs/, config) — copy a path to edit it in your editor or CI.">
+                <span class="ico">⌗</span> Files</button>
               <div class="spacer"></div>
               <div class="hint">Tests come from <b>tests/</b>, results from <b>runs/</b>. Launching spawns the CLI — no new data store.</div>
             </nav>
@@ -174,6 +179,7 @@ internal static class DashboardHtml
             const escAttr=s=>esc(s).replace(/"/g,"&quot;").replace(/'/g,"&#39;");
             let CONFIG={traceUiTemplate:""};
             const rcls=r=>(r==="Passed"||r==="Succeeded")?"ok":((r==="Aborted"||r==="Failed"||r==="Blocked")?"bad":"run");
+            const rtip=r=>({Passed:"The test reached its success condition.",Succeeded:"The run reached its success condition.",Failed:"Reached max steps without meeting the success condition.",Aborted:"Stopped early: score fell below the abort threshold or a quality guard aborted.",Blocked:"Could not start — the target window was not found.",Running:"In progress."}[r]||r);
             async function api(path,opts){
               const res=await fetch(path,opts); const ct=res.headers.get("content-type")||"";
               const data=ct.includes("json")?await res.json():await res.text();
@@ -237,7 +243,7 @@ internal static class DashboardHtml
                   ${(t.tags||[]).slice(0,4).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}
                 </div>
                 <div class="dim" style="font-size:11.5px;margin-bottom:11px;min-height:32px">${esc(t.goal||"")}</div>`;
-              const b=el("button",{className:"act",textContent:"▶ Launch"}); b.onclick=()=>launch(t); c.appendChild(b);
+              const b=el("button",{className:"act",textContent:"▶ Launch",title:"Spawn the AgentRunner CLI for this test against its target window (needs the app running + a configured LLM). Opens the Live view."}); b.onclick=()=>launch(t); c.appendChild(b);
               return c;
             }
             async function launch(t){
@@ -299,8 +305,8 @@ internal static class DashboardHtml
               try{
                 const d=await api("/api/runs");
                 if(!d.count){ $("#runs-body").innerHTML="<div class='empty'>No runs yet. Launch one from the Catalog.</div>"; return; }
-                const rows=d.runs.map(r=>`<tr class="clk" data-id="${esc(r.runId)}">
-                  <td><span class="chip ${rcls(r.result)}">${esc(r.result)}</span></td>
+                const rows=d.runs.map(r=>`<tr class="clk" data-id="${esc(r.runId)}" title="Click to expand steps, screenshots and trace">
+                  <td><span class="chip ${rcls(r.result)}" title="${escAttr(rtip(r.result))}">${esc(r.result)}</span></td>
                   <td>${esc(r.testId||r.runId)}</td><td class="fw">${esc(r.framework||"")}</td>
                   <td style="font-variant-numeric:tabular-nums">${r.finalScore}</td><td>${r.steps}</td>
                   <td class="mut">${esc((r.startedAt||"").replace("T"," ").slice(0,19))}</td></tr>`).join("");
@@ -320,7 +326,7 @@ internal static class DashboardHtml
                   <td class="mut">${esc(s.failureCode||s.guardCode||"")}</td><td style="font-variant-numeric:tabular-nums">${s.cumulativeScore}</td></tr>`).join("");
                 host.innerHTML=`<div class="panel pad fade">
                   <div class="row" style="margin-bottom:8px"><h2 style="margin:0;font-size:14px;letter-spacing:.05em">RUN ${esc(r.runId)}</h2>
-                    <span class="chip ${rcls(r.result)}">${esc(r.result)}</span><span class="dim">${esc(r.goalDescription||"")}</span></div>
+                    <span class="chip ${rcls(r.result)}" title="${escAttr(rtip(r.result))}">${esc(r.result)}</span><span class="dim">${esc(r.goalDescription||"")}</span></div>
                   <div class="row" style="margin-bottom:12px">${trace}</div>
                   <table><thead><tr><th>#</th><th>Action</th><th>Target</th><th>Outcome</th><th>Failure/Guard</th><th>Score</th></tr></thead><tbody>${steps}</tbody></table>
                   <div class="head" style="margin:16px 0 8px"><h2 style="font-size:12px">Screenshots</h2></div>
@@ -415,9 +421,9 @@ internal static class DashboardHtml
                             <span class="chip ${cls==="running"?"run":cls}">${esc(j.status)}${j.exitCode!=null?(" · exit "+j.exitCode):""}</span>
                           </div>
                           <div class="row">
-                            ${j.runId?`<span class="chip info">run ${esc(j.runId)}</span>`:'<span class="chip">awaiting run id…</span>'}
-                            <span class="chip">pid ${j.pid}</span>
-                            <span class="chip">⏱ <span class="timer" data-start="${new Date(j.startedAt).getTime()}" data-job="${esc(j.jobId)}"></span></span>
+                            ${j.runId?`<span class="chip info" title="The run id; its artifacts are under runs/${esc(j.runId)}/">run ${esc(j.runId)}</span>`:'<span class="chip" title="Recovered from the runner logs once the run starts">awaiting run id…</span>'}
+                            <span class="chip" title="Process id of the spawned AgentRunner CLI">pid ${j.pid}</span>
+                            <span class="chip" title="Elapsed time"><span class="timer" data-start="${new Date(j.startedAt).getTime()}" data-job="${esc(j.jobId)}"></span></span>
                           </div>
                         </div>
                         ${st.tot?`<div class="row" style="margin:11px 0 4px"><span class="dim" style="font-size:10.5px;letter-spacing:.08em">STEP ${st.cur} / ${st.tot}</span></div>

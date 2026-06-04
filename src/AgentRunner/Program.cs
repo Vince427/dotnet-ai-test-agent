@@ -28,7 +28,8 @@ internal static class Program
             HasArgument(args, "--list-tests") ||
             HasArgument(args, "--write-guard-demos") ||
             HasArgument(args, "--to-junit") ||
-            HasArgument(args, "--dashboard");
+            HasArgument(args, "--dashboard") ||
+            HasArgument(args, "--bridge-llm");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
@@ -129,6 +130,9 @@ internal static class Program
         if (options.DashboardOnly)
             return RunDashboard(config, options);
 
+        if (options.BridgeLlmOnly)
+            return RunBridgeLlm(config, options);
+
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
         // The driver is IDisposable, so Program owns its lifetime.
@@ -164,6 +168,32 @@ internal static class Program
         Console.WriteLine("Serves tests/ + runs/. Launching a run spawns the CLI (needs your target app + .env). Press Ctrl+C to stop.");
         server.WaitForShutdown();
         Console.WriteLine("Dashboard stopped.");
+        return 0;
+    }
+
+    // Manual command: serve a "human/agent in the loop" OpenAI-compatible endpoint so a
+    // person or an external agent (e.g. Claude Code) can be the decider with no provider
+    // key. Point a run's LLM_ENDPOINT at the printed URL; answer each req-N.txt with a
+    // resp-N.json action. Manual-first (no .env to start).
+    private static int RunBridgeLlm(WorkflowConfig config, RunnerOptions options)
+    {
+        var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        var ioDir = options.BridgeIoDir ?? Path.Combine(repoRoot, "bridge-io");
+        using var server = new BridgeLlmServer(ioDir, options.BridgePort);
+        try
+        {
+            server.Start();
+        }
+        catch (HttpListenerException ex)
+        {
+            Console.Error.WriteLine($"Failed to start bridge on port {options.BridgePort}: {ex.Message}");
+            return 1;
+        }
+
+        Console.WriteLine($"Bridge LLM (no key) at {server.BaseUrl} — set LLM_ENDPOINT to this URL for a run.");
+        Console.WriteLine($"Per step it writes {server.IoDir}\\req-N.txt; reply with resp-N.json (an action). Ctrl+C to stop.");
+        server.WaitForShutdown();
+        Console.WriteLine("Bridge stopped.");
         return 0;
     }
 

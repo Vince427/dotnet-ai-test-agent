@@ -98,6 +98,23 @@ They may run very small UI smoke scenarios, but serious FlaUI runtime suites
 should use a self-hosted interactive Windows runner so desktop focus, dialogs,
 and screenshots are reliable.
 
+## Running The Loop Without OpenRouter
+
+The "decide" step is behind `IActionDecider` (and the runner speaks the OpenAI
+chat-completions contract), so the real loop + driver + app can be exercised with no
+provider key in three ways:
+
+- **Scripted mock** (`MockLlmServer`, tests): returns a fixed action sequence —
+  deterministic regression E2E.
+- **Heuristic decider** (`HeuristicActionDecider`): rule-based, no LLM — fills configured
+  inputs and clicks a sequence from the live UI state. Automated → CI smoke without a key.
+- **Human/agent bridge** (`--bridge-llm [port]`): an OpenAI-compatible endpoint that writes
+  each prompt to `bridge-io/req-N.txt` and waits for a `resp-N.json` action, so a person or
+  an external agent (e.g. Claude Code) can be the decider. Point a run's `LLM_ENDPOINT` at
+  it. Semi-interactive → exploration/demo, not unattended CI.
+
+Only the production path (`LlmService`) needs OpenRouter or another OpenAI-compatible LLM.
+
 ## Recording Mode
 
 Recording mode should remain visible on the roadmap because it is important for

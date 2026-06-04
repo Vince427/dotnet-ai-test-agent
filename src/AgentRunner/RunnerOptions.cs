@@ -22,6 +22,9 @@ public sealed class RunnerOptions
     public bool ToJUnitOnly { get; set; }
     public bool DashboardOnly { get; set; }
     public int DashboardPort { get; set; } = 8090;
+    public bool BridgeLlmOnly { get; set; }
+    public int BridgePort { get; set; } = 8088;
+    public string? BridgeIoDir { get; set; }
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -49,6 +52,9 @@ public sealed class RunnerOptions
         var toJUnitOnly = false;
         var dashboardOnly = false;
         var dashboardPort = 8090;
+        var bridgeLlmOnly = false;
+        var bridgePort = 8088;
+        string? bridgeIoDir = null;
         string? junitOutputPath = null;
         var watch = false;
         var evidenceLevel = EvidenceLevel.Standard;
@@ -100,6 +106,18 @@ public sealed class RunnerOptions
                         throw new ArgumentException("--dashboard port must be between 1 and 65535.");
                 }
             }
+            else if (arg == "--bridge-llm")
+            {
+                bridgeLlmOnly = true;
+                if (HasOptionalValue(args, i))
+                {
+                    var raw = ReadValue(args, ref i, "--bridge-llm");
+                    if (!int.TryParse(raw, out bridgePort) || bridgePort is <= 0 or > 65535)
+                        throw new ArgumentException("--bridge-llm port must be between 1 and 65535.");
+                }
+            }
+            else if (arg == "--bridge-io")
+                bridgeIoDir = ReadValue(args, ref i, "--bridge-io");
             else if (arg == "--validate-plan")
             {
                 validatePlanOnly = true;
@@ -160,8 +178,9 @@ public sealed class RunnerOptions
         if (writeGuardDemosOnly) modeCount++;
         if (toJUnitOnly) modeCount++;
         if (dashboardOnly) modeCount++;
+        if (bridgeLlmOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, or --dashboard.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, or --bridge-llm.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
@@ -236,6 +255,9 @@ public sealed class RunnerOptions
             ToJUnitOnly = toJUnitOnly,
             DashboardOnly = dashboardOnly,
             DashboardPort = dashboardPort,
+            BridgeLlmOnly = bridgeLlmOnly,
+            BridgePort = bridgePort,
+            BridgeIoDir = bridgeIoDir,
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

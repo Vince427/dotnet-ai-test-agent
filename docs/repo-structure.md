@@ -20,7 +20,7 @@ src/
     ScoringEngine.cs  LoopDetector.cs  QualityGuards.cs  AgentActionValidator.cs
     ArtifactWriter.cs  RunArtifact.cs  RunArtifactLoader.cs  GuardFailureDemoFactory.cs
     JUnitReportWriter.cs           - --to-junit CI report
-    SymphonyWorkbenchGenerator.cs  - static AgentLoop Workbench (HTML)
+    AgentLoopWorkbenchGenerator.cs - static AgentLoop Workbench (HTML)
     TestPlanLoader.cs  TestPlanValidator.cs  TestDefinition.cs  RunnerOptions.cs  WorkflowConfig.cs
     Dashboard/                     - local-only interactive dashboard (--dashboard)
       DashboardServer.cs  DashboardApi.cs  RunJobManager.cs  DashboardHtml.cs

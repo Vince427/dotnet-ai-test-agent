@@ -2,7 +2,7 @@ using DesktopAiTestAgent.AgentRunner;
 
 namespace DesktopAiTestAgent.AgentRunner.Tests;
 
-public sealed class SymphonyWorkbenchGeneratorTests
+public sealed class AgentLoopWorkbenchGeneratorTests
 {
     [Fact]
     public void RenderHtmlIncludesBacklogAndRunSummary()
@@ -33,7 +33,7 @@ public sealed class SymphonyWorkbenchGeneratorTests
             }
         };
 
-        var html = SymphonyWorkbenchGenerator.RenderHtml(
+        var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
             Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
             [Path.Combine(Directory.GetCurrentDirectory(), "tests", "smoke.yaml")],
@@ -83,7 +83,7 @@ tests:
 """);
 
         var outputPath = Path.Combine(tempDir, "docs", "symphony.html");
-        var result = SymphonyWorkbenchGenerator.Generate(new SymphonyWorkbenchOptions
+        var result = AgentLoopWorkbenchGenerator.Generate(new AgentLoopWorkbenchOptions
         {
             RepoRoot = tempDir,
             OutputPath = outputPath,

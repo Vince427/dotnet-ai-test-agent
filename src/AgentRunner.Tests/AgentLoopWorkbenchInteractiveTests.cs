@@ -4,10 +4,10 @@ using DesktopAiTestAgent.AgentRunner;
 
 namespace DesktopAiTestAgent.AgentRunner.Tests;
 
-public sealed class SymphonyWorkbenchInteractiveTests
+public sealed class AgentLoopWorkbenchInteractiveTests
 {
     private static string Render(IReadOnlyList<RunArtifact> runs) =>
-        SymphonyWorkbenchGenerator.RenderHtml(
+        AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
             Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
             new List<string>(),
@@ -140,7 +140,7 @@ public sealed class SymphonyWorkbenchInteractiveTests
 }
 """);
 
-        var result = SymphonyWorkbenchGenerator.Generate(new SymphonyWorkbenchOptions
+        var result = AgentLoopWorkbenchGenerator.Generate(new AgentLoopWorkbenchOptions
         {
             RepoRoot = tempDir,
             OutputPath = Path.Combine(tempDir, "docs", "symphony.html"),

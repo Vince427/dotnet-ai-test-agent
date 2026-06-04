@@ -25,7 +25,7 @@ public sealed class WatchModeTests
     [Fact]
     public void RenderHtmlEmitsMetaRefreshWhenAutoRefreshSet()
     {
-        var html = SymphonyWorkbenchGenerator.RenderHtml(
+        var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
             Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
             new List<string>(),
@@ -40,7 +40,7 @@ public sealed class WatchModeTests
     [Fact]
     public void RenderHtmlOmitsMetaRefreshByDefault()
     {
-        var html = SymphonyWorkbenchGenerator.RenderHtml(
+        var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
             Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
             new List<string>(),

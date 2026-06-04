@@ -2,13 +2,15 @@
 
 Owns the local static UI over YAML specs and run artifacts.
 
-Product language is AgentLoop Workbench. Existing source/generated filenames may
-still use `symphony` until the code/file rename is done deliberately.
+Product language is AgentLoop Workbench. The code symbols were renamed
+`Symphony*`→`AgentLoop*` (D3); the **generated** `docs/symphony.html` artifact name is
+intentionally retained for now (it may be a published GitHub Pages URL — see
+`docs/github-pages.md`).
 
 ## Files
 
-- `src/AgentRunner/SymphonyWorkbenchGenerator.cs`
-- `src/AgentRunner.Tests/SymphonyWorkbenchGeneratorTests.cs`
+- `src/AgentRunner/AgentLoopWorkbenchGenerator.cs`
+- `src/AgentRunner.Tests/AgentLoopWorkbenchGeneratorTests.cs`
 - `scripts/render-ui.ps1`
 - `docs/symphony.html` (generated and ignored)
 - README/docs sections that describe workbench usage

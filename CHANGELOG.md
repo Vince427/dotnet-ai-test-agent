@@ -142,6 +142,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 - `tests/examples/demo/quick-login-check.yaml`: `DEMO-LOGIN-001` authoring example.
 
 ### Changed
+- **Symphony→AgentLoop code rename (A5, decision D3)**: the workbench C# types/files
+  `SymphonyWorkbench{Options,Result,Generator}` were renamed to `AgentLoopWorkbench*` to drop
+  the legacy loop name (collides with the unrelated `openai/symphony`). The generated
+  `docs/symphony.html` artifact name and the deliberate "Symphony **ticket**" model name are
+  kept on purpose. No behaviour change.
 - **Act-stage refactor (post global-audit, A4)**: the action dispatch is extracted out of
   `RunOrchestrator.RunCoreAsync` into a testable `ActionExecutor` (`IActionExecutor` +
   `ActionExecutionResult`), and the action verbs now come from one `ActionVocabulary` source

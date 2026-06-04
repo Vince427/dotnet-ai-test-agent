@@ -51,7 +51,7 @@ internal static class Program
         {
             var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
 
-            SymphonyWorkbenchOptions BuildWorkbenchOptions(int autoRefresh) => new()
+            AgentLoopWorkbenchOptions BuildWorkbenchOptions(int autoRefresh) => new()
             {
                 RepoRoot = repoRoot,
                 OutputPath = options.UiOutputPath!,
@@ -64,7 +64,7 @@ internal static class Program
 
             if (!options.Watch)
             {
-                var result = SymphonyWorkbenchGenerator.Generate(BuildWorkbenchOptions(0));
+                var result = AgentLoopWorkbenchGenerator.Generate(BuildWorkbenchOptions(0));
                 Console.WriteLine($"AgentLoop Workbench written to {result.OutputPath} tests={result.TestCount} runs={result.RunCount}");
                 return 0;
             }
@@ -72,7 +72,7 @@ internal static class Program
             // Watch mode: regenerate on any change under the runs root, and embed a
             // browser auto-refresh so the page updates hands-free. No server, no .env.
             const int refreshSeconds = 3;
-            var first = SymphonyWorkbenchGenerator.Generate(BuildWorkbenchOptions(refreshSeconds));
+            var first = AgentLoopWorkbenchGenerator.Generate(BuildWorkbenchOptions(refreshSeconds));
             Console.WriteLine($"AgentLoop Workbench (watch) written to {first.OutputPath} tests={first.TestCount} runs={first.RunCount}");
             Console.WriteLine($"Watching {config.WorkspaceRoot} for changes. Open the file in a browser; it auto-refreshes every {refreshSeconds}s. Press Ctrl+C to stop.");
 
@@ -101,7 +101,7 @@ internal static class Program
                 {
                     try
                     {
-                        var r = SymphonyWorkbenchGenerator.Generate(BuildWorkbenchOptions(refreshSeconds));
+                        var r = AgentLoopWorkbenchGenerator.Generate(BuildWorkbenchOptions(refreshSeconds));
                         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] workbench regenerated: runs={r.RunCount}");
                     }
                     catch (Exception ex)

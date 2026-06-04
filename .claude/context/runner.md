@@ -8,8 +8,11 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/IRunOrchestrator.cs` + `src/AgentRunner/RunOrchestrator.cs`
   (observe → decide → act → score → record loop; injectable driver + decider)
 - `src/AgentRunner/IActionDecider.cs` (the "decide" seam). Implementations: `LlmService`
-  (OpenRouter/OpenAI), `HeuristicActionDecider` (rule-based, no LLM), and the
-  `BridgeLlmServer` HTTP endpoint (`--bridge-llm`) for a human/external-agent decider.
+  (OpenRouter/OpenAI), `HeuristicActionDecider` (rule-based, no LLM), the
+  `BridgeLlmServer` HTTP endpoint (`--bridge-llm`) for a human/external-agent decider, and
+  `VisionActionDecider` (V3 Tier-2: wraps a Tier-1 decider, escalates to a VLM via `IVisionClient`
+  + `VisionResponseParser` only when the Tier-1 UIA target is unresolvable). The VLM gets the
+  masked, numbered-box overlay + identifiers-only index; the chosen box maps back to an element.
 - `src/AgentRunner/ActionExecutor.cs` (the "act" seam: `IActionExecutor` +
   `ActionExecutionResult`). Validates the action (allow-list + target existence) then
   dispatches the verb to the driver; returns the outcome the loop records. Extracted out of

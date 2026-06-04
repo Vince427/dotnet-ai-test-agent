@@ -21,6 +21,17 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
 - It is a view/launcher over the CLI + artifacts — **no new data model**. Tests come
   from `tests/` (via `TestPlanLoader`), runs from `runs/` (via `RunArtifactLoader`),
   launching spawns the AgentRunner CLI (`--plan/--test-id`). Don't add a parallel store.
+- Launches go through `RunJobManager`'s **bounded queue**: at most `MaxConcurrency` (default 2,
+  clamped [1,16], set via `POST /api/jobs/concurrency`, exposed in `GET /api/config`) run at
+  once; the rest sit in `queued` status. Batch run = N enqueues (the UI loops `POST /api/runs`),
+  so it still reduces to the same CLI contract — nothing CI can't replay. The OS-process start
+  is an overridable seam (`BeginProcess`) so the scheduler is unit-tested without spawning.
+- **Mutation is bounded to what maps to a YAML file** (the dashboard never becomes a 2nd source
+  of truth): Create writes validated YAML + ticket; Edit re-writes a **single-test file under
+  `tests/created/`** through the same validator (catalog `editable` flag); Archive **moves** a
+  single-test YAML to `tests/archived/` (catalog `archivable` flag), which `DiscoverPlanPaths`
+  excludes everywhere (catalog + CLI + CI) — reversible, shows in Git. **No hard delete.**
+  Multi-test files stay "edit on disk". The catalog also surfaces `category` for filtering.
 - Manual-first: `--dashboard` starts without `.env`/LLM. Launching a run from it spawns
   the CLI, which then needs the user's target app + provider config.
 - Created "tickets" must be **validated YAML** (`TestPlanValidator`) before persisting,

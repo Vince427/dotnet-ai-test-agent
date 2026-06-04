@@ -36,6 +36,9 @@ Owns the executable orchestration loop and manual CLI surface.
 - Manual modes `--validate-plan`, `--list-tests`, `--render-ui`, and
   `--write-guard-demos` must not require `.env`, LLM access, FlaUI, or a target
   app.
+- `TestPlanLoader.DiscoverPlanPaths` excludes `tests/archived/` everywhere (so
+  `--list-tests`/`--suite`, the dashboard catalog, and CI all skip archived tests).
+  Archiving a test = moving its YAML under `tests/archived/`; it stays in Git, reversible.
 - `--format json` must keep stdout parseable JSON.
 - `Done` is not success unless the configured success condition is visible or
   the test has no success condition by design. Visibility is tested with

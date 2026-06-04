@@ -105,6 +105,9 @@ internal static class DashboardHtml
               padding:8px 10px; font-family:var(--mono); font-size:13px; }
             input:focus, select, textarea:focus { outline:none; border-color:var(--sig-dim); box-shadow:0 0 0 2px rgba(70,224,138,.12); }
             input::placeholder, textarea::placeholder { color:var(--dim); }
+            input[type=checkbox] { width:auto; box-shadow:none; vertical-align:middle; }
+            #cat-bar input, #cat-bar select { width:auto; }
+            #cat-bar #flt-q { flex:1; min-width:200px; }
             .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
             table { width:100%; border-collapse:collapse; }
@@ -222,38 +225,111 @@ internal static class DashboardHtml
             const headHTML=(title,sub)=>`<div class="head fade"><h2>${title}</h2><span class="sub">${sub}</span></div>`;
 
             // CATALOG
+            let CATALOG=[], MAXC=2; const SEL=new Set();
+            const FILT={q:"",framework:"",priority:"",category:"",suite:""};
+            const tkey=t=>t.planPath+"|"+t.id;
+            const distinct=k=>[...new Set(CATALOG.map(t=>k==="suite"?(t.suite||""):t[k]).filter(v=>v!=null&&v!==""))].map(String).sort();
             async function loadCatalog(){
               const host=$("#tab-catalog");
-              host.innerHTML=headHTML("Catalog","Tests discovered under tests/, grouped by suite")+"<div id='cat'></div>";
+              host.innerHTML=headHTML("Catalog","Tests under tests/ — filter, then Launch one or batch-run a selection through the bounded queue")
+                +"<div class='panel pad' id='cat-bar'></div><div id='cat'></div>";
               try{
-                const d=await api("/api/tests");
-                const cat=$("#cat");
-                if(!d.count){ cat.innerHTML="<div class='empty'>No tests found under tests/. Author one in <b>Create</b>.</div>"; return; }
-                const by={}; d.tests.forEach(t=>(by[t.suite||"(no suite)"]||=[]).push(t));
-                cat.innerHTML="";
-                Object.keys(by).sort().forEach(s=>{
-                  const sec=el("div",{className:"fade",style:"margin-bottom:20px"});
-                  sec.innerHTML=`<div class="row" style="margin-bottom:9px"><span class="chip">${esc(s)}</span><span class="dim">${by[s].length} test${by[s].length>1?"s":""}</span></div>`;
-                  const g=el("div",{className:"grid"}); by[s].forEach(t=>g.appendChild(card(t))); sec.appendChild(g); cat.appendChild(sec);
-                });
+                const [d,cfg]=await Promise.all([api("/api/tests"),api("/api/config").catch(()=>({maxConcurrency:2}))]);
+                CATALOG=d.tests||[]; MAXC=cfg.maxConcurrency||2; SEL.clear();
+                if(!CATALOG.length){ $("#cat").innerHTML="<div class='empty'>No tests found under tests/. Author one in <b>Create</b>.</div>"; $("#cat-bar").remove(); return; }
+                renderBar(); renderCatalog();
               }catch(e){ $("#cat").innerHTML=`<div class='empty'>${esc(e.message)}</div>`; }
             }
+            function renderBar(){
+              const selFor=(k,label)=>`<select id="flt-${k}" title="Filter by ${label}"><option value="">${label}: all</option>`+
+                distinct(k).map(v=>`<option ${v===FILT[k]?"selected":""}>${esc(v)}</option>`).join("")+`</select>`;
+              $("#cat-bar").innerHTML=`
+                <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
+                  <input id="flt-q" placeholder="search id / title / goal / tag" value="${escAttr(FILT.q)}"/>
+                  ${selFor("category","category")} ${selFor("framework","framework")} ${selFor("priority","priority")} ${selFor("suite","suite")}
+                  <button class="ghost" id="flt-clear" title="Clear all filters">clear</button>
+                </div>
+                <div class="row" style="gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap">
+                  <button class="act" id="run-sel" title="Queue the selected tests (run MAX at a time, the rest wait)">▶ Run selected (<span id="sel-n">0</span>)</button>
+                  <button class="ghost" id="run-flt" title="Queue every test matching the current filter">▶ Run filtered</button>
+                  <span class="dim" style="margin-left:auto">max parallel</span>
+                  <input id="cc" type="number" min="1" max="16" value="${MAXC}" style="width:58px" title="Max runs executing at once; the rest queue. Guards against UIA/desktop contention."/>
+                  <span class="dim" id="cat-count"></span>
+                </div>`;
+              $("#flt-q").oninput=e=>{FILT.q=e.target.value;renderCatalog();};
+              ["category","framework","priority","suite"].forEach(k=>$("#flt-"+k).onchange=e=>{FILT[k]=e.target.value;renderCatalog();});
+              $("#flt-clear").onclick=()=>{Object.keys(FILT).forEach(k=>FILT[k]="");SEL.clear();renderBar();renderCatalog();};
+              $("#run-sel").onclick=()=>runMany([...SEL].map(k=>CATALOG.find(t=>tkey(t)===k)).filter(Boolean),"selected");
+              $("#run-flt").onclick=()=>runMany(filtered(),"filtered");
+              $("#cc").onchange=async e=>{ const v=Math.max(1,Math.min(16,parseInt(e.target.value)||2));
+                try{ const r=await api("/api/jobs/concurrency",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({max:v})}); MAXC=r.maxConcurrency; }catch(_){ } e.target.value=MAXC; };
+              updateSelN();
+            }
+            function filtered(){
+              const q=FILT.q.toLowerCase();
+              return CATALOG.filter(t=>
+                (!FILT.category||String(t.category)===FILT.category)&&
+                (!FILT.framework||t.framework===FILT.framework)&&
+                (!FILT.priority||t.priority===FILT.priority)&&
+                (!FILT.suite||(t.suite||"")===FILT.suite)&&
+                (!q||[t.id,t.title,t.goal,(t.tags||[]).join(" ")].join(" ").toLowerCase().includes(q)));
+            }
+            function renderCatalog(){
+              const list=filtered(), cat=$("#cat"); const cc=$("#cat-count"); if(cc) cc.textContent=list.length+" / "+CATALOG.length+" shown";
+              if(!list.length){ cat.innerHTML="<div class='empty'>No tests match the filter.</div>"; return; }
+              const by={}; list.forEach(t=>(by[t.suite||"(no suite)"]||=[]).push(t));
+              cat.innerHTML="";
+              Object.keys(by).sort().forEach(s=>{
+                const sec=el("div",{className:"fade",style:"margin-bottom:20px"});
+                sec.innerHTML=`<div class="row" style="margin-bottom:9px"><span class="chip">${esc(s)}</span><span class="dim">${by[s].length} test${by[s].length>1?"s":""}</span></div>`;
+                const g=el("div",{className:"grid"}); by[s].forEach(t=>g.appendChild(card(t))); sec.appendChild(g); cat.appendChild(sec);
+              });
+            }
+            const catColor={Smoke:"#46e08a",Monkey:"#e0b446",Scenario:"#5aa9e0",Regression:"#c98ae0",Exploratory:"#e0795a"};
             function card(t){
-              const c=el("div",{className:"card"});
-              c.innerHTML=`<h4>${esc(t.id)}</h4><div class="mut" style="font-size:12px;margin-bottom:9px">${esc(t.title||"—")}</div>
-                <div class="row" style="margin-bottom:10px">
+              const c=el("div",{className:"card"}), k=tkey(t), cc=catColor[t.category]||"#7a8699";
+              c.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+                  <h4 style="margin:0">${esc(t.id)}</h4>
+                  <label class="dim" style="font-size:11px;cursor:pointer" title="Select for a batch run"><input type="checkbox" class="csel" ${SEL.has(k)?"checked":""}/> sel</label></div>
+                <div class="mut" style="font-size:12px;margin:3px 0 9px">${esc(t.title||"—")}</div>
+                <div class="row" style="margin-bottom:10px;flex-wrap:wrap">
+                  <span class="chip" style="border-color:${cc};color:${cc}" title="Test category (drives the agent's prompt persona)">${esc(t.category||"Scenario")}</span>
                   ${t.framework?`<span class="chip fw">${esc(t.framework)}</span>`:""}
                   ${t.priority?`<span class="chip">${esc(t.priority)}</span>`:""}
                   ${(t.tags||[]).slice(0,4).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}
                 </div>
                 <div class="dim" style="font-size:11.5px;margin-bottom:11px;min-height:32px">${esc(t.goal||"")}</div>`;
-              const b=el("button",{className:"act",textContent:"▶ Launch",title:"Spawn the AgentRunner CLI for this test against its target window (needs the app running + a configured LLM). Opens the Live view."}); b.onclick=()=>launch(t); c.appendChild(b);
+              c.querySelector(".csel").onchange=e=>{ e.target.checked?SEL.add(k):SEL.delete(k); updateSelN(); };
+              const bar=el("div",{className:"row",style:"gap:6px;flex-wrap:wrap"});
+              const lb=el("button",{className:"act",textContent:"▶ Launch",title:"Queue this test (bounded by max parallel). Opens Live."}); lb.onclick=()=>runMany([t],"one"); bar.appendChild(lb);
+              if(t.editable){ const eb=el("button",{className:"ghost",textContent:"✎ Edit",title:"Edit this dashboard-authored YAML — reopens the form; saving overwrites it, re-validated."}); eb.onclick=()=>editTest(t); bar.appendChild(eb); }
+              if(t.archivable){ const ab=el("button",{className:"ghost",textContent:"⇩ Archive",title:"Move this YAML to tests/archived/ (excluded from catalog + CI; reversible, shows in Git). Not a hard delete."}); ab.onclick=()=>archiveTest(t); bar.appendChild(ab); }
+              c.appendChild(bar);
               return c;
             }
-            async function launch(t){
-              try{ await api("/api/runs",{method:"POST",headers:{"content-type":"application/json"},
-                body:JSON.stringify({planPath:t.planPath,testId:t.id,window:t.targetWindow})}); show("live"); }
-              catch(e){ alert("Launch failed: "+e.message); }
+            function updateSelN(){ const n=$("#sel-n"); if(n)n.textContent=SEL.size; }
+            async function runMany(tests,label){
+              if(!tests.length){ alert("Nothing to run."); return; }
+              if(tests.length>5 && !confirm(`Queue ${tests.length} runs (${label})? They execute ${MAXC} at a time.`)) return;
+              for(const t of tests){
+                try{ await api("/api/runs",{method:"POST",headers:{"content-type":"application/json"},
+                  body:JSON.stringify({planPath:t.planPath,testId:t.id,window:t.targetWindow})}); }
+                catch(e){ alert("Launch failed for "+t.id+": "+e.message); }
+              }
+              show("live");
+            }
+            async function archiveTest(t){
+              if(!confirm(`Archive ${t.id}? Moves ${t.planPath} to tests/archived/ (reversible, shows in Git).`)) return;
+              try{ await api("/api/tests/archive",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({planPath:t.planPath})}); loadCatalog(); }
+              catch(e){ alert("Archive failed: "+e.message); }
+            }
+            function editTest(t){ show("create"); fillCreate(t); }
+            function fillCreate(t){
+              const set=(k,v)=>{ const f=$("#f-"+k); if(f!=null&&v!=null) f.value=v; };
+              set("id",t.id); set("suite",t.suite); set("title",t.title); set("framework",t.framework); set("priority",t.priority);
+              set("targetWindow",t.targetWindow); set("goal",t.goal); set("successCondition",t.successCondition);
+              set("maxSteps",t.maxSteps); set("actions",(t.allowedActions||[]).join(", ")); set("tags",(t.tags||[]).join(", "));
+              const h=$("#f-hint"); if(h) h.textContent="Editing "+t.id+" — saving overwrites its YAML (re-validated).";
             }
 
             // CREATE
@@ -448,12 +524,13 @@ internal static class DashboardHtml
                     if(j.status!=="running" && !endStamp[j.jobId]) endStamp[j.jobId]=Date.now();
                     let cardEl=$("#job-"+j.jobId);
                     if(!cardEl){ cardEl=el("div",{id:"job-"+j.jobId,className:"panel pad fade",style:"margin-bottom:12px"}); host.appendChild(cardEl); cardEl.dataset.k=""; }
-                    const st=stepOf(j.logs||[]); const cls=j.status==="running"?"running":(j.exitCode===0?"ok":"bad");
+                    const st=stepOf(j.logs||[]); const isQ=j.status==="queued";
+                    const cls=isQ?"info":(j.status==="running"?"running":(j.exitCode===0?"ok":"bad"));
                     cardEl.className="panel pad live-card "+cls;
                     const key=JSON.stringify([j.status,j.exitCode,j.runId,(j.logs||[]).length,st.cur,st.tot]);
                     if(cardEl.dataset.k!==key){
                       cardEl.dataset.k=key;
-                      const dotc=j.status==="running"?"run":(j.exitCode===0?"ok":"bad");
+                      const dotc=isQ?"info":(j.status==="running"?"run":(j.exitCode===0?"ok":"bad"));
                       cardEl.innerHTML=`
                         <div class="row" style="justify-content:space-between">
                           <div class="row">
@@ -462,7 +539,7 @@ internal static class DashboardHtml
                           </div>
                           <div class="row">
                             ${j.runId?`<span class="chip info" title="The run id; its artifacts are under runs/${esc(j.runId)}/">run ${esc(j.runId)}</span>`:'<span class="chip" title="Recovered from the runner logs once the run starts">awaiting run id…</span>'}
-                            <span class="chip" title="Process id of the spawned AgentRunner CLI">pid ${j.pid}</span>
+                            ${j.pid?`<span class="chip" title="Process id of the spawned AgentRunner CLI">pid ${j.pid}</span>`:'<span class="chip" title="Waiting for a free concurrency slot">queued…</span>'}
                             <span class="chip" title="Elapsed time"><span class="timer" data-start="${new Date(j.startedAt).getTime()}" data-job="${esc(j.jobId)}"></span></span>
                           </div>
                         </div>

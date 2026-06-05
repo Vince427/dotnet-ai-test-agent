@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Deterministic replay (`--replay <session.json>`)**. A key-free `ReplayActionDecider` replays a
+  recorded session's actions through the agent loop instead of asking an LLM — completing
+  **record → replay → heal**: `--record` captures a session, `--replay` re-runs it deterministically
+  (no `.env`, no model), and a drifted target fails visibly → `SelectorHealer` records a suggestion →
+  `--heal-apply` fixes it. A drifted target is replayed verbatim (never silently skipped). Verified
+  end-to-end: replayed a 3-step login to "Login successful". +3 tests. (Note: recorded passwords are
+  redacted, so secret entry isn't reproduced from a captured session — supply real values to replay them.)
 - **`--heal-apply` — confirmed, guarded selector healing (V8 inc.2 complete)**. Turns a run's
   evidence-only `SelectorHealer` suggestions into a rewrite of the test's new optional **`selectors`**
   field: `--heal-apply --run <id> [--plan <path>] [--yes]` previews `old -> new` heals (dry-run) and,

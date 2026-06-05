@@ -46,7 +46,7 @@ internal static class Program
         var recordToStdout =
             HasArgument(args, "--record") && !HasArgument(args, "--out");
         // --vision-bridge is a runtime loop but key-free (the external agent is the VLM), so it needs no .env.
-        var keyFreeRuntime = HasArgument(args, "--vision-bridge");
+        var keyFreeRuntime = HasArgument(args, "--vision-bridge") || HasArgument(args, "--replay");
         var config = WorkflowConfig.Load(
             loadDotEnv: !manualOnlyRequested && !keyFreeRuntime,
             // Keep stdout clean for commands whose stdout IS the payload: --mcp (JSON-RPC),
@@ -182,7 +182,34 @@ internal static class Program
         using var driver = new FlaUiDesktopDriver();
 
         IActionDecider decider;
-        if (!string.IsNullOrWhiteSpace(options.VisionBridgeDir))
+        if (!string.IsNullOrWhiteSpace(options.ReplaySessionPath))
+        {
+            // --replay: key-free deterministic replay of a recorded session. The loop replays the
+            // recorded actions instead of asking an LLM; a drifted target fails visibly and is recorded
+            // as a SelectorHealer suggestion (then --heal-apply can fix it). No .env, no model.
+            RecordedSession? session;
+            try
+            {
+                var path = Path.IsPathRooted(options.ReplaySessionPath!)
+                    ? options.ReplaySessionPath!
+                    : Path.GetFullPath(Path.Combine(config.WorkflowDirectory ?? Directory.GetCurrentDirectory(), options.ReplaySessionPath!));
+                session = JsonSerializer.Deserialize<RecordedSession>(
+                    File.ReadAllText(path), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("Could not read the replay session JSON: " + ex.Message);
+                return 2;
+            }
+            if (session == null || session.Actions.Count == 0)
+            {
+                Console.Error.WriteLine("Replay session has no actions.");
+                return 2;
+            }
+            decider = new ReplayActionDecider(session.Actions);
+            Console.WriteLine($"Deterministic replay enabled (key-free): replaying {session.Actions.Count} recorded action(s), no LLM.");
+        }
+        else if (!string.IsNullOrWhiteSpace(options.VisionBridgeDir))
         {
             // --vision-bridge: key-free, agent-in-the-loop vision. Every step writes an annotated
             // screenshot + index to the folder; an external VLM (e.g. Claude Code on this desktop)

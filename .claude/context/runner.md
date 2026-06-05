@@ -7,6 +7,9 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/Program.cs` (CLI parse + manual commands; wires the runtime loop)
 - `src/AgentRunner/IRunOrchestrator.cs` + `src/AgentRunner/RunOrchestrator.cs`
   (observe → decide → act → score → record loop; injectable driver + decider)
+- `src/AgentRunner/ReplayActionDecider.cs` (`--replay <session.json>`: key-free deterministic decider
+  that replays a `RecordedSession`'s actions in order — no LLM; a drifted target is replayed verbatim so
+  the loop detects + heals it. Completes record → replay → heal.)
 - `src/AgentRunner/IActionDecider.cs` (the "decide" seam). Implementations: `LlmService`
   (OpenRouter/OpenAI), `HeuristicActionDecider` (rule-based, no LLM), the
   `BridgeLlmServer` HTTP endpoint (`--bridge-llm`) for a human/external-agent decider, and

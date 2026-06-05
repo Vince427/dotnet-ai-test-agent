@@ -6,62 +6,55 @@ parallel work.
 
 ## RESUME SNAPSHOT — 2026-06-05 (read this first)
 
-**`main` HEAD = `02b7c2f`** (Merge PR #14, V9.5 recording inc.1). Build clean on net48 + net8 +
-Avalonia + MAUI; **257 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
+**`main` HEAD = `248d8e0`** (Merge PR #31, `--heal-apply`). Build clean on net48 + net8 + Avalonia +
+MAUI; **338 tests + 3 gated** on `main`; **CI green**. Single contributor identity: `Vince427` (noreply).
+
+**How to try it (interactive):** `--dashboard 8090` (catalog/create/runs/live UI) · `--vision-bridge <dir>`
+= Claude Code plays the VLM, no key (`docs/vision-bridge.md`) · `--record`/`--compose-recording` (record→YAML)
+· `--heal-apply --run <id> [--yes]` · `--analytics` · `--validate-plan`/`--list-tests`. All key-free except
+real LLM runs. Launching a sample + agent works (Start-Process foregrounds the window before capture).
 
 > 🚩 **BEFORE TAGGING v1.0**: complete `docs/release-checklist.md` (freeze the public contract +
 > golden tests + `schema_version` + SemVer/deprecation policy). This is how we avoid breaking users
 > with future versions. Do **not** cut 1.0 until that gate is green. (memory: `road-to-v1-contract`)
 >
-> ⏳ **Branch `claude/contract-golden`** (awaiting merge): `CONTRACT.md` + `ContractTests.cs` freeze and
-> lock the public surface (CLI/exit-codes/JSON shape, YAML schema, artifacts, MCP) + SemVer policy.
-> Ticks the contract/golden-test/SemVer boxes in `docs/release-checklist.md`. **Still open for 1.0:**
-> `schema_version`/artifact `version` + tolerant-loader box, the CHANGELOG `1.0.0` section, the tag.
+> `CONTRACT.md` + `ContractTests` + `ReproducibilityTests` already freeze & lock the public surface
+> (CLI/exit-codes/JSON shape, YAML schema, artifacts, MCP) + run-to-run stability + SemVer policy.
+> **Still open for the tag:** `schema_version` on YAML + `version` on artifacts + a tolerant loader,
+> the CHANGELOG `1.0.0` section, then `v1.0.0`.
 
-**Merged to `main`:** A1–A6 (audit hardening) · V3 vision moat **complete** (inc.1 overlay artifact,
-inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 self-healing inc.1
-(`SelectorHealer`, evidence-only) · MCP adapter inc.1 (`--mcp`) · **V7 prompt-preview inc.1**
-(`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`) · **V7 inc.2** (dashboard:
-`GET /api/prompt`, catalog `warnings[]` as ⚠ notes, ⌘ Prompt modal, Create echoes warnings).
+**Everything below is MERGED to `main` (all earlier "awaiting-merge" branches are in).** The arc:
+- **V3 vision moat** complete — Tier-1 UIA → `VisionActionDecider` (Tier-2 VLM) → `OpenAiVisionClient`
+  `--vision`; **plus key-free `--vision-bridge`** (`BridgeVisionDecider`: writes annotated screenshot +
+  identifiers-only index, awaits `vision-resp-N.json` from an external agent — Claude Code as the VLM).
+- **V7** prompt preview + policy warnings across CLI (`--show-prompt`), dashboard (`/api/prompt`, ⚠),
+  static workbench (Notes + Prompt columns), MCP `show_prompt`.
+- **V8 self-healing COMPLETE** — `SelectorHealer` evidence → `summary.md` heal section → **`--heal-apply`**
+  (rewrites the test's `selectors`, surgical edit **verified by `TestFactGuard`**, `--yes`/dry-run, local-only).
+- **V9.5 recording** — `--record` (live UIA capture, env-bound) → `session.json` → `--compose-recording`
+  → validated YAML draft. Pure core (`SessionRecorder`/`RecordedActionMapper`/`Core.CapturedUiEvent`).
+- **MCP** — read-only (`--mcp`) + opt-in `create_test` (`--mcp-allow-write`).
+- **V11** `--analytics` (flaky/selector-drift/duration from `runs/`).
+- **Dashboard** — guided fully-explained UI, Category/Risk, connection banner; localhost-only.
+- **Distribution** — `scripts/publish-release.ps1` (single-file `AgentRunner.exe`) + `release.yml` (tag
+  `v*` → Release). No `dotnet tool` (desktop dep; `DISCOVERY_LOG`). `docs/install.md`.
+- **Hardening** — `CONTRACT.md` + `ContractTests` (shape) + `ReproducibilityTests` (run-twice stability)
+  + `TestFactGuard` (rewrite fact-gate). CI now builds net48 too. `docs/release-checklist.md` = the 1.0 gate.
 
-**Merged to `main`:** dashboard UX clarity (PR #10) · guided Create form + per-tab explainers +
-Category/Risk (PR #11) · V7 inc.2b static-workbench Notes + Prompt columns (PR #12).
-
-**Merged to `main`:** V8 inc.2 (screenshot half) — `summary.md` **Selector Healing Suggestions**
-section, evidence-only (PR #13). `--heal-apply` deferred (no selector field in YAML until V9.5).
-
-**Open branch awaiting merge → `claude/recording-compose`** (V9.5 recording mode inc.1):
-`--compose-recording <session.json> [--out]` → validated goal-based YAML draft via `RecordingComposer`
-(reuses `DashboardApi.BuildYaml` + validator; goal synthesised from steps, secrets redacted; key-free,
-stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, then `git pull`.**
-
-**V9.5 inc.2 capture core (merged):** `Core.CapturedUiEvent` + `RecordedActionMapper` +
-`SessionRecorder` (pure: UIA events → smoothed `RecordedSession` → composes to YAML).
-**Distribution (this branch):** `scripts/publish-release.ps1` → single-file `AgentRunner.exe` +
-`docs/install.md`. Global `dotnet tool` deferred (PackAsTool can't do `net8.0-windows`/WPF — see
-`DISCOVERY_LOG.md`); needs a CLI/driver split. 268 tests + 2 gated.
-**Release CI (branch `claude/ci-release-workflow`):** `.github/workflows/release.yml` — `v*` tag /
-`workflow_dispatch` → `publish-release.ps1 -Zip` → upload `release.zip` + attach to a GitHub Release
-(`action-gh-release@v2`, built-in `GITHUB_TOKEN`). README Install section added.
-
-**V9.5 inc.2b (branch `claude/uia-record-live`, awaiting merge):** live UIA source
-`UIAutomation/UiaSessionRecorder.cs` + `--record --window <title> [--out] [--seconds N]` → `session.json`;
-secrets redacted at capture. Env-bound — needs interactive desktop verification (gated `[InteractiveUiFact]`).
-
-**Vision bridge (key-free VLM):** `--vision-bridge <dir>` + `BridgeVisionDecider` writes an annotated
-screenshot + identifiers-only index per step and awaits `vision-resp-N.json` from an external agent
-(Claude Code as the VLM, no key). `docs/vision-bridge.md`; protocol unit-tested, run is env-bound.
-
-**Recently done (this batch):** MCP inc.2 `create_test` (opt-in write) · V11 `--analytics` · pre-1.0
-contract gate (`CONTRACT.md` + golden `ContractTests`).
+**Idioms to keep:** deterministic key-free core is gated in CI / golden-tested; stochastic LLM runs are
+recorded, never asserted-equal. Rewrites go through `TestFactGuard`. One emitter (`DashboardApi.BuildYaml`)
+for all YAML authoring. Everything multi-targets net48 + net8.
 
 **Next executable (pick up here):**
-1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply` (inc.2b live
-   `--record` already merged).
-2. **Toward the 1.0 tag** (see `docs/release-checklist.md`): `schema_version` on YAML + `version` on
-   artifacts with a tolerant loader, CHANGELOG `1.0.0` section, then tag `v1.0.0`.
-3. Investigate the live `--record` "Click not captured" finding (DISCOVERY_LOG).
-4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
+1. **Replay decider** — a deterministic `IActionDecider` that *replays* a test's `selectors`/recorded
+   steps with NO LLM. This completes the record→replay→heal loop and gives `--heal-apply` its runtime
+   payoff (today `selectors` is a maintained inventory + heal target only).
+2. **Toward the `v1.0.0` tag** (`docs/release-checklist.md`): `schema_version` on YAML + `version` on
+   artifacts + tolerant loader; CHANGELOG `1.0.0` section; tag.
+3. **Real net48-NATIVE app proof** (sourcing a buildable one) — the "real third-party app" wedge is
+   already proven on a net8 OSS app (`dotnet-winforms-examples`), which surfaced + fixed the occluded-
+   window screenshot bug; net48-runtime-specific proof is still open.
+4. Live `--record` **"Click not captured"** finding (`DISCOVERY_LOG`); env-bound `--vision`/MAUI gated E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable
 **Settings → Pages → Source: GitHub Actions** (the `enablement:true` auto-enable didn't take).

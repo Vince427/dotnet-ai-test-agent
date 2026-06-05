@@ -45,17 +45,29 @@ real LLM runs. Launching a sample + agent works (Start-Process foregrounds the w
 recorded, never asserted-equal. Rewrites go through `TestFactGuard`. One emitter (`DashboardApi.BuildYaml`)
 for all YAML authoring. Everything multi-targets net48 + net8.
 
+**The engine is capability-complete** (authoring · UIA Tier-1 / VLM hosted / VLM bridge / replay deciders ·
+record → compose → replay → heal · MCP · dashboard · analytics · distribution · CONTRACT+golden+repro+fact-gate).
+What remains is **proof + a few 1.0-gate items**, not new features.
+
 **Next executable (pick up here):**
-1. ~~Replay decider + secret substitution~~ **DONE** — `ReplayActionDecider` + `--replay <session.json>`
-   replays a recorded session with NO LLM (verified end-to-end); redacted secret fields are filled at
-   replay from env `AGENTLOOP_SECRET_<id>` (no secret on disk; verified). record → replay → heal closes:
-   `--record` → `--replay` (drift fails → `SelectorHealer` → `--heal-apply`).
+1. **★ Real-app end-to-end validation (the credibility gap — highest leverage).** Run the whole value prop
+   on an *uncontrolled* app the agent never saw, and capture the artifacts as a **reference case study**.
+   The single most convincing scenario (one run): **record** a real flow (login + form + submit) →
+   **`--replay`** it deterministically (no LLM) → **induce selector drift** (rename/move a control, or a new
+   app build) → replay fails on the drifted control → `SelectorHealer` suggests → **`--heal-apply`** fixes
+   the `selectors` → replay passes again. Also validate, on the same app: (a) **vision** (`--vision` /
+   `--vision-bridge`) on an owner-drawn / flat-UIA control where Tier-1 can't resolve — the moat; (b)
+   **non-intrusive** (zero app changes); (c) **secret-safety** (real login field never in `session.json`/
+   screenshots; replay re-injects via `AGENTLOOP_SECRET_*`). *Needs the user to pick the app* (exe path +
+   window title, or a repo). Env-bound (a real desktop). Ideal target: a real **.NET 4.8 LOB** app (also
+   closes item 3). Note: launching a sample/app + driving works here (Start-Process foregrounds before capture).
 2. **Toward the `v1.0.0` tag** (`docs/release-checklist.md`): `schema_version` on YAML + `version` on
-   artifacts + tolerant loader; CHANGELOG `1.0.0` section; tag.
-3. **Real net48-NATIVE app proof** (sourcing a buildable one) — the "real third-party app" wedge is
-   already proven on a net8 OSS app (`dotnet-winforms-examples`), which surfaced + fixed the occluded-
-   window screenshot bug; net48-runtime-specific proof is still open.
-4. Live `--record` **"Click not captured"** finding (`DISCOVERY_LOG`); env-bound `--vision`/MAUI gated E2E.
+   artifacts + a tolerant loader; CHANGELOG `1.0.0` section; cut the tag (release workflow already exists).
+3. **Real net48-NATIVE app proof** — the "real third-party app" wedge is proven on a *net8* OSS app
+   (`dotnet-winforms-examples`, which surfaced + fixed the occluded-window screenshot bug); a *net48*-runtime
+   proof is still open (sourcing a buildable native-net48 app — retargeting modern apps hits real API walls).
+4. Live `--record` **"Click not captured"** finding (`DISCOVERY_LOG`) — the driver's Click may not raise
+   the UIA Invoked event for record to capture; env-bound `--vision`/MAUI gated E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable
 **Settings → Pages → Source: GitHub Actions** (the `enablement:true` auto-enable didn't take).

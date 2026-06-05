@@ -142,4 +142,75 @@ public sealed class McpServerTests : IDisposable
         var r = Parse(_server.HandleLine("not json"));
         Assert.Equal(-32700, r.GetProperty("error").GetProperty("code").GetInt32());
     }
+
+    // --- create_test (opt-in authoring) ---
+
+    private const string CreateTestCall = """
+        {"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"create_test","arguments":{
+        "id":"AUTH-001","goal":"Open the app and confirm","framework":"winforms","title":"Authored by MCP",
+        "successCondition":"Done","maxSteps":6,"allowedActions":["Click","Done"],"tags":["mcp"]}}}
+        """;
+
+    [Fact]
+    public void CreateTest_Disabled_ByDefault_IsToolError()
+    {
+        var r = Parse(_server.HandleLine(CreateTestCall));
+        var result = r.GetProperty("result");
+        Assert.True(result.GetProperty("isError").GetBoolean());
+        var text = result.GetProperty("content")[0].GetProperty("text").GetString();
+        Assert.Contains("--mcp-allow-write", text);
+        // No file should have been written.
+        Assert.False(File.Exists(Path.Combine(_repo, "tests", "created", "AUTH-001.yaml")));
+    }
+
+    [Fact]
+    public void CreateTest_NotAdvertised_WhenWritesDisabled()
+    {
+        var r = Parse(_server.HandleLine("""{"jsonrpc":"2.0","id":21,"method":"tools/list"}"""));
+        var names = r.GetProperty("result").GetProperty("tools").EnumerateArray()
+            .Select(t => t.GetProperty("name").GetString()).ToList();
+        Assert.DoesNotContain("create_test", names);
+        // Read tools are still advertised.
+        Assert.Contains("list_tests", names);
+    }
+
+    [Fact]
+    public void CreateTest_Enabled_WritesValidYamlThatLoadsAndValidates()
+    {
+        var writer = new McpServer(_repo, Path.Combine(_repo, "runs"), allowWrite: true);
+
+        // tools/list now advertises the authoring tool.
+        var list = Parse(writer.HandleLine("""{"jsonrpc":"2.0","id":22,"method":"tools/list"}"""));
+        var names = list.GetProperty("result").GetProperty("tools").EnumerateArray()
+            .Select(t => t.GetProperty("name").GetString()).ToList();
+        Assert.Contains("create_test", names);
+
+        var r = Parse(writer.HandleLine(CreateTestCall));
+        var result = r.GetProperty("result");
+        Assert.False(result.GetProperty("isError").GetBoolean());
+        var data = Parse(result.GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.True(data.GetProperty("ok").GetBoolean());
+        Assert.Equal("tests/created/AUTH-001.yaml", data.GetProperty("planPath").GetString());
+
+        // The file exists, loads, validates, and is marked authoring_agent: mcp.
+        var path = Path.Combine(_repo, "tests", "created", "AUTH-001.yaml");
+        Assert.True(File.Exists(path));
+        var yaml = File.ReadAllText(path);
+        Assert.Contains("authoring_agent: \"mcp\"", yaml);
+        var plan = TestPlanLoader.Load(path);
+        Assert.True(TestPlanValidator.Validate(plan, "AUTH-001").IsValid);
+        Assert.Equal("AUTH-001", plan.Tests[0].Id);
+    }
+
+    [Fact]
+    public void CreateTest_Enabled_RejectsUnsafeId()
+    {
+        var writer = new McpServer(_repo, Path.Combine(_repo, "runs"), allowWrite: true);
+        var r = Parse(writer.HandleLine("""
+            {"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"create_test","arguments":{
+            "id":"../evil","goal":"escape the folder"}}}
+            """));
+        Assert.True(r.GetProperty("result").GetProperty("isError").GetBoolean());
+        Assert.False(Directory.Exists(Path.Combine(_repo, "tests", "created")));
+    }
 }

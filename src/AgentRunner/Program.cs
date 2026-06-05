@@ -154,7 +154,7 @@ internal static class Program
             return RunBridgeLlm(config, options);
 
         if (options.McpOnly)
-            return RunMcp(config);
+            return RunMcp(config, options);
 
         if (options.ShowPromptOnly)
             return ShowPrompt(config, options);
@@ -453,13 +453,15 @@ internal static class Program
         return 0;
     }
 
-    // Manual command: serve the read-only MCP adapter over stdio (--mcp). An adapter over the
-    // same CLI contract — exposes list/validate/read tools, no .env, nothing that spawns a run.
-    // stdout MUST carry only JSON-RPC, so we write nothing else there.
-    private static int RunMcp(WorkflowConfig config)
+    // Manual command: serve the MCP adapter over stdio (--mcp). An adapter over the same CLI
+    // contract — exposes list/validate/read tools, no .env, nothing that spawns a run. Writes are
+    // read-only by default; the opt-in create_test authoring tool is enabled only with
+    // --mcp-allow-write (or AGENTLOOP_MCP_ALLOW_WRITE=1). stdout MUST carry only JSON-RPC, so we
+    // write nothing else there.
+    private static int RunMcp(WorkflowConfig config, RunnerOptions options)
     {
         var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
-        var server = new Mcp.McpServer(repoRoot, config.WorkspaceRoot);
+        var server = new Mcp.McpServer(repoRoot, config.WorkspaceRoot, options.McpAllowWrite);
 
         string? line;
         while ((line = Console.In.ReadLine()) != null)

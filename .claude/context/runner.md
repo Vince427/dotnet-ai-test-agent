@@ -40,7 +40,10 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/QualityGuards.cs`
 - `src/AgentRunner/ManualCommandOutput.cs`
 - `src/AgentRunner/Mcp/McpServer.cs` (the `--mcp` JSON-RPC/stdio adapter; read-only, key-free
-  tools over the same loaders — `docs/mcp.md`)
+  tools over the same loaders — `docs/mcp.md`). Writes are **opt-in** (`--mcp-allow-write` /
+  `AGENTLOOP_MCP_ALLOW_WRITE=1`): the lone write tool `create_test` reuses `DashboardApi.BuildYaml`
+  + `TestPlanValidator` and writes `tests/created/<id>.yaml` (`authoring_agent: mcp`); disabled by
+  default — then it isn't advertised and returns a tool error. `HandleLine` stays pure/unit-tested.
 - `src/AgentRunner/RecordingComposer.cs` (V9.5 recording mode inc.1: `RecordedSession`/`RecordedAction`
   → validated YAML draft via `--compose-recording`; reuses `DashboardApi.BuildYaml` + `TestPlanValidator`)
 - `src/AgentRunner/SessionRecorder.cs` (V9.5 inc.2 capture core, pure: `RecordedActionMapper` +

@@ -11,27 +11,31 @@
 
 ## The public contract (what users depend on)
 
-Everything else (dashboard UI, internals, refactors) is free to change. The contract is:
+Everything else (dashboard UI, internals, refactors) is free to change. The contract is now
+frozen and authoritative in **[`CONTRACT.md`](../CONTRACT.md)** (repo root); the table below maps
+each surface to where it lives in code:
 
 | Surface | Where |
 |---|---|
-| **CLI**: flags, exit codes, stdout payload format, `--format json` shape | `RunnerOptions`, `Program`, `docs/` |
-| **YAML test schema**: field names + meaning | `schemas/test-plan.schema.json`, `TestDefinition` |
-| **Artifacts**: shape read by others | `report.json`, `summary.md`, JUnit (`--to-junit`) |
-| **MCP**: tool names + params | `docs/mcp.md`, `Mcp/McpServer.cs` |
+| **CLI**: flags, exit codes, stdout payload format, `--format json` shape | `RunnerOptions`, `Program`, `docs/`, `CONTRACT.md` §1 |
+| **YAML test schema**: field names + meaning | `schemas/test-plan.schema.json`, `TestDefinition`, `CONTRACT.md` §2 |
+| **Artifacts**: shape read by others | `report.json`, `summary.md`, JUnit (`--to-junit`), `CONTRACT.md` §3 |
+| **MCP**: tool names + params | `docs/mcp.md`, `Mcp/McpServer.cs`, `CONTRACT.md` §4 |
 
 ## Definition of 1.0 (gate — do all before tagging)
 
-- [ ] **Write `CONTRACT.md`** that freezes the surfaces above (the explicit "stable API").
-- [ ] **Golden / contract tests** that fail on any contract drift:
-  - [ ] schema-validate **every** `tests/**/*.yaml` against `schemas/test-plan.schema.json`;
-  - [ ] snapshot the shape of `report.json`, `summary.md`, and `--list-tests --format json`;
-  - [ ] assert CLI exit codes (0 / 1 / 2) for the documented cases.
+- [x] **Write `CONTRACT.md`** that freezes the surfaces above (the explicit "stable API").
+- [x] **Golden / contract tests** that fail on any contract drift (`src/AgentRunner.Tests/ContractTests.cs`):
+  - [x] load + validate (zero errors) **every** `tests/**/*.yaml` with the same loader/validator the CLI uses;
+  - [x] snapshot the shape (top-level + item key sets) of `--list-tests` / `--validate-plan` `--format json`
+        (and the `report.json`/`summary.md`/JUnit shapes are documented in `CONTRACT.md` §3);
+  - [x] assert CLI exit codes (invalid args → 2; known-good plan validates → 0) headlessly;
+  - [x] assert schema ⇄ loader/validator agreement (`max_steps` bounds, required `goal`, action vocabulary).
 - [ ] **`schema_version`** on YAML + a `version` on artifacts, with a **tolerant loader**
       (ignore unknown fields, fill defaults) so new tool reads old files.
-- [ ] **SemVer policy documented**: `1.x` = additive-only (new flags / **optional** fields
+- [x] **SemVer policy documented**: `1.x` = additive-only (new flags / **optional** fields
       with defaults); breaking changes only at `2.0`; **deprecate with a `WARN` for ≥1 minor
-      before removing/renaming** anything in the contract.
+      before removing/renaming** anything in the contract. (See `CONTRACT.md` § SemVer policy.)
 - [ ] **CHANGELOG** has a clear `1.0.0` section + a "Migration" note convention.
 - [ ] **Tag `v1.0.0`** (and, when ready, `dotnet tool install -g …@1.0.0` so users pin a version).
 

@@ -12,6 +12,11 @@ Avalonia + MAUI; **257 tests + 2 gated** on `main`. Single contributor identity:
 > 🚩 **BEFORE TAGGING v1.0**: complete `docs/release-checklist.md` (freeze the public contract +
 > golden tests + `schema_version` + SemVer/deprecation policy). This is how we avoid breaking users
 > with future versions. Do **not** cut 1.0 until that gate is green. (memory: `road-to-v1-contract`)
+>
+> ⏳ **Branch `claude/contract-golden`** (awaiting merge): `CONTRACT.md` + `ContractTests.cs` freeze and
+> lock the public surface (CLI/exit-codes/JSON shape, YAML schema, artifacts, MCP) + SemVer policy.
+> Ticks the contract/golden-test/SemVer boxes in `docs/release-checklist.md`. **Still open for 1.0:**
+> `schema_version`/artifact `version` + tolerant-loader box, the CHANGELOG `1.0.0` section, the tag.
 
 **Merged to `main`:** A1–A6 (audit hardening) · V3 vision moat **complete** (inc.1 overlay artifact,
 inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 self-healing inc.1
@@ -47,11 +52,15 @@ secrets redacted at capture. Env-bound — needs interactive desktop verificatio
 screenshot + identifiers-only index per step and awaits `vision-resp-N.json` from an external agent
 (Claude Code as the VLM, no key). `docs/vision-bridge.md`; protocol unit-tested, run is env-bound.
 
+**Recently done (this batch):** MCP inc.2 `create_test` (opt-in write) · V11 `--analytics` · pre-1.0
+contract gate (`CONTRACT.md` + golden `ContractTests`).
+
 **Next executable (pick up here):**
-1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply`. (inc.2b live
-   `--record` done on `claude/uia-record-live`.)
-2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
-3. ~~V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).~~ **Done** (branch `claude/v11-analytics`): pure `RunAnalytics.Compute` + `--analytics [--format json]`; flaky/drift-grouping/duration+step stats; +11 tests.
+1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply` (inc.2b live
+   `--record` already merged).
+2. **Toward the 1.0 tag** (see `docs/release-checklist.md`): `schema_version` on YAML + `version` on
+   artifacts with a tolerant loader, CHANGELOG `1.0.0` section, then tag `v1.0.0`.
+3. Investigate the live `--record` "Click not captured" finding (DISCOVERY_LOG).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable

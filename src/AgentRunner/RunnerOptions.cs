@@ -39,6 +39,12 @@ public sealed class RunnerOptions
     /// <summary>Serve the read-only MCP adapter over stdio (`--mcp`).</summary>
     public bool McpOnly { get; set; }
 
+    /// <summary>
+    /// Opt in to MCP writes (the `create_test` authoring tool). Off by default — the MCP adapter
+    /// is read-only unless `--mcp-allow-write` is passed or `AGENTLOOP_MCP_ALLOW_WRITE=1` is set.
+    /// </summary>
+    public bool McpAllowWrite { get; set; }
+
     /// <summary>Print the prompt the LLM would receive for the selected test (`--show-prompt`).</summary>
     public bool ShowPromptOnly { get; set; }
 
@@ -94,6 +100,9 @@ public sealed class RunnerOptions
         var vision = false;
         string? visionBridgeDir = null;
         var mcpOnly = false;
+        // Writes are opt-in: --mcp-allow-write flag OR AGENTLOOP_MCP_ALLOW_WRITE=1 env var.
+        var mcpAllowWrite =
+            string.Equals(Environment.GetEnvironmentVariable("AGENTLOOP_MCP_ALLOW_WRITE"), "1", StringComparison.Ordinal);
         var showPromptOnly = false;
         var composeRecordingOnly = false;
         string? recordingInputPath = null;
@@ -136,6 +145,8 @@ public sealed class RunnerOptions
                 visionBridgeDir = ReadValue(args, ref i, "--vision-bridge");
             else if (arg == "--mcp")
                 mcpOnly = true;
+            else if (arg == "--mcp-allow-write")
+                mcpAllowWrite = true;
             else if (arg == "--show-prompt")
                 showPromptOnly = true;
             else if (arg == "--compose-recording")
@@ -347,6 +358,7 @@ public sealed class RunnerOptions
             Vision = vision,
             VisionBridgeDir = visionBridgeDir,
             McpOnly = mcpOnly,
+            McpAllowWrite = mcpAllowWrite,
             ShowPromptOnly = showPromptOnly,
             ComposeRecordingOnly = composeRecordingOnly,
             RecordingInputPath = recordingInputPath,

@@ -35,15 +35,21 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/ManualCommandOutput.cs`
 - `src/AgentRunner/Mcp/McpServer.cs` (the `--mcp` JSON-RPC/stdio adapter; read-only, key-free
   tools over the same loaders — `docs/mcp.md`)
+- `src/AgentRunner/RecordingComposer.cs` (V9.5 recording mode inc.1: `RecordedSession`/`RecordedAction`
+  → validated YAML draft via `--compose-recording`; reuses `DashboardApi.BuildYaml` + `TestPlanValidator`)
 - `src/AgentRunner.Tests/**`
 - `src/Core/AgentGoal.cs`
 
 ## Invariants
 
 - Manual modes `--validate-plan`, `--list-tests`, `--render-ui`,
-  `--write-guard-demos`, `--mcp`, and `--show-prompt` must not require `.env`, LLM access, FlaUI,
-  or a target app. `--mcp`, `--show-prompt`, and `--format json` must keep **stdout** free of
-  diagnostics (JSON-RPC/JSON/prompt only; logs go to stderr).
+  `--write-guard-demos`, `--mcp`, `--show-prompt`, and `--compose-recording` must not require
+  `.env`, LLM access, FlaUI, or a target app. `--mcp`, `--show-prompt`, `--format json`, and
+  `--compose-recording` (without `--out`) must keep **stdout** free of diagnostics (the payload —
+  JSON-RPC / JSON / prompt / YAML — only; logs + policy warnings go to stderr).
+- `--compose-recording <session.json> [--out <draft.yaml>]` (V9.5 inc.1) composes a recorded session
+  into a validated goal-based YAML draft via `RecordingComposer` — key-free; the goal is synthesised
+  from the steps with secret values redacted. Live UIA capture (emitting the JSON) is a later increment.
 - `--show-prompt --test-id <id>` renders the runtime prompt via `PromptPreview` (reuses
   `PromptBuilder`; key-free). `TestPlanValidator` adds non-fatal `Warnings` (unknown framework,
   high `max_steps`, missing `success_condition`) — surfaced by `--validate-plan` (`WARN` on

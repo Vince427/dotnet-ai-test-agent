@@ -18,16 +18,19 @@ inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 sel
 **Merged to `main`:** dashboard UX clarity (PR #10) · guided Create form + per-tab explainers +
 Category/Risk (PR #11) · V7 inc.2b static-workbench Notes + Prompt columns (PR #12).
 
-**Open branch awaiting merge → `claude/runner-heal-evidence`** (V8 inc.2, screenshot half):
-`summary.md` now has a **Selector Healing Suggestions** section (old→new, confidence, rationale, +
-relative screenshot link) so heal evidence is reviewable. Evidence-only, never applied. 253 tests +
-2 gated; QA pending. **`--heal-apply` deferred** — no selector field in YAML until recording mode
-(V9.5); logged in `DISCOVERY_LOG.md`. **To resume: open/merge this PR, then `git pull`.**
+**Merged to `main`:** V8 inc.2 (screenshot half) — `summary.md` **Selector Healing Suggestions**
+section, evidence-only (PR #13). `--heal-apply` deferred (no selector field in YAML until V9.5).
+
+**Open branch awaiting merge → `claude/recording-compose`** (V9.5 recording mode inc.1):
+`--compose-recording <session.json> [--out]` → validated goal-based YAML draft via `RecordingComposer`
+(reuses `DashboardApi.BuildYaml` + validator; goal synthesised from steps, secrets redacted; key-free,
+stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, then `git pull`.**
 
 **Next executable (pick up here):**
-1. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
-2. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
-3. **V9.5 recording mode** — also unblocks `--heal-apply` (selector-bearing YAML).
+1. V9.5 inc.2 — **live UIA event capture** emitting the `session.json` (env-bound: needs a desktop +
+   target app). Also the increment that introduces selector-bearing recorded steps → unblocks `--heal-apply`.
+2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
+3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable

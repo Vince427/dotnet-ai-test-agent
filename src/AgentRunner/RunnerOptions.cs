@@ -34,6 +34,13 @@ public sealed class RunnerOptions
 
     /// <summary>Print the prompt the LLM would receive for the selected test (`--show-prompt`).</summary>
     public bool ShowPromptOnly { get; set; }
+
+    /// <summary>Compose a recorded-session JSON into a YAML test draft (`--compose-recording`, V9.5).</summary>
+    public bool ComposeRecordingOnly { get; set; }
+    /// <summary>Path to the recorded-session JSON read by `--compose-recording`.</summary>
+    public string? RecordingInputPath { get; set; }
+    /// <summary>Optional output path for the composed YAML draft (`--out`); stdout when unset.</summary>
+    public string? RecordingOutputPath { get; set; }
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -69,6 +76,9 @@ public sealed class RunnerOptions
         var vision = false;
         var mcpOnly = false;
         var showPromptOnly = false;
+        var composeRecordingOnly = false;
+        string? recordingInputPath = null;
+        string? recordingOutputPath = null;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -102,6 +112,13 @@ public sealed class RunnerOptions
                 mcpOnly = true;
             else if (arg == "--show-prompt")
                 showPromptOnly = true;
+            else if (arg == "--compose-recording")
+            {
+                composeRecordingOnly = true;
+                recordingInputPath = ReadValue(args, ref i, "--compose-recording");
+            }
+            else if (arg == "--out")
+                recordingOutputPath = ReadValue(args, ref i, "--out");
             else if (arg == "--write-guard-demos")
             {
                 writeGuardDemosOnly = true;
@@ -199,17 +216,20 @@ public sealed class RunnerOptions
         if (bridgeLlmOnly) modeCount++;
         if (mcpOnly) modeCount++;
         if (showPromptOnly) modeCount++;
+        if (composeRecordingOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, or --show-prompt.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, or --compose-recording.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly && !showPromptOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan, --list-tests, or --show-prompt.");
+        if (recordingOutputPath != null && !composeRecordingOnly)
+            throw new ArgumentException("--out is only supported with --compose-recording.");
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
             throw new ArgumentException("--watch is only supported with --render-ui.");
 
         TestDefinition? selectedTest = null;
         // --show-prompt and --mcp resolve their own test(s) across plans, so don't run the
         // single-plan runtime selection (which would throw if the id isn't in the auto-picked plan).
-        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly;
+        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly;
         if (runtimeTestSelection &&
             (!string.IsNullOrWhiteSpace(planPath) ||
             !string.IsNullOrWhiteSpace(suite) ||
@@ -283,6 +303,9 @@ public sealed class RunnerOptions
             Vision = vision,
             McpOnly = mcpOnly,
             ShowPromptOnly = showPromptOnly,
+            ComposeRecordingOnly = composeRecordingOnly,
+            RecordingInputPath = recordingInputPath,
+            RecordingOutputPath = ResolveOutputPath(recordingOutputPath, config),
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

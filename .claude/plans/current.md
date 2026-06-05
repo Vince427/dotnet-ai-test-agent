@@ -30,9 +30,14 @@ section, evidence-only (PR #13). `--heal-apply` deferred (no selector field in Y
 (reuses `DashboardApi.BuildYaml` + validator; goal synthesised from steps, secrets redacted; key-free,
 stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, then `git pull`.**
 
+**V9.5 inc.2 capture core (done, on this branch):** `Core.CapturedUiEvent` + `RecordedActionMapper`
++ `SessionRecorder` (pure: UIA events → smoothed `RecordedSession` → composes to YAML). 263 tests.
+
 **Next executable (pick up here):**
-1. V9.5 inc.2 — **live UIA event capture** emitting the `session.json` (env-bound: needs a desktop +
-   target app). Also the increment that introduces selector-bearing recorded steps → unblocks `--heal-apply`.
+1. V9.5 inc.2b — **live FlaUI/UIA event source + `--record` CLI** emitting the `session.json`
+   (env-bound: needs a desktop + target app; verify like the gated E2E). Subscribe to UIA Invoke/
+   Value/Toggle/Selection events, feed `SessionRecorder`. Then a selector-bearing recorded-steps
+   representation → unblocks `--heal-apply`.
 2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
 3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.

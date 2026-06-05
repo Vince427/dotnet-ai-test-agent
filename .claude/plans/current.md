@@ -6,23 +6,24 @@ parallel work.
 
 ## RESUME SNAPSHOT — 2026-06-05 (read this first)
 
-**`main` HEAD = `aa27bd3`** (Merge PR #8, V7 prompt preview inc.1). Build clean on net48 + net8 +
-Avalonia + MAUI; **239 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
+**`main` HEAD = `2673e84`** (Merge PR #9, V7 inc.2 dashboard surfacing). Build clean on net48 + net8 +
+Avalonia + MAUI; **246 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
 
 **Merged to `main`:** A1–A6 (audit hardening) · V3 vision moat **complete** (inc.1 overlay artifact,
 inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 self-healing inc.1
 (`SelectorHealer`, evidence-only) · MCP adapter inc.1 (`--mcp`) · **V7 prompt-preview inc.1**
-(`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`).
+(`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`) · **V7 inc.2** (dashboard:
+`GET /api/prompt`, catalog `warnings[]` as ⚠ notes, ⌘ Prompt modal, Create echoes warnings).
 
-**Open branch awaiting merge → `claude/v7-ui-surface`** (V7 inc.2 — dashboard surfacing):
-`GET /api/prompt?planPath=&testId=` renders the prompt via `PromptPreview`; catalog entries carry a
-`warnings[]` (non-fatal `TestPlanValidator` advisories, prefix-stripped) rendered as ⚠ notes; the
-catalog card has a **⌘ Prompt** modal; Create echoes warnings. View over the CLI, no new data model.
-**246 tests + 2 gated**, build clean. **To resume: open/merge this PR, then `git pull`.**
+**Open branch awaiting merge → `claude/dashboard-ux`** (dashboard UX clarity, presentational only):
+connection-lost banner + clear fetch-error message (replaces bare "failed to fetch", self-clears on
+next poll); **Create** decluttered to essentials + a collapsible **Advanced options** section. No
+backend/API change; all 13 form ids preserved; 246 tests + 2 gated; QA APPROVE.
+**To resume: open/merge this PR, then `git pull`.**
 
 **Next executable (pick up here):**
 1. V7 inc.2b (optional) — also surface the prompt preview + warnings in the **static workbench**
-   drill-down (the dashboard half is done on `claude/v7-ui-surface`).
+   drill-down (the dashboard half is done & merged).
 2. V8 inc.2 — `--heal-apply` (local-only, confirmed YAML rewrite) + screenshot in heal evidence + vision-assisted candidate.
 3. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
 4. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).

@@ -139,6 +139,8 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
             sb.AppendLine($"| {step.StepNumber} | {step.ActionType} | {step.ActionTarget ?? "-"} | {step.Outcome} | {failure} | {guard} | {step.CumulativeScore} | {evidence} |");
         }
 
+        AppendHealingSection(sb, artifact);
+
         File.WriteAllText(Path.Combine(dir, "summary.md"), sb.ToString());
     }
 
@@ -151,6 +153,40 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         };
         options.Converters.Add(new JsonStringEnumConverter());
         return options;
+    }
+
+    /// <summary>
+    /// V8 inc.2 — selector-healing evidence. Lists each drift suggestion alongside the step's
+    /// screenshot so a human can see the live UI before deciding whether to adopt the new selector.
+    /// Evidence only: the runner never applies a suggestion (CI stays deterministic).
+    /// </summary>
+    private static void AppendHealingSection(StringBuilder sb, RunArtifact artifact)
+    {
+        var hasHeal = false;
+        foreach (var step in artifact.Steps)
+            if (step.HealingSuggestion != null) { hasHeal = true; break; }
+        if (!hasHeal)
+            return;
+
+        sb.AppendLine();
+        sb.AppendLine("## Selector Healing Suggestions");
+        sb.AppendLine();
+        sb.AppendLine("Closest-match proposals for targets that drifted (named but not present in the live UI). " +
+                      "Evidence only — the runner never applies them. Review the screenshot, then adopt by hand.");
+        sb.AppendLine();
+        foreach (var step in artifact.Steps)
+        {
+            var h = step.HealingSuggestion;
+            if (h == null)
+                continue;
+            sb.AppendLine($"- **Step {step.StepNumber}**: `{h.OldTarget}` → `{h.NewTarget}` ({h.Confidence}% match, {h.ControlType})");
+            sb.AppendLine($"  - {h.Rationale}");
+            if (!string.IsNullOrWhiteSpace(step.ScreenshotPath))
+            {
+                var file = Path.GetFileName(step.ScreenshotPath);
+                sb.AppendLine($"  - Screenshot: [{file}](screenshots/{file})");
+            }
+        }
     }
 
     private static string BuildEvidenceList(RunStep step)

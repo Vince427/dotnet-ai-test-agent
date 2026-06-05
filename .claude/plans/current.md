@@ -15,19 +15,19 @@ inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 sel
 (`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`) · **V7 inc.2** (dashboard:
 `GET /api/prompt`, catalog `warnings[]` as ⚠ notes, ⌘ Prompt modal, Create echoes warnings).
 
-**Merged to `main`:** dashboard UX clarity (PR #10) · guided fully-explained Create form + per-tab
-explainers + Category/Risk fields (PR #11).
+**Merged to `main`:** dashboard UX clarity (PR #10) · guided Create form + per-tab explainers +
+Category/Risk (PR #11) · V7 inc.2b static-workbench Notes + Prompt columns (PR #12).
 
-**Open branch awaiting merge → `claude/workbench-v7`** (V7 inc.2b — static workbench):
-the Test Backlog gained a **Notes** column (non-fatal `TestPlanValidator` advisories per test,
-computed at generation via `LoadTestsAndWarnings`) and a **Prompt** column with an expandable key-free
-`PromptPreview` baked at generation (page stays fully static). 249 tests + 2 gated; QA pending.
-**To resume: open/merge this PR, then `git pull`.**
+**Open branch awaiting merge → `claude/runner-heal-evidence`** (V8 inc.2, screenshot half):
+`summary.md` now has a **Selector Healing Suggestions** section (old→new, confidence, rationale, +
+relative screenshot link) so heal evidence is reviewable. Evidence-only, never applied. 253 tests +
+2 gated; QA pending. **`--heal-apply` deferred** — no selector field in YAML until recording mode
+(V9.5); logged in `DISCOVERY_LOG.md`. **To resume: open/merge this PR, then `git pull`.**
 
 **Next executable (pick up here):**
-1. V8 inc.2 — `--heal-apply` (local-only, confirmed YAML rewrite) + screenshot in heal evidence + vision-assisted candidate.
-2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
-3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
+1. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
+2. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
+3. **V9.5 recording mode** — also unblocks `--heal-apply` (selector-bearing YAML).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable

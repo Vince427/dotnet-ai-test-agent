@@ -110,6 +110,69 @@ public sealed class ArtifactWriterTests
         Assert.Contains("Action target was not present", summary);
     }
 
+    [Fact]
+    public void WriteSummaryIncludesSelectorHealingSectionWithScreenshot()
+    {
+        var tempDir = CreateTempDirectory();
+        var writer = new ArtifactWriter(tempDir);
+        var artifact = new RunArtifact
+        {
+            RunId = "heal-demo",
+            GoalDescription = "Drifted selector.",
+            TargetWindow = "Sample",
+            Result = "Failed",
+            Steps =
+            [
+                new RunStep
+                {
+                    StepNumber = 1,
+                    ActionType = "Click",
+                    ActionTarget = "btnLogn",
+                    Outcome = "Failed",
+                    FailureCode = "action_target_not_found",
+                    ScreenshotPath = Path.Combine(tempDir, "heal-demo", "screenshots", "step_001.png"),
+                    HealingSuggestion = new HealingSuggestion
+                    {
+                        OldTarget = "btnLogn",
+                        NewTarget = "btnLogin",
+                        ControlType = "Button",
+                        Confidence = 92,
+                        Rationale = "'btnLogn' not found; closest present element is 'btnLogin' [Button], 92% match by automationId."
+                    }
+                }
+            ]
+        };
+
+        writer.WriteSummary(artifact);
+
+        var summary = File.ReadAllText(Path.Combine(tempDir, "heal-demo", "summary.md"));
+        Assert.Contains("## Selector Healing Suggestions", summary);
+        Assert.Contains("`btnLogn` → `btnLogin`", summary);
+        Assert.Contains("92% match", summary);
+        // The drift screenshot is linked relatively so a human can see the live UI.
+        Assert.Contains("(screenshots/step_001.png)", summary);
+    }
+
+    [Fact]
+    public void WriteSummaryOmitsHealingSectionWhenNoSuggestions()
+    {
+        var tempDir = CreateTempDirectory();
+        var writer = new ArtifactWriter(tempDir);
+        var artifact = new RunArtifact
+        {
+            RunId = "no-heal",
+            GoalDescription = "Clean run.",
+            TargetWindow = "Sample",
+            Result = "Passed",
+            Steps = [new RunStep { StepNumber = 1, ActionType = "Done", Outcome = "Succeeded" }]
+        };
+
+        writer.WriteSummary(artifact);
+
+        var summary = File.ReadAllText(Path.Combine(tempDir, "no-heal", "summary.md"));
+        Assert.DoesNotContain("Selector Healing", summary);
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-artifacts-" + Guid.NewGuid().ToString("N"));

@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V8 inc.2 (partial) — screenshot in selector-healing evidence**. When a target drifts
+  (`action_target_not_found`) and `SelectorHealer` proposes a closest-match selector, `summary.md`
+  now has a **Selector Healing Suggestions** section listing each `old → new` proposal with its
+  confidence, rationale, and a relative link to that step's screenshot — so a human can see the live
+  UI before adopting the new selector by hand. Still evidence-only; never auto-applied. +2 tests.
+  (The `--heal-apply` YAML-rewrite half is deferred: tests carry no selector field to rewrite until
+  recording mode (V9.5) exists — see `.claude/DISCOVERY_LOG.md`.)
 - **V7 inc.2b — prompt preview + policy warnings in the static workbench**. The AgentLoop Workbench
   Test Backlog now has a **Notes** column (the same non-fatal `TestPlanValidator` advisories the CLI's
   `--validate-plan` emits, computed at generation time) and a **Prompt** column with an expandable,

@@ -150,6 +150,21 @@ internal static class DashboardHtml
             .modal .x { background:transparent; border:1px solid var(--line2); color:var(--mut); border-radius:6px; cursor:pointer;
               padding:4px 11px; font-family:var(--mono); font-size:12px; }
             .modal .x:hover { color:var(--fg); border-color:var(--bad); }
+
+            /* connection-lost banner (clear recovery message instead of a bare "failed to fetch") */
+            #conn-banner { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:60; display:none;
+              align-items:center; gap:10px; background:#190a0c; color:var(--bad); border:1px solid #5a2027; border-radius:8px;
+              padding:9px 14px; font-size:12px; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; }
+            #conn-banner .dot { background:var(--bad); }
+
+            /* progressive disclosure for the Create form's advanced options */
+            details.adv { border:1px solid var(--line); border-radius:8px; margin:8px 0 4px; background:#0c0f16; }
+            details.adv > summary { cursor:pointer; padding:10px 13px; color:var(--mut); font-size:12px; letter-spacing:.04em; list-style:none; user-select:none; }
+            details.adv > summary::-webkit-details-marker { display:none; }
+            details.adv > summary::before { content:"▸  "; color:var(--sig); }
+            details.adv[open] > summary::before { content:"▾  "; }
+            details.adv[open] > summary { color:var(--fg); border-bottom:1px solid var(--line); }
+            details.adv .adv-body { padding:14px; }
           </style>
         </head>
         <body>
@@ -189,6 +204,7 @@ internal static class DashboardHtml
               <section id="tab-files" class="hidden"></section>
             </main>
           </div>
+          <div id="conn-banner"><span class="dot"></span><span id="conn-msg">Lost connection to the dashboard server — it may have stopped. Restart it; this clears automatically.</span></div>
 
           <script>
             const $ = (s,r=document)=>r.querySelector(s);
@@ -198,8 +214,15 @@ internal static class DashboardHtml
             let CONFIG={traceUiTemplate:""};
             const rcls=r=>(r==="Passed"||r==="Succeeded")?"ok":((r==="Aborted"||r==="Failed"||r==="Blocked")?"bad":"run");
             const rtip=r=>({Passed:"The test reached its success condition.",Succeeded:"The run reached its success condition.",Failed:"Reached max steps without meeting the success condition.",Aborted:"Stopped early: score fell below the abort threshold or a quality guard aborted.",Blocked:"Could not start — the target window was not found.",Running:"In progress."}[r]||r);
+            // Show/hide the connection-lost banner. A network-level fetch failure (server stopped,
+            // port closed) surfaces as a clear, actionable message instead of a bare "failed to fetch".
+            function setConn(ok){ const b=$("#conn-banner"); if(b) b.style.display=ok?"none":"flex"; }
             async function api(path,opts){
-              const res=await fetch(path,opts); const ct=res.headers.get("content-type")||"";
+              let res;
+              try{ res=await fetch(path,opts); }
+              catch(_){ setConn(false); throw new Error("Cannot reach the dashboard server (localhost). Is it still running?"); }
+              setConn(true);
+              const ct=res.headers.get("content-type")||"";
               const data=ct.includes("json")?await res.json():await res.text();
               if(!res.ok) throw new Error((data&&data.error)||res.statusText); return data;
             }
@@ -367,6 +390,7 @@ internal static class DashboardHtml
               set("id",t.id); set("suite",t.suite); set("title",t.title); set("framework",t.framework); set("priority",t.priority);
               set("targetWindow",t.targetWindow); set("goal",t.goal); set("successCondition",t.successCondition);
               set("maxSteps",t.maxSteps); set("actions",(t.allowedActions||[]).join(", ")); set("tags",(t.tags||[]).join(", "));
+              const adv=$("#tab-create .adv"); if(adv) adv.open=true; // reveal advanced fields being edited
               const h=$("#f-hint"); if(h) h.textContent="Editing "+t.id+" — saving overwrites its YAML (re-validated).";
             }
             // V7: preview the exact prompt the LLM would receive (key-free; reuses PromptBuilder).
@@ -401,31 +425,38 @@ internal static class DashboardHtml
             function loadCreate(){
               const fld=([k,l,req,help,ph])=>`<div class="field"><label>${l} ${req?'<span class="req">*</span>':''}</label>
                 <span class="help">${help}</span><input id="f-${k}" placeholder="${esc(ph)}"/></div>`;
-              $("#tab-create").innerHTML=headHTML("Create a ticket","Writes a validated YAML test under tests/created/ AND a Symphony ticket under tickets/created/ — both are editable by hand and runnable in CI")+
+              $("#tab-create").innerHTML=headHTML("Create a test","Fill the essentials, then Validate &amp; save — it writes a validated YAML test you can run right away (and edit by hand anytime)")+
                 `<div class="panel pad form fade">
                   ${fld(F[0])}
-                  <div class="two">${fld(F[1])}${fld(F[2])}</div>
                   <div class="two">
-                    <div class="field"><label>Framework</label><span class="help">Desktop UI toolkit of the target.</span>
+                    <div class="field"><label>Framework</label><span class="help">Desktop UI toolkit of the target app.</span>
                       <select id="f-framework"><option value="">— select —</option><option>winforms</option><option>wpf</option><option>maui</option><option>avalonia</option></select></div>
-                    <div class="field"><label>Priority</label><span class="help">Triage importance.</span>
-                      <select id="f-priority"><option value="">— select —</option><option>P1</option><option>P2</option><option>P3</option></select></div>
+                    ${fld(F[2])}
                   </div>
                   ${fld(F[3])}
                   <div class="field"><label>Goal <span class="req">*</span></label><span class="help">${F[4][3]}</span><textarea id="f-goal" rows="2" placeholder="${esc(F[4][4])}"></textarea></div>
                   ${fld(F[5])}
-                  <div class="two">
-                    <div class="field"><label>Max steps</label><span class="help">Hard cap on agent iterations before failing.</span><input id="f-maxSteps" type="number" value="8"/></div>
-                    <div class="field"><label>Allowed actions</label><span class="help">Comma-separated UI actions the agent may use.</span><input id="f-actions" value="EnterText, Click, Assert, Done, Wait"/></div>
-                  </div>
-                  <div class="two">
-                    <div class="field"><label>Evidence level</label><span class="help">Ticket: how much to capture (report+summary / +screenshots / +ui-tree).</span>
-                      <select id="f-evidence"><option>standard</option><option>minimal</option><option>full</option></select></div>
-                    <div class="field"><label>Launch sample</label><span class="help">Ticket: start the built-in sample app around the run (demo targets only).</span>
-                      <select id="f-launch"><option value="false">no</option><option value="true">yes</option></select></div>
-                  </div>
-                  <div class="field"><label>Tags</label><span class="help">Comma-separated labels for filtering.</span><input id="f-tags" placeholder="smoke, login"/></div>
-                  <div class="row" style="margin-top:6px"><button class="act" id="f-save">✓ Validate &amp; save</button><span class="dim" id="f-hint">Writes the YAML test + a Symphony ticket; validated with the same checker the CLI uses.</span></div>
+                  <details class="adv">
+                    <summary>Advanced options — suite, priority, steps, actions, evidence (optional)</summary>
+                    <div class="adv-body">
+                      <div class="two">${fld(F[1])}
+                        <div class="field"><label>Priority</label><span class="help">Triage importance.</span>
+                          <select id="f-priority"><option value="">— select —</option><option>P1</option><option>P2</option><option>P3</option></select></div>
+                      </div>
+                      <div class="two">
+                        <div class="field"><label>Max steps</label><span class="help">Hard cap on agent iterations before failing.</span><input id="f-maxSteps" type="number" value="8"/></div>
+                        <div class="field"><label>Allowed actions</label><span class="help">Comma-separated UI actions the agent may use.</span><input id="f-actions" value="EnterText, Click, Assert, Done, Wait"/></div>
+                      </div>
+                      <div class="two">
+                        <div class="field"><label>Evidence level</label><span class="help">How much to capture (report+summary / +screenshots / +ui-tree).</span>
+                          <select id="f-evidence"><option>standard</option><option>minimal</option><option>full</option></select></div>
+                        <div class="field"><label>Launch sample</label><span class="help">Start the built-in sample app around the run (demo targets only).</span>
+                          <select id="f-launch"><option value="false">no</option><option value="true">yes</option></select></div>
+                      </div>
+                      <div class="field"><label>Tags</label><span class="help">Comma-separated labels for filtering the catalog.</span><input id="f-tags" placeholder="smoke, login"/></div>
+                    </div>
+                  </details>
+                  <div class="row" style="margin-top:12px"><button class="act" id="f-save">✓ Validate &amp; save</button><span class="dim" id="f-hint">Validated with the same checker the CLI uses; also emits a runnable ticket.</span></div>
                   <div id="f-out" style="margin-top:14px"></div>
                 </div>`;
               $("#f-save").onclick=saveTest;

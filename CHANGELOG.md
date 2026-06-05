@@ -6,6 +6,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 
 ## [Unreleased]
 
+### Changed
+- **Dashboard UX clarity**. Network-level fetch failures now surface a clear, recoverable banner
+  ("Cannot reach the dashboard server — restart it; this clears automatically") instead of a bare
+  *failed to fetch*; it self-clears on the next successful poll. The **Create** tab was decluttered —
+  only the essentials (id, framework, title, target window, goal, success condition) stay visible, with
+  suite/priority/steps/actions/evidence/tags tucked into a collapsible **Advanced options** section
+  (auto-expanded when editing an existing test). No backend/API change.
+
 ### Added
 - **V7 inc.2 — prompt preview + policy warnings in the dashboard**. The local dashboard now surfaces
   the same V7 signals the CLI exposes: a **⌘ Prompt** button on every catalog card opens a key-free

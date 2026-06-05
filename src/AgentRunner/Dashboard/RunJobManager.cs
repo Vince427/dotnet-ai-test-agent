@@ -192,18 +192,24 @@ public class RunJobManager(string repoRoot) : IDisposable
             CreateNoWindow = true
         };
 
-        // Reuse this exact build of the runner. On .NET it's a dll launched via the
-        // shared host; on .NET Framework it's a directly-runnable exe.
+        // Reuse this exact build of the runner. On .NET it's a dll launched via the shared host; on
+        // .NET Framework it's a directly-runnable exe. In a single-file publish, Assembly.Location is
+        // empty — fall back to the running host process (the single-file exe), which re-enters the CLI.
+#pragma warning disable IL3000 // Location is empty under single-file; the empty case is handled below.
         var assemblyPath = Assembly.GetExecutingAssembly().Location;
+#pragma warning restore IL3000
         var parts = new List<string>();
-        if (assemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(assemblyPath) && assemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
         {
             psi.FileName = "dotnet";
             parts.Add(assemblyPath);
         }
         else
         {
-            psi.FileName = assemblyPath;
+            psi.FileName = !string.IsNullOrEmpty(assemblyPath)
+                ? assemblyPath
+                : Process.GetCurrentProcess().MainModule?.FileName
+                  ?? throw new InvalidOperationException("Cannot resolve the runner executable to launch.");
         }
 
         parts.Add("--plan");

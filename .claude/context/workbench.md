@@ -22,7 +22,11 @@ intentionally retained for now (it may be a published GitHub Pages URL — see
 - YAML and artifacts remain source of truth.
 - The UI should make selection and diagnosis simple: suite, test id, framework,
   status/result filters, run summaries, guard failures, screenshots, and prompt
-  previews later.
+  previews.
+- The Test Backlog table carries a **Notes** column (non-fatal `TestPlanValidator`
+  policy advisories per test, computed at generation via `LoadTestsAndWarnings`,
+  prefix-stripped) and a **Prompt** column with a `<details>` baking the key-free
+  `PromptPreview.BuildForTest(test)` output — fully static, no view-time server.
 - Generated `docs/symphony.html` should stay ignored unless policy changes.
 
 ## Validation

@@ -41,9 +41,9 @@ public static class AgentLoopWorkbenchGenerator
         var outputPath = Path.GetFullPath(options.OutputPath);
         var runsRoot = Path.GetFullPath(options.RunsRoot);
         var planPaths = ResolvePlanPaths(repoRoot, options.PlanPaths);
-        var tests = LoadTests(planPaths);
+        var (tests, warnings) = LoadTestsAndWarnings(planPaths);
         var runs = LoadRuns(runsRoot);
-        var html = RenderHtml(repoRoot, outputPath, planPaths, tests, runs, options.AutoRefreshSeconds);
+        var html = RenderHtml(repoRoot, outputPath, planPaths, tests, runs, options.AutoRefreshSeconds, warnings);
 
         var outputDir = Path.GetDirectoryName(outputPath);
         if (!string.IsNullOrEmpty(outputDir))
@@ -65,7 +65,8 @@ public static class AgentLoopWorkbenchGenerator
         IReadOnlyList<string> planPaths,
         IReadOnlyList<TestDefinition> tests,
         IReadOnlyList<RunArtifact> runs,
-        int autoRefreshSeconds = 0)
+        int autoRefreshSeconds = 0,
+        IReadOnlyDictionary<string, List<string>>? warningsByTestId = null)
     {
         var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
         var passed = runs.Count(r => IsResult(r, "Passed", "Succeeded"));
@@ -103,6 +104,10 @@ public static class AgentLoopWorkbenchGenerator
         sb.AppendLine("    tr.run-row { cursor:pointer; } tr.run-row:hover { background:#f0f6ff; } tr.drill > td { background:#f9fafb; }");
         sb.AppendLine("    table.steps { margin:8px 0; } table.steps th, table.steps td { padding:6px 8px; font-size:13px; } .shots { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; } .shot img { height:96px; border:1px solid var(--line); border-radius:4px; display:block; }");
         sb.AppendLine("    .hidden { display:none !important; }");
+        // Prompt-preview + warnings (V7 inc.2b)
+        sb.AppendLine("    details.prompt > summary { cursor:pointer; color:#175cd3; font-size:13px; } details.prompt[open] > summary { margin-bottom:6px; }");
+        sb.AppendLine("    pre.prompt { white-space:pre-wrap; word-break:break-word; max-width:460px; max-height:340px; overflow:auto; margin:0; background:#f9fafb; border:1px solid var(--line); border-radius:4px; padding:8px 10px; font:12px/1.45 Consolas, monospace; }");
+        sb.AppendLine("    .notes { color:var(--warn); font-size:12.5px; line-height:1.5; } .notes .none { color:var(--muted); }");
         sb.AppendLine("  </style>");
         sb.AppendLine("</head>");
         sb.AppendLine("<body>");
@@ -136,8 +141,9 @@ public static class AgentLoopWorkbenchGenerator
         }
 
         sb.AppendLine("    <h2>Test Backlog</h2>");
+        sb.AppendLine("    <p class=\"muted\">Notes are non-fatal policy advisories (same checks as <code>--validate-plan</code>). Prompt shows the exact LLM prompt this test would produce &mdash; key-free, the live UI snapshot is injected at runtime.</p>");
         sb.AppendLine("    <table>");
-        sb.AppendLine("      <thead><tr><th>ID</th><th>Title</th><th>Priority</th><th>Framework</th><th>Goal</th><th>Bounds</th></tr></thead>");
+        sb.AppendLine("      <thead><tr><th>ID</th><th>Title</th><th>Priority</th><th>Framework</th><th>Goal</th><th>Bounds</th><th>Notes</th><th>Prompt</th></tr></thead>");
         sb.AppendLine("      <tbody>");
         foreach (var test in tests.OrderBy(t => t.Priority).ThenBy(t => t.Id))
         {
@@ -148,6 +154,8 @@ public static class AgentLoopWorkbenchGenerator
             sb.AppendLine($"          <td>{Html(test.Framework ?? "-")}</td>");
             sb.AppendLine($"          <td>{Html(test.Goal)}<br><span class=\"muted\">Success: {Html(test.SuccessCondition ?? "-")}</span></td>");
             sb.AppendLine($"          <td>max_steps={test.MaxSteps}<br>{RenderPills(test.AllowedActions)}</td>");
+            sb.AppendLine($"          <td class=\"notes\">{RenderNotes(test, warningsByTestId)}</td>");
+            sb.AppendLine($"          <td><details class=\"prompt\"><summary>view</summary><pre class=\"prompt\">{Html(PromptPreview.BuildForTest(test))}</pre></details></td>");
             sb.AppendLine("        </tr>");
         }
         sb.AppendLine("      </tbody>");
@@ -346,18 +354,53 @@ public static class AgentLoopWorkbenchGenerator
         return TestPlanLoader.DiscoverPlanPaths(repoRoot);
     }
 
-    private static List<TestDefinition> LoadTests(IEnumerable<string> planPaths)
+    /// <summary>
+    /// Loads the tests and, in the same pass, the non-fatal policy warnings per test id (V7 inc.2b)
+    /// using the same <see cref="TestPlanValidator"/> the CLI's --validate-plan uses, so the static
+    /// workbench surfaces the same advisories. The "{source}:{id}: " prefix is stripped for display.
+    /// </summary>
+    private static (List<TestDefinition> tests, Dictionary<string, List<string>> warnings) LoadTestsAndWarnings(
+        IEnumerable<string> planPaths)
     {
         var tests = new List<TestDefinition>();
+        var warnings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var planPath in planPaths)
         {
             if (!File.Exists(planPath))
                 continue;
 
-            tests.AddRange(TestPlanLoader.Load(planPath).Tests);
+            TestPlan plan;
+            try { plan = TestPlanLoader.Load(planPath); }
+            catch { continue; } // a broken plan should not stop the workbench rendering
+
+            tests.AddRange(plan.Tests);
+
+            TestPlanValidationResult validation;
+            try { validation = TestPlanValidator.Validate(plan, "plan"); }
+            catch { continue; }
+
+            foreach (var t in plan.Tests)
+            {
+                if (string.IsNullOrWhiteSpace(t.Id))
+                    continue;
+                var prefix = $"plan:{t.Id}:";
+                var ws = validation.Warnings
+                    .Where(w => w.StartsWith(prefix, StringComparison.Ordinal))
+                    .Select(StripWarningPrefix)
+                    .ToList();
+                if (ws.Count > 0)
+                    warnings[t.Id!] = ws;
+            }
         }
 
-        return tests;
+        return (tests, warnings);
+    }
+
+    /// <summary>Strip the "{source}:{id}: " location prefix from a validator message for display.</summary>
+    private static string StripWarningPrefix(string warning)
+    {
+        var i = warning.IndexOf(": ", StringComparison.Ordinal);
+        return i >= 0 ? warning[(i + 2)..] : warning;
     }
 
     private static List<RunArtifact> LoadRuns(string runsRoot)
@@ -414,6 +457,14 @@ public static class AgentLoopWorkbenchGenerator
             string.Equals(result, "Aborted", StringComparison.OrdinalIgnoreCase))
             return "warn";
         return "";
+    }
+
+    private static string RenderNotes(TestDefinition test, IReadOnlyDictionary<string, List<string>>? warningsByTestId)
+    {
+        if (test.Id != null && warningsByTestId != null &&
+            warningsByTestId.TryGetValue(test.Id, out var ws) && ws.Count > 0)
+            return string.Join("<br>", ws.Select(w => "&#9888; " + Html(w)));
+        return "<span class=\"none\">-</span>";
     }
 
     private static string RenderPills(IReadOnlyList<string> values)

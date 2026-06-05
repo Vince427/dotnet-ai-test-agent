@@ -42,6 +42,7 @@ existing ones are not renamed or repurposed before `2.0` (deprecate with a `WARN
 | `--format <text\|json>` | enum | Output format for manual commands (see JSON section). |
 | `--validate-plan [path]` | optional path | Validate plan(s). Manual, key-free. |
 | `--list-tests [path]` | optional path | List discovered tests. Manual, key-free. |
+| `--analytics` | — | Summarise `runs/` history (flaky / selector-drift / duration). Manual, key-free. |
 | `--show-prompt --test-id <id> [--plan <path>]` | — | Preview the LLM prompt for a test. Key-free. |
 | `--to-junit [path]` | optional path | Convert captured runs to JUnit XML (default `artifacts/junit-results.xml`). |
 | `--render-ui <path> [--watch]` | path | Render the static AgentLoop Workbench HTML. |
@@ -50,19 +51,23 @@ existing ones are not renamed or repurposed before `2.0` (deprecate with a `WARN
 | `--bridge-llm [port]` / `--bridge-io <dir>` | optional port / dir | Key-free human/agent-in-the-loop LLM bridge. |
 | `--vision` | — | Enable the V3 Tier-2 vision fallback decider. |
 | `--vision-bridge <dir>` | dir | Key-free agent-in-the-loop vision loop. |
-| `--mcp` | — | Serve the read-only MCP adapter over stdio. |
+| `--mcp` | — | Serve the MCP adapter over stdio (read-only by default). |
+| `--mcp-allow-write` (or `AGENTLOOP_MCP_ALLOW_WRITE=1`) | — | Modifier of `--mcp`: enable the opt-in `create_test` write tool. NOT a standalone mode. |
 | `--compose-recording <session.json> [--out <draft.yaml>]` | path | Transform a recorded session into a YAML draft. Key-free. |
 | `--record [--window <title>] [--out <session.json>] [--seconds <n>]` | — | Live UIA capture (env-bound). |
 
-The "manual" / one-shot modes (`--render-ui`, `--validate-plan`, `--list-tests`, `--write-guard-demos`,
-`--to-junit`, `--dashboard`, `--bridge-llm`, `--mcp`, `--show-prompt`, `--compose-recording`,
-`--record`) are **mutually exclusive** — combining two is exit `2`.
+The "manual" / one-shot modes (`--render-ui`, `--validate-plan`, `--list-tests`, `--analytics`,
+`--write-guard-demos`, `--to-junit`, `--dashboard`, `--bridge-llm`, `--mcp`, `--show-prompt`,
+`--compose-recording`, `--record`) are **mutually exclusive** — combining two is exit `2`.
+(`--mcp-allow-write` is a modifier of `--mcp`, not a mode, so it does not count.)
 
 ### `--format json` (stdout payload)
 
-`--format json` is accepted **only** with `--validate-plan`, `--list-tests`, and `--show-prompt`
-(any other use is exit `2`). When set, those commands emit a single JSON object on **stdout**;
-diagnostics/warnings go to **stderr**. JSON uses **camelCase** keys and string-valued enums.
+`--format json` is accepted **only** with `--validate-plan`, `--list-tests`, `--show-prompt`, and
+`--analytics` (any other use is exit `2`). When set, those commands emit a single JSON object on
+**stdout**; diagnostics/warnings go to **stderr**. JSON uses **camelCase** keys and string-valued enums.
+- `--analytics --format json` → `kind:"runAnalytics"`, plus the `RunAnalyticsResult` fields
+  (`totalRuns`, per-test pass/fail + `flaky`, `selectorDrift` groups, duration/step stats, most-failing).
 
 - `--list-tests --format json` → `kind:"testList"`, plus `valid`, `count`, `tests[]`, `errors[]`.
   Each `tests[]` item: `planPath, suite, id, title, priority, framework, targetWindow, sourceIssue,
@@ -132,10 +137,11 @@ Cross-link `<property>` names: `existing_test, source_issue, source_pr, trace_id
 
 ---
 
-## 4. MCP (read-only adapter)
+## 4. MCP (adapter; read-only by default)
 
 `--mcp` serves JSON-RPC 2.0 over stdio (protocol `2024-11-05`, server `agentloop`). It is an adapter
-over the same loaders — read-only, key-free, nothing that spawns a run. Tool names + params (stable):
+over the same loaders — **read-only and key-free by default**, nothing that spawns a run. Tool names +
+params (stable):
 
 | Tool | Params | Returns |
 |---|---|---|
@@ -144,8 +150,13 @@ over the same loaders — read-only, key-free, nothing that spawns a run. Tool n
 | `list_runs` | — | `{ count, runs[] }` (runId, testId, result, finalScore, startedAt, endedAt, steps). |
 | `get_run` | `runId` (required) | the run's `report.json` passed through. |
 | `show_prompt` | `testId` (required), `path?` | `{ testId, prompt }`. |
+| `create_test` *(opt-in write)* | `id` (required, safe-segment), `goal`, `framework`, `title`, `targetWindow`, `category`, `allowedActions[]`, `tags[]`, `successCondition`, `maxSteps` | `{ ok, id, planPath, warnings[] }` — writes a validated `tests/created/<id>.yaml`. |
 
-Adding a tool or an optional param is additive. Renaming/removing a tool or required param is breaking.
+`create_test` is the only write tool and is **disabled by default**: it is advertised + callable only
+when `--mcp-allow-write` (or `AGENTLOOP_MCP_ALLOW_WRITE=1`) is set; otherwise it is not listed and a call
+returns a "writes are disabled" tool error. It reuses the same YAML emitter + validator as the dashboard.
+`run_test` (spawning a run) is intentionally not exposed. Adding a tool or an optional param is additive;
+renaming/removing a tool or required param is breaking.
 
 ---
 

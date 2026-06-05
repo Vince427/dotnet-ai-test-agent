@@ -39,6 +39,26 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-06-05 - claude/capture-foreground - automation
+
+**Observation**: Found by the first real third-party-app test (the OSS `dotnet-winforms-examples`
+gallery, driven via `--vision-bridge`). `FlaUiDesktopDriver.CaptureScreenshot` used
+`Capture.Element(_window)`, which grabs **screen pixels at the window's bounds** — so when the target
+window was **occluded** (another window in front), the screenshot was of the *occluding* window even
+though the UIA tree (element bounds/ids) was read correctly. The vision path then "saw" the wrong
+window. Our self-authored sample E2E never caught this because the sample was always foreground.
+
+**Why it matters**: vision (and screenshot evidence) is wrong whenever the target isn't on top — a
+common real-world condition. Exactly the class of bug only a real-app/real-setup run surfaces.
+
+**Fix applied (this branch)**: `CaptureScreenshot` now calls `_window.SetForeground()` (+ a 150 ms
+settle) before capturing, best-effort (never fails the shot). Re-verified live: after the fix the
+capture shows the app, and a vision-driven click correctly opened the "Slider Puzzle" window.
+
+**Status**: `CLOSED - fixed`. Follow-up idea: prefer a window-handle/PrintWindow capture that works
+even when occluded (no foregrounding needed), if foregrounding ever becomes undesirable.
+
+
 ## 2026-06-05 - claude/dist-tool - ci / runner
 
 **Observation**: A `dotnet tool install -g` global tool can't be produced for AgentRunner. `PackAsTool`

@@ -9,7 +9,9 @@ Owns the executable orchestration loop and manual CLI surface.
   (observe → decide → act → score → record loop; injectable driver + decider)
 - `src/AgentRunner/ReplayActionDecider.cs` (`--replay <session.json>`: key-free deterministic decider
   that replays a `RecordedSession`'s actions in order — no LLM; a drifted target is replayed verbatim so
-  the loop detects + heals it. Completes record → replay → heal.)
+  the loop detects + heals it. Completes record → replay → heal. Recorded secret fields stay redacted in
+  the session; their real value is supplied at replay from env `AGENTLOOP_SECRET_<AutomationId/Name>`,
+  so a recorded login replays without a secret on disk — `Program.ResolveReplaySecret`.)
 - `src/AgentRunner/IActionDecider.cs` (the "decide" seam). Implementations: `LlmService`
   (OpenRouter/OpenAI), `HeuristicActionDecider` (rule-based, no LLM), the
   `BridgeLlmServer` HTTP endpoint (`--bridge-llm`) for a human/external-agent decider, and

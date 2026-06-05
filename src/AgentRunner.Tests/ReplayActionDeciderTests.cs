@@ -46,6 +46,28 @@ public sealed class ReplayActionDeciderTests
     }
 
     [Fact]
+    public async Task SubstitutesARedactedSecretFromTheResolver()
+    {
+        // A recorded password is stored "[REDACTED]"; the resolver supplies the real value at replay.
+        var d = new ReplayActionDecider(
+            [new RecordedAction { Verb = "EnterText", Target = "txtPassword", Name = "Password", Value = "[REDACTED]" }],
+            resolveSecret: (target, name) => target == "txtPassword" ? "realpw" : null);
+
+        var a = await d.DecideActionAsync(Snap, Goal, "");
+        Assert.Equal("realpw", a.Value);
+    }
+
+    [Fact]
+    public async Task KeepsTheRedactedPlaceholderWhenNoSecretIsResolved()
+    {
+        var d = new ReplayActionDecider(
+            [new RecordedAction { Verb = "EnterText", Target = "txtPassword", Value = "[REDACTED]" }],
+            resolveSecret: (_, _) => null);
+
+        Assert.Equal("[REDACTED]", (await d.DecideActionAsync(Snap, Goal, "")).Value);
+    }
+
+    [Fact]
     public async Task EmptyScript_ReturnsDoneImmediately()
     {
         var d = new ReplayActionDecider([]);

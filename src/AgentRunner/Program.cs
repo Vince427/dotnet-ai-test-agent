@@ -206,7 +206,13 @@ internal static class Program
                 Console.Error.WriteLine("Replay session has no actions.");
                 return 2;
             }
-            decider = new ReplayActionDecider(session.Actions);
+            // Recorded secret fields are redacted; supply real values at replay from env vars
+            // (AGENTLOOP_SECRET_<target>) so a recorded login can actually log in — no secret on disk.
+            foreach (var step in session.Actions)
+                if (step.Value == SecretRedactor.RedactedValue && ResolveReplaySecret(step.Target, step.Name) == null)
+                    Console.Error.WriteLine($"  [replay] redacted value for '{step.Target ?? step.Name}' has no AGENTLOOP_SECRET_<id> env var; it will be typed as [REDACTED].");
+
+            decider = new ReplayActionDecider(session.Actions, ResolveReplaySecret);
             Console.WriteLine($"Deterministic replay enabled (key-free): replaying {session.Actions.Count} recorded action(s), no LLM.");
         }
         else if (!string.IsNullOrWhiteSpace(options.VisionBridgeDir))
@@ -498,6 +504,20 @@ internal static class Program
         Console.WriteLine($"Applied {healPlan.Replacements.Count} selector heal(s) to {planPath}.");
         return 0;
     }
+
+    // Resolve a recorded secret field's real value at replay from an env var: AGENTLOOP_SECRET_<id>
+    // (id = the control's AutomationId, else its Name, non-alphanumerics dropped). Never from disk, so a
+    // captured session keeps its passwords redacted while a replay can still log in. Returns null if unset.
+    private static string? ResolveReplaySecret(string? target, string? name)
+    {
+        var id = SanitizeEnvKey(target);
+        if (id.Length == 0) id = SanitizeEnvKey(name);
+        if (id.Length == 0) return null;
+        return Environment.GetEnvironmentVariable("AGENTLOOP_SECRET_" + id);
+    }
+
+    private static string SanitizeEnvKey(string? s) =>
+        string.IsNullOrEmpty(s) ? "" : new string(s!.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray());
 
     // Manual command: live-capture a manual UIA session into a session.json (--record --window <title>
     // [--out <session.json>] [--seconds N], V9.5 inc.2b). ENV-BOUND: needs a real interactive desktop +

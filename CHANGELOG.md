@@ -12,8 +12,12 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   **record → replay → heal**: `--record` captures a session, `--replay` re-runs it deterministically
   (no `.env`, no model), and a drifted target fails visibly → `SelectorHealer` records a suggestion →
   `--heal-apply` fixes it. A drifted target is replayed verbatim (never silently skipped). Verified
-  end-to-end: replayed a 3-step login to "Login successful". +3 tests. (Note: recorded passwords are
-  redacted, so secret entry isn't reproduced from a captured session — supply real values to replay them.)
+  end-to-end: replayed a 3-step login to "Login successful". +5 tests.
+  **Secret substitution at replay**: recorded secret fields stay redacted (`[REDACTED]`) in
+  `session.json`; at replay the real value is supplied from an env var `AGENTLOOP_SECRET_<id>` (id =
+  the control's AutomationId/Name) — so a recorded login replays without ever putting the password on
+  disk. Verified end-to-end (redacted session + env var -> "Login successful"). Missing secrets are
+  warned (the field is typed as `[REDACTED]`).
 - **`--heal-apply` — confirmed, guarded selector healing (V8 inc.2 complete)**. Turns a run's
   evidence-only `SelectorHealer` suggestions into a rewrite of the test's new optional **`selectors`**
   field: `--heal-apply --run <id> [--plan <path>] [--yes]` previews `old -> new` heals (dry-run) and,

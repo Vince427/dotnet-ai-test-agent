@@ -107,7 +107,9 @@ public sealed class BridgeVisionDecider : IActionDecider
         // Redact to "" (never the raw original) so redaction intent can't be defeated via the prompt.
         var goalText = _redactor.RedactText(goal.Description) ?? "";
         var mem = _redactor.RedactText(memoryContext) ?? "";
-        var sc = string.IsNullOrEmpty(goal.SuccessCondition) ? "" : $"\nSuccess condition: {goal.SuccessCondition}";
+        // Redact the success condition too (it can contain a secret) — same defense as PromptBuilder.
+        var scRedacted = _redactor.RedactText(goal.SuccessCondition) ?? "";
+        var sc = string.IsNullOrEmpty(goal.SuccessCondition) ? "" : $"\nSuccess condition: {scRedacted}";
         var warn = string.IsNullOrEmpty(loopWarning) ? "" : $"\nWARNING: {loopWarning} — try a different box/action.";
         return
             "You control a Windows desktop app via a screenshot with NUMBERED boxes over the actionable elements.\n" +

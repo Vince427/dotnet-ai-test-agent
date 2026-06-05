@@ -78,6 +78,20 @@ public sealed class BridgeVisionDeciderTests : IDisposable
     }
 
     [Fact]
+    public async Task Decide_RedactsASecretInTheSuccessConditionBeforeWritingThePrompt()
+    {
+        File.WriteAllText(Path.Combine(_dir, "vision-resp-1.json"), """{"box":1,"actionType":"Click"}""");
+        var goal = new AgentGoal { Description = "do it", SuccessCondition = "logged in; token=supersecret123" };
+
+        var decider = new BridgeVisionDecider(_dir, () => WhitePng(900, 900), timeoutMs: 5000);
+        await decider.DecideActionAsync(BoxedSnapshot(), goal, "");
+
+        var reqJson = File.ReadAllText(Path.Combine(_dir, "vision-req-1.json"));
+        Assert.DoesNotContain("supersecret123", reqJson); // the success-condition secret is redacted
+        Assert.Contains("[REDACTED]", reqJson);
+    }
+
+    [Fact]
     public async Task Decide_ReturnsWaitOnTimeoutWhenNoReplyArrives()
     {
         var decider = new BridgeVisionDecider(_dir, () => WhitePng(200, 200), timeoutMs: 400);

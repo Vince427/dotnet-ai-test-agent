@@ -5,8 +5,8 @@ on:
     paths:
       - 'tests/**'
       - 'schemas/**'
-      - 'src/AgentRunner/**'
-      - 'src/AgentRunner.Tests/**'
+      - 'src/**'
+      - 'DesktopAiTestAgent.sln'
       - 'scripts/validate-test-plans.ps1'
       - '.github/workflows/validate-test-plans.yml'
   push:
@@ -15,8 +15,8 @@ on:
     paths:
       - 'tests/**'
       - 'schemas/**'
-      - 'src/AgentRunner/**'
-      - 'src/AgentRunner.Tests/**'
+      - 'src/**'
+      - 'DesktopAiTestAgent.sln'
       - 'scripts/validate-test-plans.ps1'
       - '.github/workflows/validate-test-plans.yml'
 
@@ -32,6 +32,12 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      # Build EVERY target framework, including net48 (a fixed product rule). The test project is
+      # net8-only, so without this step a net48-only compile regression would ship green.
+      - name: Build all target frameworks (incl. net48)
+        shell: pwsh
+        run: dotnet build DesktopAiTestAgent.sln -c Release -v minimal
 
       - name: Validate test plans
         shell: pwsh

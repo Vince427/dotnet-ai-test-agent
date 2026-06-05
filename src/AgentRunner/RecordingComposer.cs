@@ -97,8 +97,8 @@ public static class RecordingComposer
         {
             var plan = TestPlanLoader.Parse(yaml, id);
             var validation = TestPlanValidator.Validate(plan, id);
-            result.Errors.AddRange(validation.Errors.Select(Friendly));
-            result.Warnings.AddRange(validation.Warnings.Select(Friendly));
+            result.Errors.AddRange(validation.Errors.Select(TestPlanValidator.StripLocationPrefix));
+            result.Warnings.AddRange(validation.Warnings.Select(TestPlanValidator.StripLocationPrefix));
         }
         catch (Exception ex)
         {
@@ -155,10 +155,4 @@ public static class RecordingComposer
         return slug + "-001";
     }
 
-    /// <summary>Strip the "{source}:{id}: " location prefix a validator message carries, for display.</summary>
-    private static string Friendly(string message)
-    {
-        var i = message.IndexOf(": ", StringComparison.Ordinal);
-        return i >= 0 ? message[(i + 2)..] : message;
-    }
 }

@@ -240,16 +240,9 @@ public sealed class DashboardApi
         return ApiResponse.Json(new { testId = test.Id, planPath = Relative(resolved), prompt });
     }
 
-    /// <summary>
-    /// Strip the "{source}:{id}: " location prefix a validator message carries, leaving just the
-    /// human-readable advisory for the UI. The path/id have no ": " (colon+space), so the first
-    /// ": " marks the start of the message.
-    /// </summary>
-    private static string FriendlyWarning(string warning)
-    {
-        var i = warning.IndexOf(": ", StringComparison.Ordinal);
-        return i >= 0 ? warning[(i + 2)..] : warning;
-    }
+    /// <summary>Friendly (location-prefix-stripped) validator warning for display — delegates to
+    /// <see cref="TestPlanValidator.StripLocationPrefix"/>, the single owner of the prefix shape.</summary>
+    private static string FriendlyWarning(string warning) => TestPlanValidator.StripLocationPrefix(warning);
 
     /// <summary>List the Symphony tickets under tickets/ (frontmatter parsed).</summary>
     public ApiResponse GetTickets()

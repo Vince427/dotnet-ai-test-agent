@@ -386,7 +386,7 @@ public static class AgentLoopWorkbenchGenerator
                 var prefix = $"plan:{t.Id}:";
                 var ws = validation.Warnings
                     .Where(w => w.StartsWith(prefix, StringComparison.Ordinal))
-                    .Select(StripWarningPrefix)
+                    .Select(TestPlanValidator.StripLocationPrefix)
                     .ToList();
                 if (ws.Count > 0)
                     warnings[t.Id!] = ws;
@@ -394,13 +394,6 @@ public static class AgentLoopWorkbenchGenerator
         }
 
         return (tests, warnings);
-    }
-
-    /// <summary>Strip the "{source}:{id}: " location prefix from a validator message for display.</summary>
-    private static string StripWarningPrefix(string warning)
-    {
-        var i = warning.IndexOf(": ", StringComparison.Ordinal);
-        return i >= 0 ? warning[(i + 2)..] : warning;
     }
 
     private static List<RunArtifact> LoadRuns(string runsRoot)

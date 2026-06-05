@@ -25,6 +25,20 @@ public static class TestPlanValidator
     private const int HighMaxSteps = 100;
 
 
+    /// <summary>
+    /// Strips the "{sourceName}:{label}: " location prefix this validator prepends to every message,
+    /// leaving just the human-readable advisory. Lives next to the producer (<see cref="Validate"/>)
+    /// so the prefix shape has a single owner — consumers (dashboard, workbench, recorder) call this
+    /// instead of each re-implementing the split. The path/id never contain ": " (colon+space), so the
+    /// first ": " marks the start of the message.
+    /// </summary>
+    public static string StripLocationPrefix(string message)
+    {
+        if (string.IsNullOrEmpty(message)) return message;
+        var i = message.IndexOf(": ", StringComparison.Ordinal);
+        return i >= 0 ? message[(i + 2)..] : message;
+    }
+
     public static TestPlanValidationResult Validate(TestPlan plan, string sourceName)
     {
         if (plan == null) throw new ArgumentNullException(nameof(plan));

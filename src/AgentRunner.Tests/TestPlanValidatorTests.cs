@@ -111,4 +111,16 @@ tests:
         Assert.True(result.IsValid);
         Assert.Empty(result.Warnings);
     }
+
+    [Theory]
+    [InlineData("tests/smoke.yaml:SMOKE-001: no success_condition; rely on Done.", "no success_condition; rely on Done.")]
+    [InlineData("plan:WARN-001: framework 'x' is not a first-class target.", "framework 'x' is not a first-class target.")]
+    [InlineData("no prefix here", "no prefix here")]
+    [InlineData("", "")]
+    public void StripLocationPrefix_RemovesTheSourceIdPrefixOnly(string input, string expected)
+    {
+        // Single owner of the "{source}:{id}: " prefix shape — the dashboard, workbench, and recorder
+        // all reuse this instead of re-implementing the split.
+        Assert.Equal(expected, TestPlanValidator.StripLocationPrefix(input));
+    }
 }

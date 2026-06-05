@@ -6,6 +6,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 
 ## [Unreleased]
 
+### Fixed
+- **Screenshot/vision captured the wrong window when the target was occluded.**
+  `FlaUiDesktopDriver.CaptureScreenshot` grabbed screen pixels at the window's bounds without bringing
+  the window forward, so an occluded target produced a screenshot of whatever was in front (the vision
+  path then "saw" the wrong window). Now foregrounds the target window (best-effort, with a short
+  settle) before capturing. Surfaced by the first real third-party-app test (an OSS WinForms gallery
+  driven via `--vision-bridge`) and re-verified live. See `.claude/DISCOVERY_LOG.md`.
+
 ### Added
 - **V11 run analytics (`--analytics`)**. Derives insight from the `runs/` history through a pure,
   deterministic `RunAnalytics.Compute(runs)` → `RunAnalyticsResult`: total runs; per-testId pass/fail

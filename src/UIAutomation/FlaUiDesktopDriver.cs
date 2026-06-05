@@ -130,6 +130,10 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     public byte[] CaptureScreenshot()
     {
         EnsureWindow();
+        // Bring the target window forward first: Capture.Element grabs SCREEN pixels at the element's
+        // bounds, so an occluded window would otherwise capture whatever sits in front of it (and the
+        // vision path would then "see" the wrong window). Best-effort — never let this fail the capture.
+        try { _window!.SetForeground(); System.Threading.Thread.Sleep(150); } catch { /* keep the shot */ }
         using var ms = new MemoryStream();
         var captureImage = FlaUI.Core.Capturing.Capture.Element(_window!);
         captureImage.Bitmap.Save(ms, ImageFormat.Png);

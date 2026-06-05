@@ -7,6 +7,15 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V11 run analytics (`--analytics`)**. Derives insight from the `runs/` history through a pure,
+  deterministic `RunAnalytics.Compute(runs)` → `RunAnalyticsResult`: total runs; per-testId pass/fail
+  with a **flaky** flag (same id produced BOTH a passing — Passed/Succeeded — and a non-passing run);
+  **selector-drift** count + groups (steps carrying a `HealingSuggestion`, grouped old→new target with
+  a count + max confidence); duration stats (avg/max from `StartedAt`/`EndedAt`, runs without a usable
+  `EndedAt` excluded) and average step count; plus the most-failing tests. New manual CLI `--analytics`
+  loads `runs/` via `RunArtifactLoader` — key-free, read-only, mode-exclusive — printing a text summary
+  by default or the structured `RunAnalyticsResult` under `--format json` (stdout-clean). Null-safe over
+  empty history / missing fields. +11 tests (pure, no disk).
 - **MCP authoring tool (opt-in write) — `create_test`**. The `--mcp` adapter stays read-only by
   default; an opt-in `create_test` tool builds a plan via the **same** `DashboardApi.BuildYaml`
   emitter (`authoring_agent: mcp`), validates it with `TestPlanValidator`, and writes

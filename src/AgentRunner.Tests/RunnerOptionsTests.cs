@@ -273,6 +273,27 @@ public sealed class RunnerOptionsTests
     }
 
     [Fact]
+    public void ParseSupportsAnalyticsAndJsonFormat()
+    {
+        var text = RunnerOptions.Parse(["--analytics"], new WorkflowConfig());
+        Assert.True(text.AnalyticsOnly);
+        Assert.Equal(CommandOutputFormat.Text, text.OutputFormat);
+
+        var json = RunnerOptions.Parse(["--analytics", "--format", "json"], new WorkflowConfig());
+        Assert.True(json.AnalyticsOnly);
+        Assert.Equal(CommandOutputFormat.Json, json.OutputFormat);
+    }
+
+    [Fact]
+    public void ParseRejectsAnalyticsWithAnotherMode()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            RunnerOptions.Parse(["--analytics", "--list-tests"], new WorkflowConfig()));
+
+        Assert.Contains("only one of", ex.Message);
+    }
+
+    [Fact]
     public void ParseLoadsSelectedTestFromPlan()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-plan-" + Guid.NewGuid().ToString("N"));

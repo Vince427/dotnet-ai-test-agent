@@ -55,6 +55,9 @@ public sealed class RunnerOptions
     /// <summary>Optional output path for the composed YAML draft (`--out`); stdout when unset.</summary>
     public string? RecordingOutputPath { get; set; }
 
+    /// <summary>Compute run-history analytics from `runs/` (`--analytics`, V11). Key-free, read-only.</summary>
+    public bool AnalyticsOnly { get; set; }
+
     /// <summary>Live-capture a manual UIA session into a session.json (`--record`, V9.5 inc.2b). Env-bound.</summary>
     public bool RecordSessionOnly { get; set; }
     /// <summary>Output path for the captured session JSON (`--out`); stdout when unset.</summary>
@@ -104,6 +107,7 @@ public sealed class RunnerOptions
         var composeRecordingOnly = false;
         string? recordingInputPath = null;
         string? recordingOutputPath = null;
+        var analyticsOnly = false;
         var recordSessionOnly = false;
         var recordSeconds = DefaultRecordSeconds;
         // --out is shared by --compose-recording and --record; bind it to whichever mode is active.
@@ -150,6 +154,8 @@ public sealed class RunnerOptions
                 composeRecordingOnly = true;
                 recordingInputPath = ReadValue(args, ref i, "--compose-recording");
             }
+            else if (arg == "--analytics")
+                analyticsOnly = true;
             else if (arg == "--record")
                 recordSessionOnly = true;
             else if (arg == "--seconds")
@@ -258,11 +264,12 @@ public sealed class RunnerOptions
         if (mcpOnly) modeCount++;
         if (showPromptOnly) modeCount++;
         if (composeRecordingOnly) modeCount++;
+        if (analyticsOnly) modeCount++;
         if (recordSessionOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, --compose-recording, or --record.");
-        if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly && !showPromptOnly)
-            throw new ArgumentException("--format json is only supported with --validate-plan, --list-tests, or --show-prompt.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, --compose-recording, --analytics, or --record.");
+        if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly && !showPromptOnly && !analyticsOnly)
+            throw new ArgumentException("--format json is only supported with --validate-plan, --list-tests, --show-prompt, or --analytics.");
         if (outPath != null && !composeRecordingOnly && !recordSessionOnly)
             throw new ArgumentException("--out is only supported with --compose-recording or --record.");
         if (recordSeconds != DefaultRecordSeconds && !recordSessionOnly)
@@ -277,7 +284,7 @@ public sealed class RunnerOptions
         TestDefinition? selectedTest = null;
         // --show-prompt and --mcp resolve their own test(s) across plans, so don't run the
         // single-plan runtime selection (which would throw if the id isn't in the auto-picked plan).
-        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly && !recordSessionOnly;
+        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly && !analyticsOnly && !recordSessionOnly;
         if (runtimeTestSelection &&
             (!string.IsNullOrWhiteSpace(planPath) ||
             !string.IsNullOrWhiteSpace(suite) ||
@@ -356,6 +363,7 @@ public sealed class RunnerOptions
             ComposeRecordingOnly = composeRecordingOnly,
             RecordingInputPath = recordingInputPath,
             RecordingOutputPath = ResolveOutputPath(recordingOutputPath, config),
+            AnalyticsOnly = analyticsOnly,
             RecordSessionOnly = recordSessionOnly,
             RecordOutputPath = ResolveOutputPath(recordOutputPath, config),
             RecordSeconds = recordSeconds,

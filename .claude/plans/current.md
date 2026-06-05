@@ -52,13 +52,15 @@ secrets redacted at capture. Env-bound — needs interactive desktop verificatio
 screenshot + identifiers-only index per step and awaits `vision-resp-N.json` from an external agent
 (Claude Code as the VLM, no key). `docs/vision-bridge.md`; protocol unit-tested, run is env-bound.
 
+**Recently done (this batch):** MCP inc.2 `create_test` (opt-in write) · V11 `--analytics` · pre-1.0
+contract gate (`CONTRACT.md` + golden `ContractTests`).
+
 **Next executable (pick up here):**
-1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply`. (inc.2b live
-   `--record` done on `claude/uia-record-live`.)
-2. MCP inc.2 — opt-in **`create_test`** authoring tool **done** (branch `claude/mcp-authoring`):
-   `--mcp-allow-write` / `AGENTLOOP_MCP_ALLOW_WRITE=1` gates writing `tests/created/<id>.yaml` via
-   `DashboardApi.BuildYaml` + `TestPlanValidator`; read-only by default. `run_test` still deferred.
-3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
+1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply` (inc.2b live
+   `--record` already merged).
+2. **Toward the 1.0 tag** (see `docs/release-checklist.md`): `schema_version` on YAML + `version` on
+   artifacts with a tolerant loader, CHANGELOG `1.0.0` section, then tag `v1.0.0`.
+3. Investigate the live `--record` "Click not captured" finding (DISCOVERY_LOG).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable

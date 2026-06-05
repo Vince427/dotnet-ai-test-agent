@@ -59,6 +59,10 @@ Owns the executable orchestration loop and manual CLI surface.
 - Unsupported actions and missing targets must fail visibly, not become no-op
   successes. On `action_target_not_found` the loop also records a `SelectorHealer`
   suggestion (`RunStep.HealingSuggestion`, V8) — evidence only, **never auto-applied**.
+  `summary.md` surfaces these in a **Selector Healing Suggestions** section (old→new,
+  confidence, rationale, + a relative link to the drift step's screenshot) so a human can
+  review before adopting. `--heal-apply` (YAML rewrite) is deferred until tests carry a
+  selector field (recording mode / V9.5) — see `.claude/DISCOVERY_LOG.md`.
 - The act dispatch lives in `ActionExecutor`, not inline in the loop. New verbs are added
   to `ActionVocabulary.All` (which feeds plan/prompt/target validation) and given a branch
   in `ActionExecutor.ExecuteAsync` — never by hardcoding the verb string in a fourth place.

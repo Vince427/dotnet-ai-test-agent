@@ -39,6 +39,23 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-06-05 - claude/runner-heal-evidence - runner / workflow
+
+**Observation**: The plan item "V8 inc.2 `--heal-apply` (confirmed YAML rewrite)" assumes the
+test YAML carries the selector that drifted, but `TestDefinition` has **no selector field** — the
+agent/LLM picks `AutomationId`s at runtime from the live snapshot; YAML only holds goal /
+allowed_actions / success_condition / target_window. So a `HealingSuggestion` (oldTarget→newTarget)
+has **nothing to rewrite in YAML** today. This session shipped the other half of inc.2 (screenshot
+in heal evidence) instead.
+
+**Why it matters**: `--heal-apply` as specified can't land until tests can persist concrete
+selectors — i.e. **recording mode (V9.5)**, which would author selector-bearing YAML.
+
+**Suggestion**: defer `--heal-apply` to after V9.5 (recording mode). When it exists, `--heal-apply
+--run <id>` can replace the recorded selector in the generated YAML, gated local-only + confirmed.
+
+**Status**: `OPEN` — `--heal-apply` deferred; screenshot-in-heal-evidence done on this branch.
+
 ## 2026-06-03 - claude/runner-orchestrator - automation / security
 
 **Observation**: Screenshot secret-masking (V3-A) and the text `SecretRedactor` both key

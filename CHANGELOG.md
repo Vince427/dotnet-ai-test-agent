@@ -7,6 +7,19 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V9.5 recording mode (increment 2b) — live UIA capture (`--record`)**. The env-bound half that
+  produces the `session.json` `--compose-recording` consumes. `UIAutomation/UiaSessionRecorder.cs`
+  attaches to a window by title via FlaUI/UIA3 and subscribes to automation events (Invoke → `Invoked`,
+  SelectionItem ElementSelected → `SelectionChanged`, Value property change → `ValueChanged`, ToggleState
+  → `Toggled`), feeding each as a `CapturedUiEvent` into the pure `SessionRecorder`. New CLI
+  `--record --window <title> [--out <session.json>] [--seconds N]` (default 120s, or Ctrl+C);
+  mode-exclusive, key-free, stdout-clean when no `--out`. CRITICAL secret-safety: typed values are
+  redacted **at capture** via `SecretRedactor.RedactValue`, keyed by the control's UIA **`IsPassword`**
+  flag first (so a masked field with a non-keyword id — e.g. `pin` — is still redacted) then its
+  identifier, so a password never lands in `session.json`. Env-bound (needs an interactive desktop +
+  the target app) — covered by a gated
+  `[InteractiveUiFact]` (RUN_E2E_UI=1); +6 non-gated option-parsing tests. Both `net48` and
+  `net8.0-windows` build clean.
 - **GitHub Actions release workflow** (`.github/workflows/release.yml`). On a `v*` tag push (or manual
   `workflow_dispatch`) it builds the distributable Windows exe via `scripts/publish-release.ps1 -Zip`,
   uploads `artifacts/release.zip` as a build artifact, and on a tag attaches it to a GitHub Release

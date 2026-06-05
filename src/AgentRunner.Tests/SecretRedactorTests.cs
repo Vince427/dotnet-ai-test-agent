@@ -101,4 +101,20 @@ public sealed class SecretRedactorTests
         Assert.Contains("ada@example.com", promptText);
         Assert.DoesNotContain("[REDACTED]", promptText);
     }
+
+    [Fact]
+    public void RedactValue_RedactsWhenIsPasswordEvenWithANonSensitiveIdentifier()
+    {
+        var redactor = new SecretRedactor();
+
+        // A masked field whose id/name has NO sensitive keyword (e.g. "pin") must still be redacted
+        // because IsPassword is true — the live recorder relies on this so typed secrets never hit disk.
+        Assert.Equal("[REDACTED]", redactor.RedactValue("pin", isPassword: true, "1234"));
+        // Non-password, non-sensitive identifier → value kept.
+        Assert.Equal("alice", redactor.RedactValue("txtUser", isPassword: false, "alice"));
+        // Identifier-based redaction still applies when IsPassword is false.
+        Assert.Equal("[REDACTED]", redactor.RedactValue("txtPassword", isPassword: false, "hunter2"));
+        // Null value stays null.
+        Assert.Null(redactor.RedactValue("anything", isPassword: true, null));
+    }
 }

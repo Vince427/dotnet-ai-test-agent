@@ -203,6 +203,76 @@ public sealed class RunnerOptionsTests
     }
 
     [Fact]
+    public void ParseSupportsRecordSessionWithWindowAndSeconds()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-record-" + Guid.NewGuid().ToString("N"));
+        var config = new WorkflowConfig { WorkflowDirectory = tempDir };
+
+        var options = RunnerOptions.Parse(
+            ["--record", "--window", "My App", "--seconds", "30", "--out", "runs/session.json"],
+            config);
+
+        Assert.True(options.RecordSessionOnly);
+        Assert.Equal("My App", options.TargetWindow);
+        Assert.Equal(30, options.RecordSeconds);
+        Assert.Equal(Path.Combine(tempDir, "runs", "session.json"), options.RecordOutputPath);
+    }
+
+    [Fact]
+    public void ParseRecordSessionDefaultsSecondsAndStdout()
+    {
+        var options = RunnerOptions.Parse(["--record", "--window", "My App"], new WorkflowConfig());
+
+        Assert.True(options.RecordSessionOnly);
+        Assert.Equal(RunnerOptions.DefaultRecordSeconds, options.RecordSeconds);
+        Assert.Null(options.RecordOutputPath); // stdout when no --out
+    }
+
+    [Fact]
+    public void ParseRejectsSecondsWithoutRecord()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            RunnerOptions.Parse(["--list-tests", "--seconds", "10"], new WorkflowConfig()));
+
+        Assert.Contains("--seconds", ex.Message);
+    }
+
+    [Fact]
+    public void ParseRejectsRecordCombinedWithAnotherManualMode()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            RunnerOptions.Parse(["--record", "--list-tests"], new WorkflowConfig()));
+
+        Assert.Contains("Use only one", ex.Message);
+    }
+
+    [Fact]
+    public void ParseOutFlagFeedsTheActiveRecordingMode()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-out-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var sessionPath = Path.Combine(tempDir, "in.json");
+        File.WriteAllText(sessionPath, "{\"window\":\"x\",\"actions\":[]}");
+        var config = new WorkflowConfig { WorkflowDirectory = tempDir };
+
+        // --out binds to --compose-recording when that's the active mode (and not to --record).
+        var compose = RunnerOptions.Parse(
+            ["--compose-recording", sessionPath, "--out", "draft.yaml"], config);
+        Assert.True(compose.ComposeRecordingOnly);
+        Assert.Equal(Path.Combine(tempDir, "draft.yaml"), compose.RecordingOutputPath);
+        Assert.Null(compose.RecordOutputPath);
+    }
+
+    [Fact]
+    public void ParseRejectsOutWithoutRecordingMode()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            RunnerOptions.Parse(["--list-tests", "--out", "x.json"], new WorkflowConfig()));
+
+        Assert.Contains("--out", ex.Message);
+    }
+
+    [Fact]
     public void ParseLoadsSelectedTestFromPlan()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-plan-" + Guid.NewGuid().ToString("N"));

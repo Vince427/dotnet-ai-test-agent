@@ -8,6 +8,9 @@ public sealed class RunnerOptions
 {
     public const string DefaultWindowTitle = "Sample Login App (.NET 8)";
 
+    /// <summary>Default `--record` duration: a sensible bound so a forgotten recorder still stops.</summary>
+    public const int DefaultRecordSeconds = 120;
+
     public string TargetWindow { get; set; } = DefaultWindowTitle;
     public string? GoalName { get; set; }
     public string? PlanPath { get; set; }
@@ -41,6 +44,14 @@ public sealed class RunnerOptions
     public string? RecordingInputPath { get; set; }
     /// <summary>Optional output path for the composed YAML draft (`--out`); stdout when unset.</summary>
     public string? RecordingOutputPath { get; set; }
+
+    /// <summary>Live-capture a manual UIA session into a session.json (`--record`, V9.5 inc.2b). Env-bound.</summary>
+    public bool RecordSessionOnly { get; set; }
+    /// <summary>Output path for the captured session JSON (`--out`); stdout when unset.</summary>
+    public string? RecordOutputPath { get; set; }
+    /// <summary>Max recording duration in seconds before auto-stop (`--seconds`); also stoppable with Ctrl+C.</summary>
+    public int RecordSeconds { get; set; } = DefaultRecordSeconds;
+
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -79,6 +90,10 @@ public sealed class RunnerOptions
         var composeRecordingOnly = false;
         string? recordingInputPath = null;
         string? recordingOutputPath = null;
+        var recordSessionOnly = false;
+        var recordSeconds = DefaultRecordSeconds;
+        // --out is shared by --compose-recording and --record; bind it to whichever mode is active.
+        string? outPath = null;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -117,8 +132,16 @@ public sealed class RunnerOptions
                 composeRecordingOnly = true;
                 recordingInputPath = ReadValue(args, ref i, "--compose-recording");
             }
+            else if (arg == "--record")
+                recordSessionOnly = true;
+            else if (arg == "--seconds")
+            {
+                var raw = ReadValue(args, ref i, "--seconds");
+                if (!int.TryParse(raw, out recordSeconds) || recordSeconds <= 0)
+                    throw new ArgumentException("--seconds must be a positive integer.");
+            }
             else if (arg == "--out")
-                recordingOutputPath = ReadValue(args, ref i, "--out");
+                outPath = ReadValue(args, ref i, "--out");
             else if (arg == "--write-guard-demos")
             {
                 writeGuardDemosOnly = true;
@@ -217,19 +240,26 @@ public sealed class RunnerOptions
         if (mcpOnly) modeCount++;
         if (showPromptOnly) modeCount++;
         if (composeRecordingOnly) modeCount++;
+        if (recordSessionOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, or --compose-recording.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, --compose-recording, or --record.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly && !showPromptOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan, --list-tests, or --show-prompt.");
-        if (recordingOutputPath != null && !composeRecordingOnly)
-            throw new ArgumentException("--out is only supported with --compose-recording.");
+        if (outPath != null && !composeRecordingOnly && !recordSessionOnly)
+            throw new ArgumentException("--out is only supported with --compose-recording or --record.");
+        if (recordSeconds != DefaultRecordSeconds && !recordSessionOnly)
+            throw new ArgumentException("--seconds is only supported with --record.");
+
+        // --out feeds whichever recording mode is active.
+        recordingOutputPath = composeRecordingOnly ? outPath : null;
+        var recordOutputPath = recordSessionOnly ? outPath : null;
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
             throw new ArgumentException("--watch is only supported with --render-ui.");
 
         TestDefinition? selectedTest = null;
         // --show-prompt and --mcp resolve their own test(s) across plans, so don't run the
         // single-plan runtime selection (which would throw if the id isn't in the auto-picked plan).
-        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly;
+        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly && !recordSessionOnly;
         if (runtimeTestSelection &&
             (!string.IsNullOrWhiteSpace(planPath) ||
             !string.IsNullOrWhiteSpace(suite) ||
@@ -306,6 +336,9 @@ public sealed class RunnerOptions
             ComposeRecordingOnly = composeRecordingOnly,
             RecordingInputPath = recordingInputPath,
             RecordingOutputPath = ResolveOutputPath(recordingOutputPath, config),
+            RecordSessionOnly = recordSessionOnly,
+            RecordOutputPath = ResolveOutputPath(recordOutputPath, config),
+            RecordSeconds = recordSeconds,
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

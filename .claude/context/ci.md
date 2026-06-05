@@ -24,6 +24,11 @@ Owns repeatable validation commands, CI templates, and contributor workflow.
 - Do not hide required provider secrets in scripts.
 - Keep `dotnet build`, `dotnet test`, and plan validation as the core checks.
 - Do not introduce heavy infrastructure before a concrete need.
+- Distribution = a published Windows exe via `scripts/publish-release.ps1` (single-file
+  `AgentRunner.exe`, framework-dependent or `-SelfContained`; see `docs/install.md`). A cross-platform
+  `dotnet tool` is **not** viable (PackAsTool rejects `net8.0-windows`/`UseWPF`/`UseWindowsForms`; the
+  agent needs FlaUI desktop) — see `.claude/DISCOVERY_LOG.md`. Note: `dotnet publish -r <rid>` rewrites
+  `obj/project.assets.json` for that RID — run `dotnet restore` before a subsequent `--no-restore` build.
 - Ticket-to-evidence CI stays `workflow_dispatch` only on hosted runners and
   uses `run-ticket-proof.ps1 -TicketPath <ticket.md> -SkipRuntime -DryRun`;
   real desktop automation belongs on local or self-hosted interactive Windows

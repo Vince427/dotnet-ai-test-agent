@@ -39,6 +39,25 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-06-05 - claude/dist-tool - ci / runner
+
+**Observation**: A `dotnet tool install -g` global tool can't be produced for AgentRunner. `PackAsTool`
+rejects a `net8.0-windows` TFM and `UseWPF`/`UseWindowsForms` on .NET 5+ (SDK `NETSDK1146`), and the
+runner references FlaUI + WinForms/WPF (Windows desktop) transitively via `UIAutomation`. So the tool
+would have to target plain `net8.0`, which the desktop driver can't.
+
+**Why it matters**: the "one-line install" P2 item can't be a global tool as written. Distribution
+pivoted to a published Windows exe (`scripts/publish-release.ps1` → single-file `AgentRunner.exe`,
+`docs/install.md`). Fixed in passing: `RunJobManager` used `Assembly.Location` (empty under single-file)
+to find the runner to spawn — now falls back to the host process path.
+
+**Suggestion**: a `dotnet tool` only becomes possible if the **manual/key-free CLI** (validate, list,
+render, compose-recording, mcp, show-prompt) is split into a `net8.0` core assembly with the FlaUI
+desktop driver loaded as an optional/plugin dependency. Consider as a pre-1.0 architecture decision
+(it would also sharpen the CONTRACT.md surface). Until then: ship the exe.
+
+**Status**: `OPEN` — exe distribution shipped; global-tool deferred behind a CLI/driver split.
+
 ## 2026-06-05 - claude/runner-heal-evidence - runner / workflow
 
 **Observation**: The plan item "V8 inc.2 `--heal-apply` (confirmed YAML rewrite)" assumes the

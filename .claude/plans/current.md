@@ -30,8 +30,11 @@ section, evidence-only (PR #13). `--heal-apply` deferred (no selector field in Y
 (reuses `DashboardApi.BuildYaml` + validator; goal synthesised from steps, secrets redacted; key-free,
 stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, then `git pull`.**
 
-**V9.5 inc.2 capture core (done, on this branch):** `Core.CapturedUiEvent` + `RecordedActionMapper`
-+ `SessionRecorder` (pure: UIA events → smoothed `RecordedSession` → composes to YAML). 263 tests.
+**V9.5 inc.2 capture core (merged):** `Core.CapturedUiEvent` + `RecordedActionMapper` +
+`SessionRecorder` (pure: UIA events → smoothed `RecordedSession` → composes to YAML).
+**Distribution (this branch):** `scripts/publish-release.ps1` → single-file `AgentRunner.exe` +
+`docs/install.md`. Global `dotnet tool` deferred (PackAsTool can't do `net8.0-windows`/WPF — see
+`DISCOVERY_LOG.md`); needs a CLI/driver split. 268 tests + 2 gated.
 
 **Next executable (pick up here):**
 1. V9.5 inc.2b — **live FlaUI/UIA event source + `--record` CLI** emitting the `session.json`

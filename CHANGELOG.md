@@ -7,6 +7,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Distributable Windows release build** (`scripts/publish-release.ps1` + `docs/install.md`). Produces
+  a single-file `AgentRunner.exe` (win-x64, framework-dependent by default; `-SelfContained` for no
+  prerequisite, `-Zip` to package) so the agent is download-and-run. A cross-platform `dotnet tool` is
+  **not** viable — `PackAsTool` rejects `net8.0-windows` + `UseWPF`/`UseWindowsForms`, and the agent
+  needs FlaUI/WinForms/WPF (see `.claude/DISCOVERY_LOG.md`); an exe is the right shape for a desktop
+  tool. Fixed in passing: `RunJobManager` resolved the runner via `Assembly.Location` (empty under
+  single-file) — now falls back to the host process path, so the dashboard's run-launch works in the
+  published exe too. Version stamped `0.9.0` (pre-1.0).
 - **V9.5 recording mode (increment 2) — UIA capture core**. The pure, testable heart of recording:
   `CapturedUiEvent` (a normalized, framework-agnostic UIA event in Core), `RecordedActionMapper`
   (Invoked/Toggled/SelectionChanged → Click, ValueChanged → EnterText), and `SessionRecorder` which

@@ -50,6 +50,9 @@ Owns the executable orchestration loop and manual CLI surface.
   `SessionRecorder` map `Core.CapturedUiEvent`s → a `RecordedSession`, smoothing event noise). The live
   FlaUI/UIA event source (`UIAutomation/UiaSessionRecorder.cs`) + the `--record` CLI (inc.2b, env-bound)
   feed it; `RecordSession` in `Program` wires the source → `SessionRecorder` → `session.json`.
+- `src/AgentRunner/TestFactGuard.cs` (fact-gate: `Verify(before, after, allowedToChange)` reports facts
+  a YAML rewrite dropped/changed outside an allow-list — the pure safety primitive for a future
+  `--heal-apply`/compose/edit; not yet wired into a CLI).
 - `src/AgentRunner.Tests/**`
 - `src/Core/AgentGoal.cs`
 

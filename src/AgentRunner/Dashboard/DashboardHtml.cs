@@ -138,6 +138,18 @@ internal static class DashboardHtml
             .empty { color:var(--dim); border:1px dashed var(--line2); border-radius:9px; padding:26px; text-align:center; font-size:12.5px; }
             .fade { animation:fade .25s ease both; } @keyframes fade { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
             a { color:var(--info); }
+
+            /* policy advisories (V7) + prompt-preview modal */
+            .warn { color:var(--run); font-size:11px; line-height:1.55; margin:-4px 0 10px; border-left:2px solid var(--run);
+              padding-left:8px; background:#15110611; }
+            .modal { position:fixed; inset:0; background:rgba(2,4,8,.72); display:flex; align-items:center; justify-content:center; z-index:50; padding:30px; }
+            .modal .box { background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line2); border-radius:11px;
+              max-width:880px; width:100%; max-height:86vh; display:flex; flex-direction:column; box-shadow:0 18px 60px rgba(0,0,0,.6); }
+            .modal .mhead { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 16px; border-bottom:1px solid var(--line); }
+            .modal .mbody { padding:16px; overflow:auto; }
+            .modal .x { background:transparent; border:1px solid var(--line2); color:var(--mut); border-radius:6px; cursor:pointer;
+              padding:4px 11px; font-family:var(--mono); font-size:12px; }
+            .modal .x:hover { color:var(--fg); border-color:var(--bad); }
           </style>
         </head>
         <body>
@@ -322,10 +334,12 @@ internal static class DashboardHtml
                   ${t.priority?`<span class="chip">${esc(t.priority)}</span>`:""}
                   ${(t.tags||[]).slice(0,4).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}
                 </div>
-                <div class="dim" style="font-size:11.5px;margin-bottom:11px;min-height:32px">${esc(t.goal||"")}</div>`;
+                <div class="dim" style="font-size:11.5px;margin-bottom:11px;min-height:32px">${esc(t.goal||"")}</div>
+                ${(t.warnings&&t.warnings.length)?`<div class="warn" title="Non-fatal policy advisories (same as --validate-plan). The test still runs.">${t.warnings.map(w=>"⚠ "+esc(w)).join("<br>")}</div>`:""}`;
               c.querySelector(".csel").onchange=e=>{ e.target.checked?SEL.add(k):SEL.delete(k); updateSelN(); };
               const bar=el("div",{className:"row",style:"gap:6px;flex-wrap:wrap"});
               const lb=el("button",{className:"act",textContent:"▶ Launch",title:"Queue this test (bounded by max parallel). Opens Live."}); lb.onclick=()=>runMany([t],"one"); bar.appendChild(lb);
+              const pb=el("button",{className:"ghost",textContent:"⌘ Prompt",title:"Preview the exact prompt the LLM would receive (key-free, no run) — same as --show-prompt."}); pb.onclick=()=>showPrompt(t); bar.appendChild(pb);
               if(t.editable){ const eb=el("button",{className:"ghost",textContent:"✎ Edit",title:"Edit this dashboard-authored YAML — reopens the form; saving overwrites it, re-validated."}); eb.onclick=()=>editTest(t); bar.appendChild(eb); }
               if(t.archivable){ const ab=el("button",{className:"ghost",textContent:"⇩ Archive",title:"Move this YAML to tests/archived/ (excluded from catalog + CI; reversible, shows in Git). Not a hard delete."}); ab.onclick=()=>archiveTest(t); bar.appendChild(ab); }
               c.appendChild(bar);
@@ -354,6 +368,25 @@ internal static class DashboardHtml
               set("targetWindow",t.targetWindow); set("goal",t.goal); set("successCondition",t.successCondition);
               set("maxSteps",t.maxSteps); set("actions",(t.allowedActions||[]).join(", ")); set("tags",(t.tags||[]).join(", "));
               const h=$("#f-hint"); if(h) h.textContent="Editing "+t.id+" — saving overwrites its YAML (re-validated).";
+            }
+            // V7: preview the exact prompt the LLM would receive (key-free; reuses PromptBuilder).
+            async function showPrompt(t){
+              const m=el("div",{className:"modal fade"});
+              m.innerHTML=`<div class="box"><div class="mhead">
+                  <div class="row" style="gap:8px"><span class="chip info">prompt</span><b>${esc(t.id)}</b><span class="dim" style="font-size:11px">${esc(t.planPath)}</span></div>
+                  <button class="x" title="Close (Esc)">✕ close</button></div>
+                <div class="mbody"><div class="dim" style="font-size:11px;margin-bottom:8px">Exact prompt the LLM would receive — key-free preview, secrets redacted, the live UI snapshot is injected at runtime. Same as <b>--show-prompt</b>.</div>
+                <pre class="term" style="max-height:none"><span class="dim">Loading…</span></pre></div></div>`;
+              document.body.appendChild(m);
+              const pre=m.querySelector("pre");
+              const close=()=>{ m.remove(); document.removeEventListener("keydown",onKey); };
+              const onKey=e=>{ if(e.key==="Escape") close(); };
+              m.querySelector(".x").onclick=close;
+              m.onclick=e=>{ if(e.target===m) close(); };
+              document.addEventListener("keydown",onKey);
+              try{ const d=await api(`/api/prompt?planPath=${encodeURIComponent(t.planPath)}&testId=${encodeURIComponent(t.id)}`);
+                pre.textContent=d.prompt; }
+              catch(e){ pre.innerHTML=`<span style="color:var(--bad)">${esc(e.message)}</span>`; }
             }
 
             // CREATE
@@ -406,7 +439,8 @@ internal static class DashboardHtml
                 evidenceLevel:v("evidence")||"standard",launchSample:v("launch")==="true"};
               const out=$("#f-out");
               try{ const r=await api("/api/tests",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(req)});
-                out.innerHTML=`<div class="row" style="margin-bottom:8px"><span class="chip ok">test ${esc(r.planPath)}</span><span class="chip ok">ticket ${esc(r.ticketPath)}</span></div><pre class="term">${esc(r.yaml)}</pre>`;
+                const warns=(r.warnings&&r.warnings.length)?`<div class="warn" style="margin-bottom:10px" title="Non-fatal policy advisories — the test was still saved.">${r.warnings.map(w=>"⚠ "+esc(w)).join("<br>")}</div>`:"";
+                out.innerHTML=`<div class="row" style="margin-bottom:8px"><span class="chip ok">test ${esc(r.planPath)}</span><span class="chip ok">ticket ${esc(r.ticketPath)}</span></div>${warns}<pre class="term">${esc(r.yaml)}</pre>`;
               }catch(e){ out.innerHTML=`<div class="chip bad">${esc(e.message)}</div>`; }
             }
 

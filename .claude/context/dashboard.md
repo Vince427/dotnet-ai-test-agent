@@ -7,7 +7,8 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
 
 - `src/AgentRunner/Dashboard/DashboardServer.cs` (HttpListener routing, localhost-only)
 - `src/AgentRunner/Dashboard/DashboardApi.cs` (transport-agnostic handlers: catalog,
-  run history/detail, create-ticket, launch, screenshot serving, file tree + preview)
+  run history/detail, create-ticket, launch, screenshot serving, file tree + preview,
+  prompt preview)
 - `src/AgentRunner/Dashboard/RunJobManager.cs` (spawns the CLI per launch, captures
   stdout, correlates `runId` from `session_id=` log markers)
 - `src/AgentRunner/Dashboard/DashboardHtml.cs` (the single-page UI, vanilla JS)
@@ -36,6 +37,13 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
   The catalog also surfaces `category` for filtering.
 - Manual-first: `--dashboard` starts without `.env`/LLM. Launching a run from it spawns
   the CLI, which then needs the user's target app + provider config.
+- **V7 inc.2 (prompt preview + warnings)**: the dashboard mirrors the V7 CLI signals, key-free.
+  `GET /api/prompt?planPath=&testId=` returns `{ testId, planPath, prompt }` from `PromptPreview`
+  (reuses `PromptBuilder` → can't drift from the runtime prompt; `SecretRedactor` applied;
+  path-guarded via `ResolveUnderRepo`) — the dashboard surface for `--show-prompt` / MCP
+  `show_prompt`. Each `/api/tests` entry also carries a `warnings: string[]` (the non-fatal
+  `TestPlanValidator` advisories for that test, location prefix stripped), and `CreateTest`
+  echoes `warnings` in its OK response. These are advisory only — the plan stays valid.
 - Created "tickets" must be **validated YAML** (`TestPlanValidator`) before persisting,
   written under `tests/created/`. YAML stays the source of truth.
 - The **Tickets** tab + Create are the Symphony bridge: `CreateTest` writes a YAML test

@@ -100,6 +100,9 @@ public sealed class DashboardServer : IDisposable
                     return ApiResponse.Json(new { traceUiTemplate = _traceUiTemplate, maxConcurrency = _api.MaxConcurrency });
                 case "/api/tests":
                     return _api.GetTests();
+                case "/api/prompt":
+                    return _api.GetPrompt(
+                        request.QueryString["planPath"] ?? "", request.QueryString["testId"] ?? "");
                 case "/api/runs":
                     return _api.GetRuns();
                 case "/api/jobs":

@@ -78,8 +78,21 @@ public sealed class DashboardApi
             var singleTest = plan.Tests.Count == 1;
             var editable = singleTest && relPlan.StartsWith("tests/created/", StringComparison.OrdinalIgnoreCase);
 
+            // V7 inc.2: surface the same non-fatal policy warnings the CLI's --validate-plan emits,
+            // so they're visible at a glance in the catalog (the plan is still valid — advisory only).
+            TestPlanValidationResult validation;
+            try { validation = TestPlanValidator.Validate(plan, relPlan); }
+            catch { validation = new TestPlanValidationResult(); }
+
             foreach (var t in plan.Tests)
             {
+                var label = string.IsNullOrWhiteSpace(t.Id) ? "(missing id)" : t.Id!;
+                var prefix = $"{relPlan}:{label}:";
+                var warnings = validation.Warnings
+                    .Where(w => w.StartsWith(prefix, StringComparison.Ordinal))
+                    .Select(FriendlyWarning)
+                    .ToList();
+
                 tests.Add(new
                 {
                     planPath = relPlan,
@@ -96,6 +109,7 @@ public sealed class DashboardApi
                     maxSteps = t.MaxSteps,
                     allowedActions = t.AllowedActions,
                     tags = t.Tags,
+                    warnings,
                     editable,
                     archivable = singleTest
                 });
@@ -193,8 +207,48 @@ public sealed class DashboardApi
 
         return ApiResponse.Json(new
         {
-            ok = true, id = req.Id, planPath = Relative(path), ticketPath = Relative(ticketPath), yaml
+            ok = true, id = req.Id, planPath = Relative(path), ticketPath = Relative(ticketPath), yaml,
+            // V7 inc.2: the plan is valid, but echo any non-fatal advisories so the author sees them.
+            warnings = validation.Warnings.Select(FriendlyWarning).ToList()
         });
+    }
+
+    /// <summary>
+    /// V7 inc.2: render the exact prompt the LLM would receive for a test — key-free, no run. This
+    /// is the dashboard surface for the CLI's <c>--show-prompt</c> / MCP <c>show_prompt</c>; it reuses
+    /// <see cref="PromptPreview"/> (and thus <c>PromptBuilder</c>), so the preview can't drift from the
+    /// runtime prompt. Secrets are redacted by the <see cref="SecretRedactor"/> baked into the preview.
+    /// </summary>
+    public ApiResponse GetPrompt(string planPath, string testId)
+    {
+        if (string.IsNullOrWhiteSpace(planPath) || string.IsNullOrWhiteSpace(testId))
+            return ApiResponse.Error(400, "planPath and testId are required.");
+
+        var resolved = ResolveUnderRepo(planPath);
+        if (resolved == null || !File.Exists(resolved))
+            return ApiResponse.Error(400, "planPath not found under the repository.");
+
+        TestPlan plan;
+        try { plan = TestPlanLoader.Load(resolved); }
+        catch (Exception ex) { return ApiResponse.Error(422, "Plan is invalid: " + ex.Message); }
+
+        var test = plan.Tests.FirstOrDefault(t => string.Equals(t.Id, testId, StringComparison.OrdinalIgnoreCase));
+        if (test == null)
+            return ApiResponse.Error(404, $"Test '{testId}' not found in {Relative(resolved)}.");
+
+        var prompt = PromptPreview.BuildForTest(test, new SecretRedactor());
+        return ApiResponse.Json(new { testId = test.Id, planPath = Relative(resolved), prompt });
+    }
+
+    /// <summary>
+    /// Strip the "{source}:{id}: " location prefix a validator message carries, leaving just the
+    /// human-readable advisory for the UI. The path/id have no ": " (colon+space), so the first
+    /// ": " marks the start of the message.
+    /// </summary>
+    private static string FriendlyWarning(string warning)
+    {
+        var i = warning.IndexOf(": ", StringComparison.Ordinal);
+        return i >= 0 ? warning[(i + 2)..] : warning;
     }
 
     /// <summary>List the Symphony tickets under tickets/ (frontmatter parsed).</summary>

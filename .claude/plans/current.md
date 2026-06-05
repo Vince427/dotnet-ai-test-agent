@@ -12,6 +12,11 @@ Avalonia + MAUI; **257 tests + 2 gated** on `main`. Single contributor identity:
 > 🚩 **BEFORE TAGGING v1.0**: complete `docs/release-checklist.md` (freeze the public contract +
 > golden tests + `schema_version` + SemVer/deprecation policy). This is how we avoid breaking users
 > with future versions. Do **not** cut 1.0 until that gate is green. (memory: `road-to-v1-contract`)
+>
+> ⏳ **Branch `claude/contract-golden`** (awaiting merge): `CONTRACT.md` + `ContractTests.cs` freeze and
+> lock the public surface (CLI/exit-codes/JSON shape, YAML schema, artifacts, MCP) + SemVer policy.
+> Ticks the contract/golden-test/SemVer boxes in `docs/release-checklist.md`. **Still open for 1.0:**
+> `schema_version`/artifact `version` + tolerant-loader box, the CHANGELOG `1.0.0` section, the tag.
 
 **Merged to `main`:** A1–A6 (audit hardening) · V3 vision moat **complete** (inc.1 overlay artifact,
 inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 self-healing inc.1

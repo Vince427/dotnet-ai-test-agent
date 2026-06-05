@@ -14,6 +14,17 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   only via `--mcp-allow-write` or `AGENTLOOP_MCP_ALLOW_WRITE=1`; otherwise `create_test` is not
   advertised and any call returns a clear "writes are disabled" tool error. `run_test` (spawns a run)
   stays deferred. `HandleLine` remains pure. See `docs/mcp.md`. +4 tests.
+- **Public contract frozen + locked with golden tests (`CONTRACT.md` + `src/AgentRunner.Tests/ContractTests.cs`)**.
+  New `CONTRACT.md` at the repo root is the authoritative "stable API": CLI flags + exit codes (0/1/2) +
+  which commands emit JSON on stdout and that JSON's key shape; the YAML test schema fields; the
+  `report.json`/`summary.md`/JUnit artifact shapes; the read-only MCP tool names/params; and a SemVer
+  policy (`1.x` additive-only, breaking only at `2.0`, deprecate-with-`WARN` first). `ContractTests`
+  make any drift a RED test: every `tests/**/*.yaml` (excluding `tests/archived/`) loads and validates
+  with zero errors; the `--list-tests`/`--validate-plan` `--format json` top-level + item key sets are
+  snapshotted; documented exit codes are asserted headlessly; and the schema is checked against the
+  loader/validator (`max_steps` bounds, required `goal`, action vocabulary). Executes the
+  `docs/release-checklist.md` "Definition of 1.0" contract gate (boxes ticked there). +26 tests, no new
+  dependency.
 - **Vision bridge — key-free, agent-in-the-loop VLM (`--vision-bridge <dir>`)**. Runs the vision loop
   with **no provider API key**: each step `BridgeVisionDecider` captures the screen, masks secrets, draws
   the numbered overlay, and writes `vision-req-N.png` + an identifiers-only index to the folder, then

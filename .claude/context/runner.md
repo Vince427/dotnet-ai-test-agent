@@ -32,6 +32,8 @@ Owns the executable orchestration loop and manual CLI surface.
 - `src/AgentRunner/WorkflowConfig.cs`
 - `src/AgentRunner/ArtifactWriter.cs`
 - `src/AgentRunner/RunArtifact.cs`
+- `src/AgentRunner/RunAnalytics.cs` (V11: pure `RunAnalytics.Compute(runs)` → `RunAnalyticsResult`;
+  the `--analytics` manual command reads `runs/` via `RunArtifactLoader` and renders text or JSON)
 - `src/AgentRunner/GuardFailureDemoFactory.cs`
 - `src/AgentRunner/ScoringEngine.cs`
 - `src/AgentRunner/LoopDetector.cs`
@@ -51,12 +53,21 @@ Owns the executable orchestration loop and manual CLI surface.
 ## Invariants
 
 - Manual modes `--validate-plan`, `--list-tests`, `--render-ui`,
-  `--write-guard-demos`, `--mcp`, `--show-prompt`, and `--compose-recording` must not require
+  `--write-guard-demos`, `--mcp`, `--show-prompt`, `--analytics`, and `--compose-recording` must not require
   `.env`, LLM access, FlaUI, or a target app. `--record` is also key-free (no `.env`/LLM) but is the
   one manual mode that DOES need FlaUI + an interactive desktop + the target app (env-bound). `--mcp`,
   `--show-prompt`, `--format json`, `--compose-recording` (without `--out`), and `--record` (without
   `--out`) must keep **stdout** free of diagnostics (the payload — JSON-RPC / JSON / prompt / YAML /
   session JSON — only; logs + policy warnings go to stderr).
+- `--analytics [--format json]` (V11) derives run-history insight from `runs/` (loaded via
+  `RunArtifactLoader`) through the pure, deterministic `RunAnalytics.Compute`: total runs; per-testId
+  pass/fail counts with a **flaky** flag (same id has BOTH a passing — Passed/Succeeded — and a
+  non-passing result); **selector-drift** count + groups (steps carrying a `HealingSuggestion`, grouped
+  old→new target with a count + max confidence); duration stats (avg/max from `StartedAt`/`EndedAt`,
+  runs with no/invalid `EndedAt` excluded) and average step count; and the most-failing tests. Key-free,
+  read-only, mode-exclusive. Text summary by default; `--format json` emits the `RunAnalyticsResult`
+  (stdout-clean — config diagnostic suppressed, like the other `--format json` modes). Null-safe:
+  empty history and partial runs never throw.
 - `--compose-recording <session.json> [--out <draft.yaml>]` (V9.5 inc.1) composes a recorded session
   into a validated goal-based YAML draft via `RecordingComposer` — key-free; the goal is synthesised
   from the steps with secret values redacted.
@@ -119,6 +130,7 @@ Owns the executable orchestration loop and manual CLI surface.
 dotnet test .\DesktopAiTestAgent.sln --no-restore -v minimal
 dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --validate-plan --format json
 dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --list-tests --format json
+dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --analytics --format json
 ```
 
 ## Cross-Domain Notes

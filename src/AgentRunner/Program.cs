@@ -33,6 +33,7 @@ internal static class Program
             HasArgument(args, "--mcp") ||
             HasArgument(args, "--show-prompt") ||
             HasArgument(args, "--compose-recording") ||
+            HasArgument(args, "--analytics") ||
             HasArgument(args, "--record");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
@@ -160,6 +161,9 @@ internal static class Program
 
         if (options.ComposeRecordingOnly)
             return ComposeRecording(config, options);
+
+        if (options.AnalyticsOnly)
+            return Analytics(config, options);
 
         if (options.RecordSessionOnly)
             return RecordSession(config, options);
@@ -316,6 +320,55 @@ internal static class Program
         else
         {
             Console.WriteLine(result.Yaml);
+        }
+
+        return 0;
+    }
+
+    // Manual command: derive analytics from the run history under runs/ (--analytics, V11). Key-free,
+    // read-only: loads every runs/<id>/report.json via RunArtifactLoader and hands the in-memory list
+    // to the pure RunAnalytics.Compute. Text summary by default; --format json emits the structured
+    // result (stdout-clean — only the JSON payload, diagnostics go to stderr).
+    private static int Analytics(WorkflowConfig config, RunnerOptions options)
+    {
+        var runs = RunArtifactLoader.LoadFromDirectory(config.WorkspaceRoot);
+        var result = RunAnalytics.Compute(runs);
+
+        if (options.OutputFormat == CommandOutputFormat.Json)
+        {
+            WriteJson(result);
+            return 0;
+        }
+
+        Console.WriteLine($"Run analytics: totalRuns={result.TotalRuns} tests={result.Tests.Count} flaky={result.FlakyTestCount} selectorDrift={result.SelectorDriftCount}");
+        if (result.TotalRuns == 0)
+        {
+            Console.WriteLine("No runs found under " + config.WorkspaceRoot + ". Run a test (artifacts land in runs/) then re-run --analytics.");
+            return 0;
+        }
+
+        Console.WriteLine(
+            $"Durations: runsWithDuration={result.RunsWithDuration} avg={result.AverageRunDurationSeconds}s max={result.MaxRunDurationSeconds}s | avgStepCount={result.AverageStepCount} (totalSteps={result.TotalSteps})");
+
+        Console.WriteLine();
+        Console.WriteLine("Per-test (id / runs / passed / failed / flaky):");
+        foreach (var t in result.Tests)
+            Console.WriteLine($"  {t.TestId}\t{t.Runs}\t{t.Passed}\t{t.Failed}\t{(t.Flaky ? "FLAKY" : "-")}");
+
+        if (result.MostFailingTests.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Most-failing tests:");
+            foreach (var t in result.MostFailingTests)
+                Console.WriteLine($"  {t.TestId}\tfailed={t.Failed}/{t.Runs}");
+        }
+
+        if (result.SelectorDrift.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Selector drift (old -> new / count / maxConfidence):");
+            foreach (var d in result.SelectorDrift)
+                Console.WriteLine($"  {d.OldTarget} -> {d.NewTarget}\t{d.Count}\t{d.MaxConfidence}%");
         }
 
         return 0;

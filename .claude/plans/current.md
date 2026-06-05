@@ -43,6 +43,10 @@ stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, 
 `UIAutomation/UiaSessionRecorder.cs` + `--record --window <title> [--out] [--seconds N]` → `session.json`;
 secrets redacted at capture. Env-bound — needs interactive desktop verification (gated `[InteractiveUiFact]`).
 
+**Vision bridge (key-free VLM):** `--vision-bridge <dir>` + `BridgeVisionDecider` writes an annotated
+screenshot + identifiers-only index per step and awaits `vision-resp-N.json` from an external agent
+(Claude Code as the VLM, no key). `docs/vision-bridge.md`; protocol unit-tested, run is env-bound.
+
 **Next executable (pick up here):**
 1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply`. (inc.2b live
    `--record` done on `claude/uia-record-live`.)

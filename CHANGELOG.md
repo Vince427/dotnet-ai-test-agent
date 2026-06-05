@@ -7,6 +7,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V7 inc.2b — prompt preview + policy warnings in the static workbench**. The AgentLoop Workbench
+  Test Backlog now has a **Notes** column (the same non-fatal `TestPlanValidator` advisories the CLI's
+  `--validate-plan` emits, computed at generation time) and a **Prompt** column with an expandable,
+  key-free preview of the exact prompt each test would produce (`PromptPreview`, baked at generation —
+  the page stays fully static, no view-time server). +2 tests.
 - **Dashboard Category field**. The Create form now lets you pick the test **Category**
   (Scenario / Smoke / Monkey / Audit) instead of every dashboard-authored test being hardcoded to
   `Scenario`; the value is whitelisted server-side in `BuildYaml` (unknown → `Scenario`). +1 test.

@@ -15,21 +15,20 @@ inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 sel
 (`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`) · **V7 inc.2** (dashboard:
 `GET /api/prompt`, catalog `warnings[]` as ⚠ notes, ⌘ Prompt modal, Create echoes warnings).
 
-**Merged to `main`:** dashboard UX clarity (PR #10 — connection-lost banner + clear fetch-error message).
+**Merged to `main`:** dashboard UX clarity (PR #10) · guided fully-explained Create form + per-tab
+explainers + Category/Risk fields (PR #11).
 
-**Open branch awaiting merge → `claude/create-form-guided`** (dashboard: guided fully-explained UI):
-every tab opens with a plain-language `intro()` explainer; **Create** rebuilt as a guided 4-section
-form — every field + every dropdown option explained, action-verb legend, and the new **Category**
-(`CreateTestRequest.Category`, whitelisted in `BuildYaml`) + **Risk** fields exposed. 247 tests + 2
-gated; QA APPROVE. **To resume: open/merge this PR, then `git pull`.**
+**Open branch awaiting merge → `claude/workbench-v7`** (V7 inc.2b — static workbench):
+the Test Backlog gained a **Notes** column (non-fatal `TestPlanValidator` advisories per test,
+computed at generation via `LoadTestsAndWarnings`) and a **Prompt** column with an expandable key-free
+`PromptPreview` baked at generation (page stays fully static). 249 tests + 2 gated; QA pending.
+**To resume: open/merge this PR, then `git pull`.**
 
 **Next executable (pick up here):**
-1. V7 inc.2b (optional) — also surface the prompt preview + warnings in the **static workbench**
-   drill-down (the dashboard half is done & merged).
-2. V8 inc.2 — `--heal-apply` (local-only, confirmed YAML rewrite) + screenshot in heal evidence + vision-assisted candidate.
-3. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
-4. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
-5. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
+1. V8 inc.2 — `--heal-apply` (local-only, confirmed YAML rewrite) + screenshot in heal evidence + vision-assisted candidate.
+2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
+3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
+4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
 
 **Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable
 **Settings → Pages → Source: GitHub Actions** (the `enablement:true` auto-enable didn't take).

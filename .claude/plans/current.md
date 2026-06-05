@@ -6,8 +6,12 @@ parallel work.
 
 ## RESUME SNAPSHOT — 2026-06-05 (read this first)
 
-**`main` HEAD = `2673e84`** (Merge PR #9, V7 inc.2 dashboard surfacing). Build clean on net48 + net8 +
-Avalonia + MAUI; **246 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
+**`main` HEAD = `02b7c2f`** (Merge PR #14, V9.5 recording inc.1). Build clean on net48 + net8 +
+Avalonia + MAUI; **257 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
+
+> 🚩 **BEFORE TAGGING v1.0**: complete `docs/release-checklist.md` (freeze the public contract +
+> golden tests + `schema_version` + SemVer/deprecation policy). This is how we avoid breaking users
+> with future versions. Do **not** cut 1.0 until that gate is green. (memory: `road-to-v1-contract`)
 
 **Merged to `main`:** A1–A6 (audit hardening) · V3 vision moat **complete** (inc.1 overlay artifact,
 inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 self-healing inc.1

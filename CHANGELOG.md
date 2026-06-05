@@ -6,6 +6,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 
 ## [Unreleased]
 
+### Added
+- **Test-rewrite fact-gate (`TestFactGuard`)** — a pure, key-free guard (the desktop-agent analogue
+  of drift-guard's fact-preservation check) that compares a test's before/after `TestDefinition` and
+  reports any declared fact (goal, success_condition, allowed_actions, framework, …) that a rewrite
+  **dropped or silently changed** outside an explicit allow-list. The reusable primitive a future
+  `--heal-apply` (or compose / MCP-edit) calls to refuse a rewrite that alters more than intended,
+  before it touches disk. Lists are order-insensitive; +6 tests. Not yet wired into a CLI (guard only).
+
 ### Fixed
 - **Screenshot/vision captured the wrong window when the target was occluded.**
   `FlaUiDesktopDriver.CaptureScreenshot` grabbed screen pixels at the window's bounds without bringing

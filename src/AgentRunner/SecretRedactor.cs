@@ -86,6 +86,23 @@ public sealed class SecretRedactor
         return RedactValueForIdentifier(action.AutomationId, action.Value);
     }
 
+    /// <summary>
+    /// Redacts a captured value given the source control's identifier AND its UIA <c>IsPassword</c>
+    /// flag. <c>IsPassword</c> is the primary signal (matching <see cref="IsSensitiveElement"/>): a
+    /// masked field is redacted even when its AutomationId/Name carries no sensitive keyword (e.g.
+    /// <c>pin</c>, an unlabeled password box). Otherwise falls back to identifier-based redaction.
+    /// Used by the live recorder so a typed password never reaches <c>session.json</c>.
+    /// </summary>
+    public string? RedactValue(string? identifier, bool isPassword, string? value)
+    {
+        if (value is null)
+            return null;
+
+        return isPassword || IsSensitiveIdentifier(identifier)
+            ? RedactedValue
+            : RedactText(value);
+    }
+
     public string? RedactText(string? text)
     {
         if (string.IsNullOrEmpty(text))

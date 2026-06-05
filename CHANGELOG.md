@@ -14,8 +14,10 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   → `Toggled`), feeding each as a `CapturedUiEvent` into the pure `SessionRecorder`. New CLI
   `--record --window <title> [--out <session.json>] [--seconds N]` (default 120s, or Ctrl+C);
   mode-exclusive, key-free, stdout-clean when no `--out`. CRITICAL secret-safety: typed values are
-  redacted **at capture** (`SecretRedactor.RedactValueForIdentifier`) so a password never lands in
-  `session.json`. Env-bound (needs an interactive desktop + the target app) — covered by a gated
+  redacted **at capture** via `SecretRedactor.RedactValue`, keyed by the control's UIA **`IsPassword`**
+  flag first (so a masked field with a non-keyword id — e.g. `pin` — is still redacted) then its
+  identifier, so a password never lands in `session.json`. Env-bound (needs an interactive desktop +
+  the target app) — covered by a gated
   `[InteractiveUiFact]` (RUN_E2E_UI=1); +6 non-gated option-parsing tests. Both `net48` and
   `net8.0-windows` build clean.
 - **Distributable Windows release build** (`scripts/publish-release.ps1` + `docs/install.md`). Produces

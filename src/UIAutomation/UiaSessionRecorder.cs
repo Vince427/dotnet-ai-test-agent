@@ -28,9 +28,10 @@ namespace DesktopAiTestAgent.UIAutomation;
 /// </summary>
 public sealed class UiaSessionRecorder : IDisposable
 {
-    /// <summary>Redacts a captured value given the source control's identifier (AutomationId/Name).
-    /// Returns the value to store; should return the redacted placeholder for sensitive fields.</summary>
-    public delegate string? ValueRedactor(string? identifier, string? value);
+    /// <summary>Redacts a captured value given the source control's identifier (AutomationId/Name)
+    /// and its UIA IsPassword flag. Returns the value to store; returns the redacted placeholder for
+    /// password controls or sensitive identifiers.</summary>
+    public delegate string? ValueRedactor(string? identifier, bool isPassword, string? value);
 
     private readonly Action<CapturedUiEvent> _sink;
     private readonly ValueRedactor _redact;
@@ -50,7 +51,7 @@ public sealed class UiaSessionRecorder : IDisposable
         Action<string>? diagnostics = null)
     {
         _sink = sink ?? throw new ArgumentNullException(nameof(sink));
-        _redact = redact ?? ((_, v) => v);
+        _redact = redact ?? ((_, __, v) => v);
         _diagnostics = diagnostics;
     }
 
@@ -121,11 +122,13 @@ public sealed class UiaSessionRecorder : IDisposable
             var automationId = SafeGet(() => src.Properties.AutomationId.ValueOrDefault);
             var name = SafeGet(() => src.Properties.Name.ValueOrDefault);
             var controlType = SafeGet(() => src.Properties.ControlType.ValueOrDefault.ToString());
+            // IsPassword is the primary secret signal (a masked field may have a non-keyword id).
+            var isPassword = SafeGetBool(() => src.Properties.IsPassword.ValueOrDefault);
 
-            // Secret-safety: redact the value at capture, keyed by the source identifier, BEFORE it
-            // can enter the CapturedUiEvent / session.json. Never store the raw typed value.
+            // Secret-safety: redact the value at capture — keyed by IsPassword first, then the source
+            // identifier — BEFORE it can enter the CapturedUiEvent / session.json. Never store raw text.
             string? safeValue = kind == UiEventKind.ValueChanged
-                ? _redact(string.IsNullOrEmpty(automationId) ? name : automationId, rawValue)
+                ? _redact(string.IsNullOrEmpty(automationId) ? name : automationId, isPassword, rawValue)
                 : null;
 
             _sink(new CapturedUiEvent
@@ -161,6 +164,11 @@ public sealed class UiaSessionRecorder : IDisposable
     private static string? SafeGet(Func<string?> getter)
     {
         try { return getter(); } catch { return null; }
+    }
+
+    private static bool SafeGetBool(Func<bool> getter)
+    {
+        try { return getter(); } catch { return false; }
     }
 
     public void Dispose()

@@ -34,7 +34,7 @@ public sealed class UiaSessionRecorderE2ETests
             var redactor = new SecretRedactor();
             var sink = new SessionRecorder { Window = target.WindowTitle, Title = target.WindowTitle };
 
-            using var recorder = new UiaSessionRecorder(sink.Observe, redactor.RedactValueForIdentifier);
+            using var recorder = new UiaSessionRecorder(sink.Observe, redactor.RedactValue);
             Assert.True(recorder.Attach(target.WindowTitle, TimeSpan.FromSeconds(10)));
 
             // Drive the form: a non-secret field, the password field, then the login button. UIA raises

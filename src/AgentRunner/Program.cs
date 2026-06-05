@@ -307,8 +307,8 @@ internal static class Program
     // the running target app — it can't be exercised headless. Key-free (no .env / LLM). Attaches via
     // FlaUI/UIA3, subscribes to automation events, smooths them through the pure SessionRecorder, then
     // writes the RecordedSession JSON the existing --compose-recording consumes. Secret VALUES are
-    // redacted AT CAPTURE (SecretRedactor.RedactValueForIdentifier) so a password never lands on disk.
-    // Stdout is the session JSON when no --out is given (diagnostics go to stderr).
+    // redacted AT CAPTURE (SecretRedactor.RedactValue, keyed by IsPassword + identifier) so a password
+    // never lands on disk. Stdout is the session JSON when no --out is given (diagnostics go to stderr).
     private static int RecordSession(WorkflowConfig config, RunnerOptions options)
     {
         var window = options.TargetWindow;
@@ -323,7 +323,7 @@ internal static class Program
 
         using var recorder = new UiaSessionRecorder(
             sink.Observe,
-            redactor.RedactValueForIdentifier,
+            redactor.RedactValue,
             diagnostics: msg => Console.Error.WriteLine("  " + msg));
 
         Console.Error.WriteLine($"Attaching to window \"{window}\"...");

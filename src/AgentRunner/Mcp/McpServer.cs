@@ -28,11 +28,19 @@ public sealed class McpServer
 
     private readonly string _repoRoot;
     private readonly string _runsRoot;
+    private readonly bool _allowWrite;
 
-    public McpServer(string repoRoot, string runsRoot)
+    /// <summary>
+    /// Create the adapter. Writes are <b>off by default</b> (read-only). Pass
+    /// <paramref name="allowWrite"/> = <c>true</c> (from the opt-in <c>--mcp-allow-write</c> CLI flag
+    /// or the <c>AGENTLOOP_MCP_ALLOW_WRITE=1</c> env var) to enable the authoring <c>create_test</c>
+    /// tool, which writes validated YAML under <c>tests/created/</c>.
+    /// </summary>
+    public McpServer(string repoRoot, string runsRoot, bool allowWrite = false)
     {
         _repoRoot = repoRoot;
         _runsRoot = runsRoot;
+        _allowWrite = allowWrite;
     }
 
     /// <summary>
@@ -89,7 +97,19 @@ public sealed class McpServer
         serverInfo = new { name = ServerName, version = "0.1.0" }
     };
 
-    private static object[] ToolDefinitions() => new object[]
+    private object[] ToolDefinitions()
+    {
+        var tools = new List<object>(ReadOnlyToolDefinitions());
+        // Authoring tool is advertised only when writes are opted in (--mcp-allow-write /
+        // AGENTLOOP_MCP_ALLOW_WRITE=1). Read-only hosts never see a write tool.
+        if (_allowWrite)
+            tools.Add(Tool("create_test",
+                "Author a new test: build YAML (via the same emitter the dashboard uses), validate it with the CLI validator, and write tests/created/<id>.yaml. Opt-in; disabled unless the server was started with writes enabled.",
+                CreateTestSchema()));
+        return tools.ToArray();
+    }
+
+    private static object[] ReadOnlyToolDefinitions() => new object[]
     {
         Tool("list_tests", "List the AgentLoop tests discovered under tests/ (id, title, framework, priority, category, suite, tags).", EmptySchema()),
         Tool("validate_plan",
@@ -117,6 +137,7 @@ public sealed class McpServer
             "list_runs" => ListRuns(),
             "get_run" => GetRun(args),
             "show_prompt" => ShowPrompt(args),
+            "create_test" => CreateTest(args),
             _ => throw new McpToolException("Unknown tool: " + name)
         };
 
@@ -200,6 +221,87 @@ public sealed class McpServer
         return new { testId, prompt = PromptPreview.BuildForTest(test) };
     }
 
+    // --- Authoring (opt-in write; --mcp-allow-write / AGENTLOOP_MCP_ALLOW_WRITE=1) ---
+
+    /// <summary>
+    /// Author a test: build YAML via the SAME emitter the dashboard uses
+    /// (<see cref="Dashboard.DashboardApi.BuildYaml"/>, authoring_agent "mcp"), validate it with the
+    /// CLI validator, and on success write <c>tests/created/&lt;id&gt;.yaml</c>. Writes are off unless
+    /// the server was started with writes enabled; otherwise this is a clear tool error. The id is
+    /// guarded with the same safe-segment check the dashboard uses, so it can't escape the folder.
+    /// </summary>
+    private object CreateTest(JsonElement args)
+    {
+        if (!_allowWrite)
+            throw new McpToolException(
+                "create_test is disabled: writes are off by default. Enable with --mcp-allow-write or AGENTLOOP_MCP_ALLOW_WRITE=1.");
+
+        if (args.ValueKind != JsonValueKind.Object)
+            throw new McpToolException("create_test requires arguments (at least 'id' and 'goal').");
+
+        string? Str(string name) => args.TryGetProperty(name, out var e) && e.ValueKind == JsonValueKind.String
+            ? e.GetString() : null;
+        List<string>? StrList(string name)
+        {
+            if (!args.TryGetProperty(name, out var e) || e.ValueKind != JsonValueKind.Array) return null;
+            var list = new List<string>();
+            foreach (var item in e.EnumerateArray())
+                if (item.ValueKind == JsonValueKind.String && item.GetString() is { } s && s.Length > 0)
+                    list.Add(s);
+            return list.Count > 0 ? list : null;
+        }
+
+        var id = Str("id");
+        if (string.IsNullOrWhiteSpace(id) || !Dashboard.DashboardApi.IsSafeSegment(id))
+            throw new McpToolException("A safe test id is required (letters, digits, '-', '_').");
+        if (string.IsNullOrWhiteSpace(Str("goal")))
+            throw new McpToolException("A goal is required.");
+
+        int? maxSteps = args.TryGetProperty("maxSteps", out var ms) && ms.ValueKind == JsonValueKind.Number
+            && ms.TryGetInt32(out var n) ? n : null;
+
+        var req = new Dashboard.DashboardApi.CreateTestRequest
+        {
+            Id = id,
+            Goal = Str("goal"),
+            Framework = Str("framework"),
+            Title = Str("title"),
+            TargetWindow = Str("targetWindow"),
+            Category = Str("category"),
+            SuccessCondition = Str("successCondition"),
+            MaxSteps = maxSteps,
+            AllowedActions = StrList("allowedActions"),
+            Tags = StrList("tags"),
+            Suite = Str("suite"),
+            Priority = Str("priority"),
+            // One emitter, one provenance marker: the MCP adapter authored this.
+            AuthoringAgent = "mcp"
+        };
+
+        var yaml = Dashboard.DashboardApi.BuildYaml(req);
+
+        TestPlan plan;
+        try { plan = TestPlanLoader.Parse(yaml, id); }
+        catch (Exception ex) { throw new McpToolException("Generated YAML is invalid: " + ex.Message); }
+
+        var validation = TestPlanValidator.Validate(plan, id!);
+        if (!validation.IsValid)
+            throw new McpToolException("Validation failed: " + string.Join("; ", validation.Errors));
+
+        var dir = Path.Combine(_repoRoot, "tests", "created");
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, id + ".yaml");
+        File.WriteAllText(path, yaml);
+
+        return new
+        {
+            ok = true,
+            id,
+            planPath = Relative(path),
+            warnings = validation.Warnings.Select(TestPlanValidator.StripLocationPrefix).ToList()
+        };
+    }
+
     private object ListRuns()
     {
         var runs = RunArtifactLoader.LoadFromDirectory(_runsRoot)
@@ -240,6 +342,29 @@ public sealed class McpServer
         new { name, description, inputSchema };
 
     private static object EmptySchema() => new { type = "object", properties = new { } };
+
+    /// <summary>Input schema for the opt-in <c>create_test</c> authoring tool (scalars + string arrays).</summary>
+    private static object CreateTestSchema()
+    {
+        static object Str(string desc) => new { type = "string", description = desc };
+        static object StrArray(string desc) => new { type = "array", items = new { type = "string" }, description = desc };
+        var props = new Dictionary<string, object>
+        {
+            ["id"] = Str("Test id (letters, digits, '-', '_'); also the file name under tests/created/."),
+            ["goal"] = Str("Plain-language goal for the agent to accomplish."),
+            ["framework"] = Str("Target UI framework (e.g. winforms, wpf, avalonia, maui)."),
+            ["title"] = Str("Human-readable test title."),
+            ["targetWindow"] = Str("Target window title to attach to."),
+            ["category"] = Str("Smoke | Monkey | Audit | Scenario (default Scenario)."),
+            ["successCondition"] = Str("Status text that proves success."),
+            ["maxSteps"] = new { type = "integer", description = "Step budget (default 8)." },
+            ["allowedActions"] = StrArray("Allow-list of action verbs (e.g. EnterText, Click, Done)."),
+            ["tags"] = StrArray("Free-form tags."),
+            ["suite"] = Str("Suite name (default 'created')."),
+            ["priority"] = Str("Priority label (optional).")
+        };
+        return new { type = "object", properties = props, required = new[] { "id", "goal" } };
+    }
 
     private static object ObjSchema(params (string Name, string Type, string Desc, bool Required)[] fields)
     {

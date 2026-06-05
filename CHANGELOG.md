@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **MCP authoring tool (opt-in write) — `create_test`**. The `--mcp` adapter stays read-only by
+  default; an opt-in `create_test` tool builds a plan via the **same** `DashboardApi.BuildYaml`
+  emitter (`authoring_agent: mcp`), validates it with `TestPlanValidator`, and writes
+  `tests/created/<id>.yaml` (id guarded by the dashboard's safe-segment check). Writes are enabled
+  only via `--mcp-allow-write` or `AGENTLOOP_MCP_ALLOW_WRITE=1`; otherwise `create_test` is not
+  advertised and any call returns a clear "writes are disabled" tool error. `run_test` (spawns a run)
+  stays deferred. `HandleLine` remains pure. See `docs/mcp.md`. +4 tests.
 - **Public contract frozen + locked with golden tests (`CONTRACT.md` + `src/AgentRunner.Tests/ContractTests.cs`)**.
   New `CONTRACT.md` at the repo root is the authoritative "stable API": CLI flags + exit codes (0/1/2) +
   which commands emit JSON on stdout and that JSON's key shape; the YAML test schema fields; the

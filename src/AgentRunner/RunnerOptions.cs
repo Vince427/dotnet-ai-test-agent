@@ -58,6 +58,14 @@ public sealed class RunnerOptions
     /// <summary>Compute run-history analytics from `runs/` (`--analytics`, V11). Key-free, read-only.</summary>
     public bool AnalyticsOnly { get; set; }
 
+    /// <summary>Apply a run's selector-drift suggestions to the test's `selectors` (`--heal-apply`, V8 inc.2).
+    /// Key-free, local-only; dry-run preview unless `--yes` is given.</summary>
+    public bool HealApplyOnly { get; set; }
+    /// <summary>The run id (`--run`) whose healing suggestions `--heal-apply` applies.</summary>
+    public string? HealRunId { get; set; }
+    /// <summary>Confirm the YAML rewrite for `--heal-apply` (`--yes`); otherwise just preview.</summary>
+    public bool HealConfirmed { get; set; }
+
     /// <summary>Live-capture a manual UIA session into a session.json (`--record`, V9.5 inc.2b). Env-bound.</summary>
     public bool RecordSessionOnly { get; set; }
     /// <summary>Output path for the captured session JSON (`--out`); stdout when unset.</summary>
@@ -108,6 +116,9 @@ public sealed class RunnerOptions
         string? recordingInputPath = null;
         string? recordingOutputPath = null;
         var analyticsOnly = false;
+        var healApplyOnly = false;
+        string? healRunId = null;
+        var healConfirmed = false;
         var recordSessionOnly = false;
         var recordSeconds = DefaultRecordSeconds;
         // --out is shared by --compose-recording and --record; bind it to whichever mode is active.
@@ -156,6 +167,12 @@ public sealed class RunnerOptions
             }
             else if (arg == "--analytics")
                 analyticsOnly = true;
+            else if (arg == "--heal-apply")
+                healApplyOnly = true;
+            else if (arg == "--run")
+                healRunId = ReadValue(args, ref i, "--run");
+            else if (arg == "--yes")
+                healConfirmed = true;
             else if (arg == "--record")
                 recordSessionOnly = true;
             else if (arg == "--seconds")
@@ -265,15 +282,20 @@ public sealed class RunnerOptions
         if (showPromptOnly) modeCount++;
         if (composeRecordingOnly) modeCount++;
         if (analyticsOnly) modeCount++;
+        if (healApplyOnly) modeCount++;
         if (recordSessionOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, --compose-recording, --analytics, or --record.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, --show-prompt, --compose-recording, --analytics, --heal-apply, or --record.");
         if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly && !showPromptOnly && !analyticsOnly)
             throw new ArgumentException("--format json is only supported with --validate-plan, --list-tests, --show-prompt, or --analytics.");
         if (outPath != null && !composeRecordingOnly && !recordSessionOnly)
             throw new ArgumentException("--out is only supported with --compose-recording or --record.");
         if (recordSeconds != DefaultRecordSeconds && !recordSessionOnly)
             throw new ArgumentException("--seconds is only supported with --record.");
+        if ((healRunId != null || healConfirmed) && !healApplyOnly)
+            throw new ArgumentException("--run and --yes are only supported with --heal-apply.");
+        if (healApplyOnly && string.IsNullOrWhiteSpace(healRunId))
+            throw new ArgumentException("--heal-apply requires --run <runId>.");
 
         // --out feeds whichever recording mode is active.
         recordingOutputPath = composeRecordingOnly ? outPath : null;
@@ -284,7 +306,7 @@ public sealed class RunnerOptions
         TestDefinition? selectedTest = null;
         // --show-prompt and --mcp resolve their own test(s) across plans, so don't run the
         // single-plan runtime selection (which would throw if the id isn't in the auto-picked plan).
-        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly && !analyticsOnly && !recordSessionOnly;
+        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly && !composeRecordingOnly && !analyticsOnly && !recordSessionOnly && !healApplyOnly;
         if (runtimeTestSelection &&
             (!string.IsNullOrWhiteSpace(planPath) ||
             !string.IsNullOrWhiteSpace(suite) ||
@@ -364,6 +386,9 @@ public sealed class RunnerOptions
             RecordingInputPath = recordingInputPath,
             RecordingOutputPath = ResolveOutputPath(recordingOutputPath, config),
             AnalyticsOnly = analyticsOnly,
+            HealApplyOnly = healApplyOnly,
+            HealRunId = healRunId,
+            HealConfirmed = healConfirmed,
             RecordSessionOnly = recordSessionOnly,
             RecordOutputPath = ResolveOutputPath(recordOutputPath, config),
             RecordSeconds = recordSeconds,

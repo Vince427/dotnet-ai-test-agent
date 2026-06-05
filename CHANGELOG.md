@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **`--heal-apply` — confirmed, guarded selector healing (V8 inc.2 complete)**. Turns a run's
+  evidence-only `SelectorHealer` suggestions into a rewrite of the test's new optional **`selectors`**
+  field: `--heal-apply --run <id> [--plan <path>] [--yes]` previews `old -> new` heals (dry-run) and,
+  with `--yes`, performs a **surgical** YAML edit (only the `selectors:` line) that is then **verified by
+  `TestFactGuard`** — if the edit changed anything but `selectors`, the write is refused. Local-only,
+  key-free, single-test files only. New `selectors` YAML field (schema + loader + emitter). Wires the
+  fact-gate into a real consumer; `HealApplier` is pure + tested. +4 tests; verified end-to-end.
 - **Reproducibility gate (`ReproducibilityTests`)** — borrowed from open-cognitive-bench's run-twice-diff
   idea: the key-free deterministic surfaces (plan discovery, `--compose-recording` YAML, `--analytics`,
   `--show-prompt`, and the static workbench HTML) must produce **identical** output across two runs on the

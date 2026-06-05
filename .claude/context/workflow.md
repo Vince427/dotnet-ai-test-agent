@@ -29,6 +29,10 @@ Owns AgentLoop policy, YAML test plans, schema, and agent authoring contracts.
   `source_issue`, `source_pr`, `authoring_agent`, `risk`, `ci_profile`,
   `existing_tests`.
 - Keep `allowed_actions` explicit and bounded.
+- Optional `selectors` (string list of AutomationIds the test targets): an inventory populated by
+  recording and maintained by `--heal-apply` on selector drift. Optional + manually meaningful; schema
+  + loader (`TestPlanLoader`) + emitter (`DashboardApi.BuildYaml`) evolve together. `--heal-apply`
+  rewrites ONLY this field (surgical edit verified by `TestFactGuard`).
 
 ## Validation
 

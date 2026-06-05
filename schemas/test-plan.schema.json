@@ -121,6 +121,10 @@
         "existing_tests": {
           "description": "Ids of existing automated tests this run complements (e.g. a TRX/JUnit testcase like 'MyApp.UiTests.LoginTests.HappyPath'). Surface as JUnit properties.",
           "$ref": "#/$defs/stringList"
+        },
+        "selectors": {
+          "description": "Concrete control selectors (AutomationIds) this test targets. Optional inventory, populated by recording and maintained by --heal-apply on selector drift.",
+          "$ref": "#/$defs/stringList"
         }
       }
     }

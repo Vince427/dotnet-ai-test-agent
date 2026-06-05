@@ -170,6 +170,9 @@ public static class TestPlanLoader
             case "existing_tests":
                 test.ExistingTests = ParseInlineList(cleanValue);
                 break;
+            case "selectors":
+                test.Selectors = ParseInlineList(cleanValue);
+                break;
         }
     }
 
@@ -188,6 +191,9 @@ public static class TestPlanLoader
                 break;
             case "existing_tests":
                 test.ExistingTests.Add(value);
+                break;
+            case "selectors":
+                test.Selectors.Add(value);
                 break;
         }
     }

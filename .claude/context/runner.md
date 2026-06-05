@@ -51,8 +51,10 @@ Owns the executable orchestration loop and manual CLI surface.
   FlaUI/UIA event source (`UIAutomation/UiaSessionRecorder.cs`) + the `--record` CLI (inc.2b, env-bound)
   feed it; `RecordSession` in `Program` wires the source → `SessionRecorder` → `session.json`.
 - `src/AgentRunner/TestFactGuard.cs` (fact-gate: `Verify(before, after, allowedToChange)` reports facts
-  a YAML rewrite dropped/changed outside an allow-list — the pure safety primitive for a future
-  `--heal-apply`/compose/edit; not yet wired into a CLI).
+  a YAML rewrite dropped/changed outside an allow-list). Wired into `--heal-apply`.
+- `src/AgentRunner/HealApplier.cs` (V8 inc.2: `--heal-apply --run <id> [--plan] [--yes]` applies a run's
+  selector-drift suggestions to the test's `selectors` — pure `Plan` + a surgical YAML rewrite that
+  `TestFactGuard` verifies changed only `selectors` before writing; local-only, single-test files).
 - `src/AgentRunner.Tests/**`
 - `src/Core/AgentGoal.cs`
 
@@ -103,8 +105,10 @@ Owns the executable orchestration loop and manual CLI surface.
   suggestion (`RunStep.HealingSuggestion`, V8) — evidence only, **never auto-applied**.
   `summary.md` surfaces these in a **Selector Healing Suggestions** section (old→new,
   confidence, rationale, + a relative link to the drift step's screenshot) so a human can
-  review before adopting. `--heal-apply` (YAML rewrite) is deferred until tests carry a
-  selector field (recording mode / V9.5) — see `.claude/DISCOVERY_LOG.md`.
+  review before adopting. **`--heal-apply`** then applies a confirmed heal: it rewrites the test's
+  optional `selectors` field (a surgical YAML edit, `TestFactGuard`-verified to change nothing else),
+  local-only + single-test files. (Runtime payoff — a decider that *replays* `selectors` — is the
+  remaining piece; today `selectors` is a maintained inventory.)
 - The act dispatch lives in `ActionExecutor`, not inline in the loop. New verbs are added
   to `ActionVocabulary.All` (which feeds plan/prompt/target validation) and given a branch
   in `ActionExecutor.ExecuteAsync` — never by hardcoding the verb string in a fourth place.

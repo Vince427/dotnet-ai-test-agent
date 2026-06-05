@@ -29,6 +29,11 @@ Owns repeatable validation commands, CI templates, and contributor workflow.
   `dotnet tool` is **not** viable (PackAsTool rejects `net8.0-windows`/`UseWPF`/`UseWindowsForms`; the
   agent needs FlaUI desktop) — see `.claude/DISCOVERY_LOG.md`. Note: `dotnet publish -r <rid>` rewrites
   `obj/project.assets.json` for that RID — run `dotnet restore` before a subsequent `--no-restore` build.
+- Release automation = `.github/workflows/release.yml`: on a `v*` tag push (or manual
+  `workflow_dispatch`) on `windows-latest` it runs `scripts/publish-release.ps1 -Zip`, uploads
+  `artifacts/release.zip` as a build artifact, and on a tag attaches it to a GitHub Release via
+  `softprops/action-gh-release@v2` using the built-in `GITHUB_TOKEN` (`permissions: contents: write`;
+  no provider secrets).
 - Ticket-to-evidence CI stays `workflow_dispatch` only on hosted runners and
   uses `run-ticket-proof.ps1 -TicketPath <ticket.md> -SkipRuntime -DryRun`;
   real desktop automation belongs on local or self-hosted interactive Windows

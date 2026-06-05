@@ -35,6 +35,9 @@ stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, 
 **Distribution (this branch):** `scripts/publish-release.ps1` → single-file `AgentRunner.exe` +
 `docs/install.md`. Global `dotnet tool` deferred (PackAsTool can't do `net8.0-windows`/WPF — see
 `DISCOVERY_LOG.md`); needs a CLI/driver split. 268 tests + 2 gated.
+**Release CI (branch `claude/ci-release-workflow`):** `.github/workflows/release.yml` — `v*` tag /
+`workflow_dispatch` → `publish-release.ps1 -Zip` → upload `release.zip` + attach to a GitHub Release
+(`action-gh-release@v2`, built-in `GITHUB_TOKEN`). README Install section added.
 
 **V9.5 inc.2b (branch `claude/uia-record-live`, awaiting merge):** live UIA source
 `UIAutomation/UiaSessionRecorder.cs` + `--record --window <title> [--out] [--seconds N]` → `session.json`;

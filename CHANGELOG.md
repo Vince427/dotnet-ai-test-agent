@@ -20,6 +20,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
   the target app) — covered by a gated
   `[InteractiveUiFact]` (RUN_E2E_UI=1); +6 non-gated option-parsing tests. Both `net48` and
   `net8.0-windows` build clean.
+- **GitHub Actions release workflow** (`.github/workflows/release.yml`). On a `v*` tag push (or manual
+  `workflow_dispatch`) it builds the distributable Windows exe via `scripts/publish-release.ps1 -Zip`,
+  uploads `artifacts/release.zip` as a build artifact, and on a tag attaches it to a GitHub Release
+  (`softprops/action-gh-release@v2`, built-in `GITHUB_TOKEN`, no secrets). README gained an **Install**
+  section pointing at the Releases page + `docs/install.md`.
 - **Distributable Windows release build** (`scripts/publish-release.ps1` + `docs/install.md`). Produces
   a single-file `AgentRunner.exe` (win-x64, framework-dependent by default; `-SelfContained` for no
   prerequisite, `-Zip` to package) so the agent is download-and-run. A cross-platform `dotnet tool` is

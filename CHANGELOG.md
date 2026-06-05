@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Reproducibility gate (`ReproducibilityTests`)** — borrowed from open-cognitive-bench's run-twice-diff
+  idea: the key-free deterministic surfaces (plan discovery, `--compose-recording` YAML, `--analytics`,
+  `--show-prompt`, and the static workbench HTML) must produce **identical** output across two runs on the
+  same input. ContractTests pin the *shape*; these pin run-to-run *stability*, so a future change that
+  smuggles in dict/set ordering, `DateTime.Now`, or file-glob order becomes a RED test. The workbench's
+  one volatile line (the "Generated &lt;timestamp&gt;") is normalized, exactly like the bench's report
+  run-id. +5 tests.
 - **Test-rewrite fact-gate (`TestFactGuard`)** — a pure, key-free guard (the desktop-agent analogue
   of drift-guard's fact-preservation check) that compares a test's before/after `TestDefinition` and
   reports any declared fact (goal, success_condition, allowed_actions, framework, …) that a rewrite

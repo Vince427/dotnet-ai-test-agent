@@ -72,6 +72,7 @@ public static class TestFactGuard
         ("tags", t => JoinList(t.Tags)),
         ("blocked_if", t => JoinList(t.BlockedIf)),
         ("existing_tests", t => JoinList(t.ExistingTests)),
+        ("selectors", t => JoinList(t.Selectors)),
     ];
 
     /// <summary>Every fact that differs between <paramref name="before"/> and <paramref name="after"/>.</summary>

@@ -38,6 +38,9 @@ public sealed class TestDefinition
     public TestCategory Category { get; set; } = TestCategory.Scenario;
     public List<string> AllowedActions { get; set; } = [];
     public List<string> Tags { get; set; } = [];
+    /// <summary>Concrete control selectors (AutomationIds) this test targets — optional inventory,
+    /// populated by recording and maintained by <c>--heal-apply</c> on selector drift.</summary>
+    public List<string> Selectors { get; set; } = [];
     public List<string> BlockedIf { get; set; } = [];
     public List<string> ExistingTests { get; set; } = [];
 

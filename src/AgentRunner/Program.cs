@@ -34,6 +34,7 @@ internal static class Program
             HasArgument(args, "--show-prompt") ||
             HasArgument(args, "--compose-recording") ||
             HasArgument(args, "--analytics") ||
+            HasArgument(args, "--heal-apply") ||
             HasArgument(args, "--record");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
@@ -164,6 +165,9 @@ internal static class Program
 
         if (options.AnalyticsOnly)
             return Analytics(config, options);
+
+        if (options.HealApplyOnly)
+            return HealApply(config, options);
 
         if (options.RecordSessionOnly)
             return RecordSession(config, options);
@@ -371,6 +375,100 @@ internal static class Program
                 Console.WriteLine($"  {d.OldTarget} -> {d.NewTarget}\t{d.Count}\t{d.MaxConfidence}%");
         }
 
+        return 0;
+    }
+
+    // Manual command: --heal-apply --run <id> [--plan <path>] [--yes]. Local-only, key-free. Takes a
+    // run's evidence-only selector-drift suggestions and applies them to the test's `selectors` —
+    // a SURGICAL edit (only the selectors line changes) VERIFIED by TestFactGuard (the rewrite must
+    // change nothing but selectors, else it's refused). Dry-run preview unless --yes. Single-test files
+    // only (multi-test files: edit by hand), so it can't clobber a sibling test.
+    private static int HealApply(WorkflowConfig config, RunnerOptions options)
+    {
+        var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        var runDir = Path.Combine(config.WorkspaceRoot, options.HealRunId!);
+        var run = RunArtifactLoader.LoadFromDirectory(runDir).FirstOrDefault();
+        if (run == null)
+        {
+            Console.Error.WriteLine($"Run '{options.HealRunId}' not found under {config.WorkspaceRoot}.");
+            return 2;
+        }
+        if (string.IsNullOrWhiteSpace(run.TestId))
+        {
+            Console.Error.WriteLine("That run has no testId, so its test can't be located.");
+            return 2;
+        }
+
+        var planPaths = string.IsNullOrWhiteSpace(options.PlanPath)
+            ? TestPlanLoader.DiscoverPlanPaths(repoRoot)
+            : new List<string> { options.PlanPath! };
+
+        string? planPath = null;
+        TestDefinition? test = null;
+        foreach (var p in planPaths)
+        {
+            TestPlan plan;
+            try { plan = TestPlanLoader.Load(p); } catch { continue; }
+            var t = plan.FindById(run.TestId!);
+            if (t == null) continue;
+            if (plan.Tests.Count != 1)
+            {
+                Console.Error.WriteLine($"Test '{run.TestId}' lives in a multi-test file ({p}); --heal-apply rewrites single-test files only (edit multi-test files by hand).");
+                return 2;
+            }
+            planPath = p; test = t; break;
+        }
+        if (test == null || planPath == null)
+        {
+            Console.Error.WriteLine($"Could not find a single-test plan for testId '{run.TestId}'.");
+            return 2;
+        }
+
+        var healPlan = HealApplier.Plan(run, test);
+        if (!healPlan.HasChanges)
+        {
+            Console.WriteLine($"No selector heals to apply for {run.TestId}: the run's drift suggestions don't match any of the test's declared `selectors`.");
+            return 0;
+        }
+
+        Console.WriteLine($"Proposed selector heals for {run.TestId} ({planPath}):");
+        foreach (var r in healPlan.Replacements)
+            Console.WriteLine($"  {r.Old} -> {r.New}  ({r.Confidence}% match)");
+
+        if (!options.HealConfirmed)
+        {
+            Console.WriteLine("Dry run. Re-run with --yes to apply (local-only, the file shows in Git).");
+            return 0;
+        }
+
+        var original = File.ReadAllText(planPath);
+        var rewritten = HealApplier.RewriteSelectorsInYaml(original, healPlan.Replacements);
+        if (rewritten == original)
+        {
+            Console.Error.WriteLine("No `selectors:` entry matched in the YAML; nothing written.");
+            return 1;
+        }
+
+        TestDefinition after;
+        try { after = TestPlanLoader.Parse(rewritten, run.TestId)!.FindById(run.TestId!)!; }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Rewrite produced invalid YAML; not writing: " + ex.Message);
+            return 1;
+        }
+
+        // The fact-gate is the safety net: the surgical edit must change ONLY `selectors`.
+        var guard = TestFactGuard.Verify(test, after, allowedToChange: new[] { "selectors" });
+        if (!guard.Ok)
+        {
+            Console.Error.WriteLine("Refusing to write — the rewrite changed more than `selectors`:");
+            foreach (var v in guard.Violations)
+                Console.Error.WriteLine("  " + v);
+            return 1;
+        }
+
+        File.WriteAllText(planPath, rewritten);
+        Console.WriteLine($"Applied {healPlan.Replacements.Count} selector heal(s) to {planPath}.");
         return 0;
     }
 

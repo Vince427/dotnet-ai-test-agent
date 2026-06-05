@@ -7,6 +7,11 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Road-to-1.0 release checklist** (`docs/release-checklist.md`). A durable pre-1.0 gate so future
+  versions can't silently break users: freeze the public contract (CLI / YAML schema / artifacts /
+  MCP), lock it with golden + schema tests, add `schema_version` + a tolerant loader, and adopt a
+  SemVer/deprecation policy (1.x additive-only; deprecate-with-WARN before any removal). Surfaced from
+  the plan's resume snapshot so `/suite` reminds us before tagging 1.0.
 - **V9.5 recording mode (increment 1) — `--compose-recording`**. Turns a recorded manual session
   (a portable `session.json`: window + ordered interactions) into a **validated, goal-based YAML test
   draft** — the biggest authoring on-ramp (record once, edit the draft, run it). `--compose-recording

@@ -37,6 +37,9 @@ Owns the executable orchestration loop and manual CLI surface.
   tools over the same loaders — `docs/mcp.md`)
 - `src/AgentRunner/RecordingComposer.cs` (V9.5 recording mode inc.1: `RecordedSession`/`RecordedAction`
   → validated YAML draft via `--compose-recording`; reuses `DashboardApi.BuildYaml` + `TestPlanValidator`)
+- `src/AgentRunner/SessionRecorder.cs` (V9.5 inc.2 capture core, pure: `RecordedActionMapper` +
+  `SessionRecorder` map `Core.CapturedUiEvent`s → a `RecordedSession`, smoothing event noise). The live
+  FlaUI/UIA event source + a `--record` CLI are the env-bound next increment.
 - `src/AgentRunner.Tests/**`
 - `src/Core/AgentGoal.cs`
 

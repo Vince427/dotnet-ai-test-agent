@@ -9,6 +9,8 @@ Owns black-box desktop automation and UI tree capture.
 - `src/Core/AgentAction.cs`
 - `src/Core/UiElement.cs`
 - `src/Core/UiSnapshot.cs` (`WindowBounds` = screenshot origin, same space as `UiElement.BoundingBox`)
+- `src/Core/CapturedUiEvent.cs` (V9.5 recording: a normalized, framework-agnostic UIA event — the
+  live FlaUI/UIA event source will emit these; `AgentRunner.SessionRecorder` maps them, pure)
 
 ## Invariants
 

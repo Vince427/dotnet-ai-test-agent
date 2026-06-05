@@ -50,6 +50,8 @@ public sealed class RecordingComposeResult
 /// The draft stays goal-based (the existing schema): the goal is synthesised in plain language from the
 /// recorded steps (secret values redacted), allowed_actions are the distinct verbs used, and the window
 /// /framework carry over. A human edits the goal + adds a success condition before committing.
+/// A <see cref="SessionRecorder"/> (increment 2) produces the <see cref="RecordedSession"/> from live
+/// UIA events; this composer is also driven directly from a hand-written/JSON session.
 /// </summary>
 public static class RecordingComposer
 {

@@ -7,6 +7,13 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V9.5 recording mode (increment 2) — UIA capture core**. The pure, testable heart of recording:
+  `CapturedUiEvent` (a normalized, framework-agnostic UIA event in Core), `RecordedActionMapper`
+  (Invoked/Toggled/SelectionChanged → Click, ValueChanged → EnterText), and `SessionRecorder` which
+  accumulates events into a `RecordedSession` and smooths raw noise (consecutive text edits on a field
+  collapse to the final value; a doubled click is de-duplicated). Feeds increment 1's
+  `RecordingComposer` → YAML draft. The live FlaUI/UIA event subscription + a `--record` CLI (env-bound,
+  needs a desktop + target app) are the next increment. +6 tests.
 - **Road-to-1.0 release checklist** (`docs/release-checklist.md`). A durable pre-1.0 gate so future
   versions can't silently break users: freeze the public contract (CLI / YAML schema / artifacts /
   MCP), lock it with golden + schema tests, add `schema_version` + a tolerant loader, and adopt a

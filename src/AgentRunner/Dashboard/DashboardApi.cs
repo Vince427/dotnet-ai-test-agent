@@ -690,7 +690,13 @@ public sealed class DashboardApi
         AppendScalar(sb, "target_window", req.TargetWindow);
         AppendScalar(sb, "risk", req.Risk);
         sb.AppendLine("    authoring_agent: \"dashboard\"");
-        sb.AppendLine("    category: \"Scenario\"");
+        // Category shapes the agent persona/prompt; whitelist to the known taxonomy, default Scenario.
+        var category = req.Category switch
+        {
+            "Smoke" or "Monkey" or "Audit" or "Scenario" => req.Category,
+            _ => "Scenario"
+        };
+        sb.AppendLine($"    category: \"{category}\"");
         AppendScalar(sb, "goal", req.Goal);
         AppendScalar(sb, "success_condition", req.SuccessCondition);
         sb.Append("    max_steps: ").AppendLine((req.MaxSteps is > 0 ? req.MaxSteps.Value : 8).ToString());
@@ -722,6 +728,7 @@ public sealed class DashboardApi
         public string? Framework { get; set; }
         public string? TargetWindow { get; set; }
         public string? Risk { get; set; }
+        public string? Category { get; set; }   // Smoke | Monkey | Audit | Scenario (default)
         public string? Goal { get; set; }
         public string? SuccessCondition { get; set; }
         public int? MaxSteps { get; set; }

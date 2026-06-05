@@ -332,6 +332,18 @@ public sealed class DashboardApiTests : IDisposable
     }
 
     [Fact]
+    public void CreateTest_WritesChosenCategory_AndDefaultsUnknownToScenario()
+    {
+        // A valid category from the taxonomy is written through to the YAML.
+        Assert.Equal(200, _api.CreateTest("""{"id":"CAT-001","goal":"g","framework":"wpf","category":"Smoke","allowedActions":["Click","Done"]}""").Status);
+        Assert.Equal(Core.TestCategory.Smoke, TestPlanLoader.Load(Path.Combine(_repo, "tests", "created", "CAT-001.yaml")).Tests[0].Category);
+
+        // An unknown / spoofed category falls back to Scenario (whitelist).
+        Assert.Equal(200, _api.CreateTest("""{"id":"CAT-002","goal":"g","framework":"wpf","category":"Bogus","allowedActions":["Click","Done"]}""").Status);
+        Assert.Equal(Core.TestCategory.Scenario, TestPlanLoader.Load(Path.Combine(_repo, "tests", "created", "CAT-002.yaml")).Tests[0].Category);
+    }
+
+    [Fact]
     public void GetPrompt_RendersTheTestPromptKeyFree()
     {
         var res = _api.GetPrompt("tests/smoke.yaml", "smoke-001"); // case-insensitive id match

@@ -50,7 +50,9 @@ screenshot + identifiers-only index per step and awaits `vision-resp-N.json` fro
 **Next executable (pick up here):**
 1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply`. (inc.2b live
    `--record` done on `claude/uia-record-live`.)
-2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
+2. MCP inc.2 — opt-in **`create_test`** authoring tool **done** (branch `claude/mcp-authoring`):
+   `--mcp-allow-write` / `AGENTLOOP_MCP_ALLOW_WRITE=1` gates writing `tests/created/<id>.yaml` via
+   `DashboardApi.BuildYaml` + `TestPlanValidator`; read-only by default. `run_test` still deferred.
 3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.
 

@@ -10,7 +10,14 @@ Owns black-box desktop automation and UI tree capture.
 - `src/Core/UiElement.cs`
 - `src/Core/UiSnapshot.cs` (`WindowBounds` = screenshot origin, same space as `UiElement.BoundingBox`)
 - `src/Core/CapturedUiEvent.cs` (V9.5 recording: a normalized, framework-agnostic UIA event — the
-  live FlaUI/UIA event source will emit these; `AgentRunner.SessionRecorder` maps them, pure)
+  live FlaUI/UIA event source emits these; `AgentRunner.SessionRecorder` maps them, pure)
+- `src/UIAutomation/UiaSessionRecorder.cs` (V9.5 inc.2b, env-bound live event source): attaches to a
+  window by title via UIA3, subscribes to `RegisterAutomationEvent` (Invoke → `Invoked`, SelectionItem
+  ElementSelected → `SelectionChanged`) + `RegisterPropertyChangedEvent` (Value → `ValueChanged`,
+  ToggleState → `Toggled`), and feeds each as a `Core.CapturedUiEvent` to an injected sink (the runner
+  wires `SessionRecorder.Observe`). Takes an injected value-redactor delegate applied **at capture** so a
+  typed password never enters the event/JSON. Does not reference `SessionRecorder` (keeps the
+  mapping/smoothing pure + unit-testable without a desktop). Driven by the runner's `--record` mode.
 
 ## Invariants
 
@@ -23,6 +30,10 @@ Owns black-box desktop automation and UI tree capture.
 - Avalonia starts with UIA3, with vision fallback later when the tree is flat.
 - Action execution must be bounded by YAML `allowed_actions`.
 - UI tree snapshots must avoid secrets and remain useful for evidence.
+- Live recording (`UiaSessionRecorder`, `--record`) redacts secret VALUES at capture: it applies the
+  injected redactor (`SecretRedactor.RedactValueForIdentifier`, keyed by AutomationId/Name) to a
+  `ValueChanged` value before it ever enters a `CapturedUiEvent` — so a typed password never reaches
+  `session.json` on disk. Non-value events (Invoked/Toggled/SelectionChanged) carry no value.
 - Screenshots redact secrets at capture: the runner masks regions of fields
   `SecretRedactor.IsSensitiveIdentifier` flags, mapped via `WindowBounds`. Keep
   `WindowBounds`/`BoundingBox` in the same screen-coordinate space so the mapping holds.

@@ -32,21 +32,27 @@ internal static class Program
             HasArgument(args, "--bridge-llm") ||
             HasArgument(args, "--mcp") ||
             HasArgument(args, "--show-prompt") ||
-            HasArgument(args, "--compose-recording");
+            HasArgument(args, "--compose-recording") ||
+            HasArgument(args, "--record");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
         // --compose-recording prints the YAML draft to stdout when no --out is given, so keep stdout clean.
         var composeToStdout =
             HasArgument(args, "--compose-recording") && !HasArgument(args, "--out");
+        // --record prints the captured session JSON to stdout when no --out is given; keep stdout clean.
+        var recordToStdout =
+            HasArgument(args, "--record") && !HasArgument(args, "--out");
         var config = WorkflowConfig.Load(
             loadDotEnv: !manualOnlyRequested,
             // Keep stdout clean for commands whose stdout IS the payload: --mcp (JSON-RPC),
-            // --show-prompt (the prompt text), --compose-recording (the YAML), and any --format json command.
+            // --show-prompt (the prompt text), --compose-recording (the YAML), --record (the session
+            // JSON), and any --format json command.
             logConfig: !jsonManualOutputRequested
                        && !HasArgument(args, "--mcp")
                        && !HasArgument(args, "--show-prompt")
-                       && !composeToStdout);
+                       && !composeToStdout
+                       && !recordToStdout);
         RunnerOptions options;
         try
         {
@@ -152,6 +158,9 @@ internal static class Program
 
         if (options.ComposeRecordingOnly)
             return ComposeRecording(config, options);
+
+        if (options.RecordSessionOnly)
+            return RecordSession(config, options);
 
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
@@ -288,6 +297,85 @@ internal static class Program
         else
         {
             Console.WriteLine(result.Yaml);
+        }
+
+        return 0;
+    }
+
+    // Manual command: live-capture a manual UIA session into a session.json (--record --window <title>
+    // [--out <session.json>] [--seconds N], V9.5 inc.2b). ENV-BOUND: needs a real interactive desktop +
+    // the running target app — it can't be exercised headless. Key-free (no .env / LLM). Attaches via
+    // FlaUI/UIA3, subscribes to automation events, smooths them through the pure SessionRecorder, then
+    // writes the RecordedSession JSON the existing --compose-recording consumes. Secret VALUES are
+    // redacted AT CAPTURE (SecretRedactor.RedactValueForIdentifier) so a password never lands on disk.
+    // Stdout is the session JSON when no --out is given (diagnostics go to stderr).
+    private static int RecordSession(WorkflowConfig config, RunnerOptions options)
+    {
+        var window = options.TargetWindow;
+        if (string.IsNullOrWhiteSpace(window))
+        {
+            Console.Error.WriteLine("--record requires --window <title>.");
+            return 2;
+        }
+
+        var redactor = new SecretRedactor();
+        var sink = new SessionRecorder { Window = window, Title = window };
+
+        using var recorder = new UiaSessionRecorder(
+            sink.Observe,
+            redactor.RedactValueForIdentifier,
+            diagnostics: msg => Console.Error.WriteLine("  " + msg));
+
+        Console.Error.WriteLine($"Attaching to window \"{window}\"...");
+        bool attached;
+        try
+        {
+            attached = recorder.Attach(window, TimeSpan.FromSeconds(15));
+        }
+        catch (Exception ex)
+        {
+            // Env-bound: UIA needs a real interactive desktop session. Report cleanly, don't crash.
+            Console.Error.WriteLine($"Could not attach via UI Automation: {ex.Message}");
+            Console.Error.WriteLine("--record needs a real interactive Windows desktop session and the target app running.");
+            return 1;
+        }
+        if (!attached)
+        {
+            Console.Error.WriteLine($"Could not find window \"{window}\". Is the target app running?");
+            return 1;
+        }
+
+        sink.Title = recorder.WindowTitle ?? window;
+        Console.Error.WriteLine(
+            $"Recording \"{recorder.WindowTitle}\" for up to {options.RecordSeconds}s. " +
+            "Interact with the app now; press Ctrl+C to stop early.");
+
+        using var stop = new System.Threading.ManualResetEventSlim(false);
+        Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Set(); };
+        stop.Wait(TimeSpan.FromSeconds(options.RecordSeconds));
+
+        var session = sink.ToSession();
+        Console.Error.WriteLine($"Captured {session.Actions.Count} action(s).");
+
+        var json = JsonSerializer.Serialize(
+            session,
+            new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
+
+        if (!string.IsNullOrWhiteSpace(options.RecordOutputPath))
+        {
+            var outPath = options.RecordOutputPath!;
+            var dir = Path.GetDirectoryName(outPath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(outPath, json);
+            Console.Error.WriteLine($"Wrote session to {outPath}. Compose it with: --compose-recording {outPath}");
+        }
+        else
+        {
+            Console.WriteLine(json);
         }
 
         return 0;

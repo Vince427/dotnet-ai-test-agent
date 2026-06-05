@@ -36,11 +36,13 @@ stdout=YAML). 258 tests + 2 gated; QA pending. **To resume: open/merge this PR, 
 `docs/install.md`. Global `dotnet tool` deferred (PackAsTool can't do `net8.0-windows`/WPF — see
 `DISCOVERY_LOG.md`); needs a CLI/driver split. 268 tests + 2 gated.
 
+**V9.5 inc.2b (branch `claude/uia-record-live`, awaiting merge):** live UIA source
+`UIAutomation/UiaSessionRecorder.cs` + `--record --window <title> [--out] [--seconds N]` → `session.json`;
+secrets redacted at capture. Env-bound — needs interactive desktop verification (gated `[InteractiveUiFact]`).
+
 **Next executable (pick up here):**
-1. V9.5 inc.2b — **live FlaUI/UIA event source + `--record` CLI** emitting the `session.json`
-   (env-bound: needs a desktop + target app; verify like the gated E2E). Subscribe to UIA Invoke/
-   Value/Toggle/Selection events, feed `SessionRecorder`. Then a selector-bearing recorded-steps
-   representation → unblocks `--heal-apply`.
+1. V9.5 — a selector-bearing recorded-steps representation → unblocks `--heal-apply`. (inc.2b live
+   `--record` done on `claude/uia-record-live`.)
 2. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
 3. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).
 4. **Env-bound (needs interactive box):** live multimodal `--vision` demo + Tier-2 gated E2E; MAUI gated E2E; re-run the gated UI E2E.

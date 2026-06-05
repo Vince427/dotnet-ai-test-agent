@@ -7,6 +7,17 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V9.5 recording mode (increment 2b) — live UIA capture (`--record`)**. The env-bound half that
+  produces the `session.json` `--compose-recording` consumes. `UIAutomation/UiaSessionRecorder.cs`
+  attaches to a window by title via FlaUI/UIA3 and subscribes to automation events (Invoke → `Invoked`,
+  SelectionItem ElementSelected → `SelectionChanged`, Value property change → `ValueChanged`, ToggleState
+  → `Toggled`), feeding each as a `CapturedUiEvent` into the pure `SessionRecorder`. New CLI
+  `--record --window <title> [--out <session.json>] [--seconds N]` (default 120s, or Ctrl+C);
+  mode-exclusive, key-free, stdout-clean when no `--out`. CRITICAL secret-safety: typed values are
+  redacted **at capture** (`SecretRedactor.RedactValueForIdentifier`) so a password never lands in
+  `session.json`. Env-bound (needs an interactive desktop + the target app) — covered by a gated
+  `[InteractiveUiFact]` (RUN_E2E_UI=1); +6 non-gated option-parsing tests. Both `net48` and
+  `net8.0-windows` build clean.
 - **Distributable Windows release build** (`scripts/publish-release.ps1` + `docs/install.md`). Produces
   a single-file `AgentRunner.exe` (win-x64, framework-dependent by default; `-SelfContained` for no
   prerequisite, `-Zip` to package) so the agent is download-and-run. A cross-platform `dotnet tool` is

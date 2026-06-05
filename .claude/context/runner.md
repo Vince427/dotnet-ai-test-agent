@@ -39,7 +39,8 @@ Owns the executable orchestration loop and manual CLI surface.
   → validated YAML draft via `--compose-recording`; reuses `DashboardApi.BuildYaml` + `TestPlanValidator`)
 - `src/AgentRunner/SessionRecorder.cs` (V9.5 inc.2 capture core, pure: `RecordedActionMapper` +
   `SessionRecorder` map `Core.CapturedUiEvent`s → a `RecordedSession`, smoothing event noise). The live
-  FlaUI/UIA event source + a `--record` CLI are the env-bound next increment.
+  FlaUI/UIA event source (`UIAutomation/UiaSessionRecorder.cs`) + the `--record` CLI (inc.2b, env-bound)
+  feed it; `RecordSession` in `Program` wires the source → `SessionRecorder` → `session.json`.
 - `src/AgentRunner.Tests/**`
 - `src/Core/AgentGoal.cs`
 
@@ -47,12 +48,23 @@ Owns the executable orchestration loop and manual CLI surface.
 
 - Manual modes `--validate-plan`, `--list-tests`, `--render-ui`,
   `--write-guard-demos`, `--mcp`, `--show-prompt`, and `--compose-recording` must not require
-  `.env`, LLM access, FlaUI, or a target app. `--mcp`, `--show-prompt`, `--format json`, and
-  `--compose-recording` (without `--out`) must keep **stdout** free of diagnostics (the payload —
-  JSON-RPC / JSON / prompt / YAML — only; logs + policy warnings go to stderr).
+  `.env`, LLM access, FlaUI, or a target app. `--record` is also key-free (no `.env`/LLM) but is the
+  one manual mode that DOES need FlaUI + an interactive desktop + the target app (env-bound). `--mcp`,
+  `--show-prompt`, `--format json`, `--compose-recording` (without `--out`), and `--record` (without
+  `--out`) must keep **stdout** free of diagnostics (the payload — JSON-RPC / JSON / prompt / YAML /
+  session JSON — only; logs + policy warnings go to stderr).
 - `--compose-recording <session.json> [--out <draft.yaml>]` (V9.5 inc.1) composes a recorded session
   into a validated goal-based YAML draft via `RecordingComposer` — key-free; the goal is synthesised
-  from the steps with secret values redacted. Live UIA capture (emitting the JSON) is a later increment.
+  from the steps with secret values redacted.
+- `--record --window <title> [--out <session.json>] [--seconds N]` (V9.5 inc.2b, **env-bound**) live-
+  captures a manual UIA session into the `session.json` that `--compose-recording` consumes. Key-free
+  (no `.env`/LLM) but needs a real interactive desktop + the running target app, so it can't be verified
+  headless. Attaches via `UiaSessionRecorder`, smooths events through the pure `SessionRecorder`, records
+  until `--seconds` (default `RunnerOptions.DefaultRecordSeconds` = 120) elapse or Ctrl+C, then writes the
+  `RecordedSession` JSON to `--out` (or stdout when unset — stdout stays clean, diagnostics to stderr).
+  Secret values are redacted **at capture** (so a password never lands in `session.json`). `--out` is
+  shared with `--compose-recording` and binds to whichever recording mode is active; `--seconds` is
+  `--record`-only. `--record` is mode-exclusive with the other manual modes.
 - `--show-prompt --test-id <id>` renders the runtime prompt via `PromptPreview` (reuses
   `PromptBuilder`; key-free). `TestPlanValidator` adds non-fatal `Warnings` (unknown framework,
   high `max_steps`, missing `success_condition`) — surfaced by `--validate-plan` (`WARN` on

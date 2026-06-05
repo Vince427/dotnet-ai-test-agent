@@ -33,11 +33,13 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Build EVERY target framework, including net48 (a fixed product rule). The test project is
-      # net8-only, so without this step a net48-only compile regression would ship green.
-      - name: Build all target frameworks (incl. net48)
+      # Build the AGENT for every target framework, including net48 (a fixed product rule). We build
+      # the AgentRunner project (it pulls Core + UIAutomation) rather than the whole solution, because
+      # the solution also contains the MAUI sample, whose packages need the MAUI workload (not installed
+      # on the runner -> NU1015). This covers the net48 health of the actual product without it.
+      - name: Build the agent for all target frameworks (incl. net48)
         shell: pwsh
-        run: dotnet build DesktopAiTestAgent.sln -c Release -v minimal
+        run: dotnet build src/AgentRunner/AgentRunner.csproj -c Release -v minimal
 
       - name: Validate test plans
         shell: pwsh

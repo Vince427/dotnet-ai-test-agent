@@ -300,6 +300,75 @@ public sealed class DashboardApiTests : IDisposable
             t => t.GetProperty("testId").GetString() == "TKT-001");
     }
 
+    [Fact]
+    public void GetTests_SurfacesPolicyWarningsPerTest()
+    {
+        // SMOKE-001 is a clean plan (known framework, has success_condition, low max_steps) → no warnings.
+        var smoke = ParseBody(_api.GetTests()).GetProperty("tests")[0];
+        Assert.Empty(smoke.GetProperty("warnings").EnumerateArray());
+
+        // A plan that trips all three V7 advisories: unknown framework, high max_steps, no success_condition.
+        File.WriteAllText(Path.Combine(_repo, "tests", "warn.yaml"),
+            """
+            suite: warn
+            tests:
+              WARN-001:
+                title: "Warny"
+                framework: "blazor"
+                goal: "Do a thing"
+                max_steps: 200
+                allowed_actions: ["Click", "Done"]
+            """);
+
+        var warny = ParseBody(_api.GetTests()).GetProperty("tests").EnumerateArray()
+            .First(t => t.GetProperty("id").GetString() == "WARN-001");
+        var warnings = warny.GetProperty("warnings").EnumerateArray().Select(w => w.GetString()!).ToList();
+        Assert.Equal(3, warnings.Count);
+        // The location prefix is stripped for display.
+        Assert.All(warnings, w => Assert.DoesNotContain("tests/warn.yaml:", w));
+        Assert.Contains(warnings, w => w.Contains("framework"));
+        Assert.Contains(warnings, w => w.Contains("max_steps"));
+        Assert.Contains(warnings, w => w.Contains("success_condition"));
+    }
+
+    [Fact]
+    public void GetPrompt_RendersTheTestPromptKeyFree()
+    {
+        var res = _api.GetPrompt("tests/smoke.yaml", "smoke-001"); // case-insensitive id match
+        Assert.Equal(200, res.Status);
+
+        var root = ParseBody(res);
+        Assert.Equal("SMOKE-001", root.GetProperty("testId").GetString());
+        var prompt = root.GetProperty("prompt").GetString()!;
+        Assert.Contains("Log in and confirm", prompt);   // the goal is in the rendered prompt
+    }
+
+    [Fact]
+    public void GetPrompt_UnknownTest_Returns404()
+    {
+        Assert.Equal(404, _api.GetPrompt("tests/smoke.yaml", "NOPE-999").Status);
+    }
+
+    [Theory]
+    [InlineData("", "SMOKE-001")]                     // missing planPath
+    [InlineData("tests/smoke.yaml", "")]              // missing testId
+    [InlineData("../../etc/passwd", "SMOKE-001")]     // path escapes the repo
+    public void GetPrompt_RejectsMissingOrUnsafeArgs(string planPath, string testId)
+    {
+        Assert.True(_api.GetPrompt(planPath, testId).Status is 400 or 404);
+    }
+
+    [Fact]
+    public void CreateTest_EchoesPolicyWarnings()
+    {
+        // No success_condition → the create response carries the advisory, but the test still saves.
+        var res = _api.CreateTest("""{"id":"WARN-CR-001","goal":"do a thing","framework":"wpf","allowedActions":["Click","Done"]}""");
+        Assert.Equal(200, res.Status);
+
+        var warnings = ParseBody(res).GetProperty("warnings").EnumerateArray().Select(w => w.GetString()!).ToList();
+        Assert.Contains(warnings, w => w.Contains("success_condition"));
+    }
+
     [Theory]
     [InlineData("../../etc/passwd")]      // outside repo
     [InlineData("tests/created/x.yaml")]  // wrong extension / not a ticket

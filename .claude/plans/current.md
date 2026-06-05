@@ -4,23 +4,25 @@ This file gives `/suite` and other agents a small executable backlog. The
 source of truth remains `docs/roadmap.md`; keep this file focused on near-term
 parallel work.
 
-## RESUME SNAPSHOT — 2026-06-04 (read this first)
+## RESUME SNAPSHOT — 2026-06-05 (read this first)
 
-**`main` HEAD = `bc43bba`** (Merge MCP adapter). Build clean on net48 + net8 + Avalonia + MAUI;
-**232 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
+**`main` HEAD = `aa27bd3`** (Merge PR #8, V7 prompt preview inc.1). Build clean on net48 + net8 +
+Avalonia + MAUI; **239 tests + 2 gated** on `main`. Single contributor identity: `Vince427` (noreply).
 
-**Merged to `main` this session:** A1–A6 (audit hardening) · V3 vision moat **complete**
-(inc.1 overlay artifact, inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) ·
-V8 self-healing inc.1 (`SelectorHealer`, evidence-only) · MCP adapter inc.1 (`--mcp`).
+**Merged to `main`:** A1–A6 (audit hardening) · V3 vision moat **complete** (inc.1 overlay artifact,
+inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 self-healing inc.1
+(`SelectorHealer`, evidence-only) · MCP adapter inc.1 (`--mcp`) · **V7 prompt-preview inc.1**
+(`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`).
 
-**Open branch awaiting merge → `claude/v7-prompt-preview`** (V7 prompt preview + policy warnings):
-`--show-prompt --test-id <id>` (+ MCP `show_prompt`) renders the prompt via `PromptPreview`;
-`TestPlanValidator.Warnings` (unknown framework / high max_steps / missing success_condition)
-surfaced by `--validate-plan` (WARN→stderr, `warnings` in `--format json`) + MCP `validate_plan`.
-239 tests + 2 gated, QA pending. **To resume: open/merge this PR, then `git pull`.**
+**Open branch awaiting merge → `claude/v7-ui-surface`** (V7 inc.2 — dashboard surfacing):
+`GET /api/prompt?planPath=&testId=` renders the prompt via `PromptPreview`; catalog entries carry a
+`warnings[]` (non-fatal `TestPlanValidator` advisories, prefix-stripped) rendered as ⚠ notes; the
+catalog card has a **⌘ Prompt** modal; Create echoes warnings. View over the CLI, no new data model.
+**246 tests + 2 gated**, build clean. **To resume: open/merge this PR, then `git pull`.**
 
 **Next executable (pick up here):**
-1. V7 inc.2 — surface the prompt preview + validation warnings in the dashboard/workbench UI.
+1. V7 inc.2b (optional) — also surface the prompt preview + warnings in the **static workbench**
+   drill-down (the dashboard half is done on `claude/v7-ui-surface`).
 2. V8 inc.2 — `--heal-apply` (local-only, confirmed YAML rewrite) + screenshot in heal evidence + vision-assisted candidate.
 3. MCP inc.2 — opt-in `run_test` + author/edit tools (write YAML via the validator).
 4. V11 analytics — flaky/selector-drift/cost-duration from `runs/` history (pure, testable).

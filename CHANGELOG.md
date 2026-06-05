@@ -7,6 +7,12 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V7 inc.2 — prompt preview + policy warnings in the dashboard**. The local dashboard now surfaces
+  the same V7 signals the CLI exposes: a **⌘ Prompt** button on every catalog card opens a key-free
+  preview of the exact prompt the LLM would receive (`GET /api/prompt?planPath=&testId=`, reuses
+  `PromptPreview`); each catalog entry carries a `warnings` array (the non-fatal policy advisories from
+  `TestPlanValidator`) rendered inline as ⚠ notes; and **Create** echoes any advisories after saving.
+  Still a view over the CLI contract — no new data model. +7 tests.
 - **V7 prompt preview + policy warnings**. `--show-prompt --test-id <id>` prints the exact prompt
   the LLM would receive for a test (key-free — `PromptPreview` reuses `PromptBuilder`, so it can't
   drift from the real prompt; the live UI snapshot is a labelled placeholder). Text by default,

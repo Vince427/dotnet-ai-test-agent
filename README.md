@@ -94,6 +94,19 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- -
 # then open http://localhost:8090/  (Ctrl+C to stop)
 ```
 
+## Install
+
+The agent is a Windows desktop tool, distributed as a published `AgentRunner.exe`
+(not a cross-platform `dotnet tool` — it depends on FlaUI/WinForms/WPF).
+
+- Download the latest `release.zip` from the
+  [Releases page](https://github.com/Vince427/dotnet-ai-test-agent/releases) — it is built and
+  attached automatically by the release workflow on each `v*` tag.
+- Or build it yourself: `powershell -ExecutionPolicy Bypass -File scripts/publish-release.ps1 -Zip`.
+
+See [docs/install.md](docs/install.md) for prerequisites (the .NET 8 Desktop Runtime, or a
+`-SelfContained` build with no prerequisite) and run examples.
+
 ## Runtime LLM Configuration
 
 Only runtime desktop execution needs an LLM endpoint. Validation, listing,

@@ -36,6 +36,11 @@ public sealed class RunnerOptions
     /// writes an annotated screenshot + index to this dir for an external VLM (agent) to decide. No `.env`.</summary>
     public string? VisionBridgeDir { get; set; }
 
+    /// <summary>When set, run a key-free **deterministic replay** of a recorded session
+    /// (`--replay &lt;session.json&gt;`): the agent loop replays the recorded actions instead of asking an
+    /// LLM. No `.env`. Drives a real window (env-bound).</summary>
+    public string? ReplaySessionPath { get; set; }
+
     /// <summary>Serve the read-only MCP adapter over stdio (`--mcp`).</summary>
     public bool McpOnly { get; set; }
 
@@ -107,6 +112,7 @@ public sealed class RunnerOptions
         var watch = false;
         var vision = false;
         string? visionBridgeDir = null;
+        string? replaySessionPath = null;
         var mcpOnly = false;
         // Writes are opt-in: --mcp-allow-write flag OR AGENTLOOP_MCP_ALLOW_WRITE=1 env var.
         var mcpAllowWrite =
@@ -154,6 +160,8 @@ public sealed class RunnerOptions
                 vision = true;
             else if (arg == "--vision-bridge")
                 visionBridgeDir = ReadValue(args, ref i, "--vision-bridge");
+            else if (arg == "--replay")
+                replaySessionPath = ReadValue(args, ref i, "--replay");
             else if (arg == "--mcp")
                 mcpOnly = true;
             else if (arg == "--mcp-allow-write")
@@ -296,6 +304,8 @@ public sealed class RunnerOptions
             throw new ArgumentException("--run and --yes are only supported with --heal-apply.");
         if (healApplyOnly && string.IsNullOrWhiteSpace(healRunId))
             throw new ArgumentException("--heal-apply requires --run <runId>.");
+        if (replaySessionPath != null && visionBridgeDir != null)
+            throw new ArgumentException("--replay and --vision-bridge both choose the decider; use only one.");
 
         // --out feeds whichever recording mode is active.
         recordingOutputPath = composeRecordingOnly ? outPath : null;
@@ -379,6 +389,7 @@ public sealed class RunnerOptions
             BridgeIoDir = bridgeIoDir,
             Vision = vision,
             VisionBridgeDir = visionBridgeDir,
+            ReplaySessionPath = replaySessionPath,
             McpOnly = mcpOnly,
             McpAllowWrite = mcpAllowWrite,
             ShowPromptOnly = showPromptOnly,

@@ -46,9 +46,11 @@ recorded, never asserted-equal. Rewrites go through `TestFactGuard`. One emitter
 for all YAML authoring. Everything multi-targets net48 + net8.
 
 **Next executable (pick up here):**
-1. **Replay decider** — a deterministic `IActionDecider` that *replays* a test's `selectors`/recorded
-   steps with NO LLM. This completes the record→replay→heal loop and gives `--heal-apply` its runtime
-   payoff (today `selectors` is a maintained inventory + heal target only).
+1. ~~Replay decider~~ **DONE** — `ReplayActionDecider` + `--replay <session.json>` replays a recorded
+   session with NO LLM (verified end-to-end on the sample login). record → replay → heal now closes:
+   `--record` → `--replay` (drift fails visibly → `SelectorHealer` → `--heal-apply`). *Remaining polish:*
+   recorded passwords are redacted, so secret entry isn't reproduced from a capture — supply real values
+   (e.g. an env/`.env` substitution at replay) to replay secret fields.
 2. **Toward the `v1.0.0` tag** (`docs/release-checklist.md`): `schema_version` on YAML + `version` on
    artifacts + tolerant loader; CHANGELOG `1.0.0` section; tag.
 3. **Real net48-NATIVE app proof** (sourcing a buildable one) — the "real third-party app" wedge is

@@ -165,6 +165,22 @@ internal static class DashboardHtml
             details.adv[open] > summary::before { content:"▾  "; }
             details.adv[open] > summary { color:var(--fg); border-bottom:1px solid var(--line); }
             details.adv .adv-body { padding:14px; }
+
+            /* per-tab explainer banner — says what the tab is for and how to use it, in plain words */
+            .intro { display:flex; gap:10px; align-items:flex-start; background:#0c111b; border:1px solid var(--line);
+              border-left:3px solid var(--info); border-radius:8px; padding:11px 13px; margin-bottom:16px; font-size:12px; color:var(--mut); line-height:1.55; }
+            .intro .i-ico { color:var(--info); font-size:13px; line-height:1.4; }
+            .intro b { color:var(--fg); font-weight:600; }
+            .intro code { color:var(--sig); background:#08160e; border:1px solid var(--sig-dim); border-radius:4px; padding:0 4px; font-size:11px; }
+
+            /* guided Create form: labelled sections + an inline action-verb legend */
+            .csec { margin:20px 0 10px; } .csec:first-of-type { margin-top:4px; }
+            .csec-h { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--sig); font-weight:700; }
+            .csec-d { font-size:11.5px; color:var(--mut); margin-top:2px; }
+            .csec-hr { height:1px; background:var(--line); margin:6px 0 14px; }
+            .verbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:4px 16px; margin-top:7px;
+              font-size:11px; color:var(--mut); }
+            .verbs span b { color:var(--fg); font-weight:600; } .verbs .tgt { color:var(--viol); }
           </style>
         </head>
         <body>
@@ -258,6 +274,7 @@ internal static class DashboardHtml
               if(tab==="files")loadFiles();
             }
             const headHTML=(title,sub)=>`<div class="head fade"><h2>${title}</h2><span class="sub">${sub}</span></div>`;
+            const intro=(html)=>`<div class="intro fade"><span class="i-ico">ⓘ</span><div>${html}</div></div>`;
 
             // CATALOG
             let CATALOG=[], MAXC=2; const SEL=new Set();
@@ -267,6 +284,7 @@ internal static class DashboardHtml
             async function loadCatalog(){
               const host=$("#tab-catalog");
               host.innerHTML=headHTML("Catalog","Tests under tests/ — filter, then Launch one or batch-run a selection through the bounded queue")
+                +intro("Your test backlog, read live from <code>tests/*.yaml</code>. Narrow it with the filters, then <b>▶ Launch</b> one test — or tick several and <b>Run selected</b>. Runs go through a bounded queue (<b>max parallel</b>) so the desktop isn't overwhelmed. On each card: <b>⌘ Prompt</b> previews the exact LLM prompt (no run), <b>✎ Edit</b> reopens dashboard-authored tests, <b>⇩ Archive</b> hides one (reversible, shows in Git). <b>⚠</b> notes are non-fatal policy advisories — the test still runs.")
                 +"<div class='panel pad' id='cat-bar'></div><div id='cat'></div><div id='cat-arch'></div>";
               try{
                 const [d,cfg]=await Promise.all([api("/api/tests"),api("/api/config").catch(()=>({maxConcurrency:2}))]);
@@ -388,9 +406,9 @@ internal static class DashboardHtml
             function fillCreate(t){
               const set=(k,v)=>{ const f=$("#f-"+k); if(f!=null&&v!=null) f.value=v; };
               set("id",t.id); set("suite",t.suite); set("title",t.title); set("framework",t.framework); set("priority",t.priority);
+              set("category",t.category); set("risk",t.risk);
               set("targetWindow",t.targetWindow); set("goal",t.goal); set("successCondition",t.successCondition);
               set("maxSteps",t.maxSteps); set("actions",(t.allowedActions||[]).join(", ")); set("tags",(t.tags||[]).join(", "));
-              const adv=$("#tab-create .adv"); if(adv) adv.open=true; // reveal advanced fields being edited
               const h=$("#f-hint"); if(h) h.textContent="Editing "+t.id+" — saving overwrites its YAML (re-validated).";
             }
             // V7: preview the exact prompt the LLM would receive (key-free; reuses PromptBuilder).
@@ -414,49 +432,58 @@ internal static class DashboardHtml
             }
 
             // CREATE
-            const F=[
-              ["id","Test ID","required","Unique identifier for the test.","DEMO-LOGIN-001"],
-              ["suite","Suite","","Group it belongs to (file/folder bucket). Defaults to 'created'.","login"],
-              ["title","Title","","Short human-readable name.","Login happy path"],
-              ["targetWindow","Target window","","Exact title of the desktop window to drive.","Sample Login App (.NET 8)"],
-              ["goal","Goal","required","What the agent must accomplish, in plain language.","Enter admin / password123, click Login, confirm success."],
-              ["successCondition","Success condition","","Text the app shows when the goal is met. Leave blank to verify with an Assert instead.","Login successful"]
-            ];
+            // section header + a text/textarea/select field builder, each with a plain-language explainer.
+            const csec=(t,d)=>`<div class="csec"><div class="csec-h">${t}</div><div class="csec-d">${d}</div></div><div class="csec-hr"></div>`;
+            const fField=(k,label,req,help,ph,ta)=>`<div class="field"><label>${label} ${req?'<span class="req">*</span>':''}</label>
+                <span class="help">${help}</span>${ta?`<textarea id="f-${k}" rows="2" placeholder="${escAttr(ph)}"></textarea>`:`<input id="f-${k}" placeholder="${escAttr(ph)}"/>`}</div>`;
+            const fSelect=(k,label,help,opts,val)=>`<div class="field"><label>${label}</label><span class="help">${help}</span>
+                <select id="f-${k}">${opts.map(o=>{const[v,t]=Array.isArray(o)?o:[o,o];return `<option value="${escAttr(v)}"${v===val?" selected":""}>${esc(t)}</option>`;}).join("")}</select></div>`;
             function loadCreate(){
-              const fld=([k,l,req,help,ph])=>`<div class="field"><label>${l} ${req?'<span class="req">*</span>':''}</label>
-                <span class="help">${help}</span><input id="f-${k}" placeholder="${esc(ph)}"/></div>`;
-              $("#tab-create").innerHTML=headHTML("Create a test","Fill the essentials, then Validate &amp; save — it writes a validated YAML test you can run right away (and edit by hand anytime)")+
+              const verbLegend=`<div class="verbs">
+                  <span><b>EnterText</b> <span class="tgt">⌖</span> — type into a field</span>
+                  <span><b>Click</b> <span class="tgt">⌖</span> — click a control</span>
+                  <span><b>DoubleClick</b> <span class="tgt">⌖</span> — double-click a control</span>
+                  <span><b>Scroll</b> <span class="tgt">⌖</span> — scroll (value = up/down)</span>
+                  <span><b>Assert</b> <span class="tgt">⌖</span> — verify a control's text/state</span>
+                  <span><b>Wait</b> — pause for the UI to settle</span>
+                  <span><b>Explore</b> — inspect the UI to find controls</span>
+                  <span><b>Done</b> — declare the goal achieved</span>
+                </div><div class="dim" style="font-size:10.5px;margin-top:5px"><span class="tgt">⌖</span> = needs a target control. Restrict the list to keep a test focused; leave the default for general flows.</div>`;
+              $("#tab-create").innerHTML=headHTML("Create a test","A guided form — every field is explained. Fill it, Validate &amp; save, and you get a ready-to-run YAML test (editable by hand anytime).")+
+                intro("This writes a validated <b>YAML test</b> under <code>tests/created/</code> plus a runnable <b>ticket</b> — the exact same files the CLI and CI use. Nothing here is dashboard-only: you can open and edit them in your editor. Fields marked <span class='req'>*</span> are required; everything else has a sensible default.")+
                 `<div class="panel pad form fade">
-                  ${fld(F[0])}
+
+                  ${csec("1 · Identity &amp; triage","How this test is named, grouped, and prioritised in the catalog.")}
+                  ${fField("id","Test ID","required","A unique identifier. Used in the catalog, in run artifacts, and to select the test from the CLI (<code>--test-id</code>). Convention: UPPER-CASE-WITH-DASHES.","LOGIN-HAPPY-001")}
                   <div class="two">
-                    <div class="field"><label>Framework</label><span class="help">Desktop UI toolkit of the target app.</span>
-                      <select id="f-framework"><option value="">— select —</option><option>winforms</option><option>wpf</option><option>maui</option><option>avalonia</option></select></div>
-                    ${fld(F[2])}
+                    ${fField("title","Title","","A short human-readable name shown in the catalog and reports.","Login — happy path")}
+                    ${fField("suite","Suite","","Logical group this test belongs to (a bucket in the catalog). Defaults to <code>created</code>.","login")}
                   </div>
-                  ${fld(F[3])}
-                  <div class="field"><label>Goal <span class="req">*</span></label><span class="help">${F[4][3]}</span><textarea id="f-goal" rows="2" placeholder="${esc(F[4][4])}"></textarea></div>
-                  ${fld(F[5])}
-                  <details class="adv">
-                    <summary>Advanced options — suite, priority, steps, actions, evidence (optional)</summary>
-                    <div class="adv-body">
-                      <div class="two">${fld(F[1])}
-                        <div class="field"><label>Priority</label><span class="help">Triage importance.</span>
-                          <select id="f-priority"><option value="">— select —</option><option>P1</option><option>P2</option><option>P3</option></select></div>
-                      </div>
-                      <div class="two">
-                        <div class="field"><label>Max steps</label><span class="help">Hard cap on agent iterations before failing.</span><input id="f-maxSteps" type="number" value="8"/></div>
-                        <div class="field"><label>Allowed actions</label><span class="help">Comma-separated UI actions the agent may use.</span><input id="f-actions" value="EnterText, Click, Assert, Done, Wait"/></div>
-                      </div>
-                      <div class="two">
-                        <div class="field"><label>Evidence level</label><span class="help">How much to capture (report+summary / +screenshots / +ui-tree).</span>
-                          <select id="f-evidence"><option>standard</option><option>minimal</option><option>full</option></select></div>
-                        <div class="field"><label>Launch sample</label><span class="help">Start the built-in sample app around the run (demo targets only).</span>
-                          <select id="f-launch"><option value="false">no</option><option value="true">yes</option></select></div>
-                      </div>
-                      <div class="field"><label>Tags</label><span class="help">Comma-separated labels for filtering the catalog.</span><input id="f-tags" placeholder="smoke, login"/></div>
-                    </div>
-                  </details>
-                  <div class="row" style="margin-top:12px"><button class="act" id="f-save">✓ Validate &amp; save</button><span class="dim" id="f-hint">Validated with the same checker the CLI uses; also emits a runnable ticket.</span></div>
+                  <div class="two">
+                    ${fSelect("category","Category","Shapes the agent's persona &amp; prompt. <b>Scenario</b> = directed business flow with a clear goal (default). <b>Smoke</b> = quick \"does it open / basic path works\". <b>Monkey</b> = stress/explore to surface crashes. <b>Audit</b> = inspect UI/accessibility only, no changes.",[["Scenario","Scenario — directed flow (default)"],["Smoke","Smoke — quick basic-path check"],["Monkey","Monkey — stress / explore"],["Audit","Audit — inspect only, no changes"]],"Scenario")}
+                    ${fSelect("priority","Priority","Triage importance for humans &amp; CI ordering. <b>P1</b> = must-pass / critical · <b>P2</b> = important · <b>P3</b> = nice-to-have. Optional.",[["","— none —"],"P1","P2","P3"],"")}
+                  </div>
+                  ${fSelect("risk","Risk","How damaging a wrong action would be. Higher risk tightens the runner's guards (e.g. protected actions may need confirmation). Leave blank if unsure.",[["","— none —"],["low","low"],["medium","medium"],["high","high"],["critical","critical"]],"")}
+
+                  ${csec("2 · Target application","Which desktop app the agent drives, and how it finds it.")}
+                  ${fSelect("framework","Framework","The desktop UI toolkit your target app is built with — it drives how the agent attaches and reads controls. <b>winforms</b> &amp; <b>wpf</b> = classic .NET desktop · <b>maui</b> = .NET MAUI (Windows) · <b>avalonia</b> = Avalonia desktop.",[["","— select —"],"winforms","wpf","maui","avalonia"],"")}
+                  ${fField("targetWindow","Target window","","The exact title-bar text of the window to drive — the agent locates the app by this title. Tip: copy it from the running app's title bar.","Sample Login App (.NET 8)")}
+
+                  ${csec("3 · What the agent should do","The task itself, how success is proven, and the actions allowed.")}
+                  ${fField("goal","Goal","required","Plain-language description of the task — this is the heart of the test. Be specific: which fields, which values, which button, and what proves success.","Type 'admin' / 'password123', click Login, and confirm the welcome screen appears.",true)}
+                  ${fField("successCondition","Success condition","","Text the app shows when the goal is met — the agent watches for it to mark the run <b>Passed</b>. Leave blank to instead prove success with an explicit <b>Assert</b> action.","Login successful")}
+                  <div class="field"><label>Allowed actions</label><span class="help">The UI verbs the agent may use (comma-separated):</span>
+                    <input id="f-actions" value="EnterText, Click, Assert, Done, Wait"/>${verbLegend}</div>
+                  <div class="field"><label>Max steps</label><span class="help">Hard cap on agent iterations before the run fails. Keep it tight (5–15) for focused flows; higher allows more exploration but is slower/costlier. Above 100 raises a warning.</span><input id="f-maxSteps" type="number" min="1" value="8"/></div>
+
+                  ${csec("4 · Evidence &amp; demo run","What to capture, and an optional helper for the built-in samples.")}
+                  <div class="two">
+                    ${fSelect("evidence","Evidence level","How much to capture per run. <b>minimal</b> = report + summary only (fastest) · <b>standard</b> = + screenshots (default, good for review) · <b>full</b> = + full UI-tree dumps (best for debugging selector issues).",[["standard","standard — + screenshots (default)"],["minimal","minimal — report only (fastest)"],["full","full — + UI-tree dumps (debug)"]],"standard")}
+                    ${fSelect("launch","Launch sample","Only for the demo apps shipped with this repo: <b>yes</b> starts the sample app automatically around the run. For your own app, leave <b>no</b> and launch it yourself.",[["false","no — I'll launch the app myself"],["true","yes — start the built-in sample"]],"false")}
+                  </div>
+                  ${fField("tags","Tags","","Free comma-separated labels you can filter the catalog by. Optional.","smoke, login")}
+
+                  <div class="row" style="margin-top:16px"><button class="act" id="f-save">✓ Validate &amp; save</button><span class="dim" id="f-hint">Validated with the same checker the CLI uses; also emits a runnable ticket.</span></div>
                   <div id="f-out" style="margin-top:14px"></div>
                 </div>`;
               $("#f-save").onclick=saveTest;
@@ -465,6 +492,7 @@ internal static class DashboardHtml
               const v=k=>($("#f-"+k)?.value||"").trim();
               const list=s=>s.split(",").map(x=>x.trim()).filter(Boolean);
               const req={id:v("id"),suite:v("suite"),title:v("title"),framework:v("framework"),priority:v("priority"),
+                category:v("category")||null,risk:v("risk")||null,
                 targetWindow:v("targetWindow"),goal:v("goal"),successCondition:v("successCondition")||null,
                 maxSteps:parseInt(v("maxSteps"))||8,allowedActions:list(v("actions")),tags:list(v("tags")),
                 evidenceLevel:v("evidence")||"standard",launchSample:v("launch")==="true"};
@@ -477,7 +505,9 @@ internal static class DashboardHtml
 
             // RUNS
             async function loadRuns(){
-              $("#tab-runs").innerHTML=headHTML("Runs","Recorded run history from runs/")+"<div class='panel pad' id='runs-body'></div><div id='run-detail' style='margin-top:14px'></div>";
+              $("#tab-runs").innerHTML=headHTML("Runs","Recorded run history from runs/")+
+                intro("Recorded history from <code>runs/</code>. Each row is one past run: its <b>result</b> (hover the chip for what it means), final <b>score</b>, number of steps, and start time. Click a run to expand its step-by-step actions, screenshots, and the OpenTelemetry <b>trace</b> link.")+
+                "<div class='panel pad' id='runs-body'></div><div id='run-detail' style='margin-top:14px'></div>";
               try{
                 const d=await api("/api/runs");
                 if(!d.count){ $("#runs-body").innerHTML="<div class='empty'>No runs yet. Launch one from the Catalog.</div>"; return; }
@@ -521,6 +551,7 @@ internal static class DashboardHtml
             const fsize=n=>n<1024?n+" B":(n<1048576?(n/1024).toFixed(1)+" KB":(n/1048576).toFixed(1)+" MB");
             async function loadFiles(){
               $("#tab-files").innerHTML=headHTML("Files","On-disk sources the dashboard reflects — edit them in your editor or CI; no UI required")+
+                intro("A <b>read-only</b> mirror of the on-disk sources: <code>tests/</code> (your YAML — the source of truth), <code>runs/</code> (artifacts), plus key config. Click a text file to preview it; use <b>copy</b> to grab a path and edit it in your own editor. The dashboard never hides where the real files live — it's a view over them, not a replacement.")+
                 `<div class="row" style="margin-bottom:12px"><span class="chip">tests/ = YAML source of truth</span><span class="chip">runs/ = artifacts</span><span class="dim" style="font-size:11.5px">click a text file to preview · copy a path to open it manually</span></div>
                  <div style="display:grid;grid-template-columns:minmax(320px,460px) 1fr;gap:14px"><div class="panel pad fade" id="ftree"></div><div class="panel pad" id="fview"><span class="dim">Select a file to preview.</span></div></div>`;
               try{
@@ -565,6 +596,7 @@ internal static class DashboardHtml
             // TICKETS — Symphony contract (same files CI runs via run-ticket-proof.ps1)
             async function loadTickets(){
               $("#tab-tickets").innerHTML=headHTML("Tickets","Symphony tickets under tickets/ — view one, or Run it through the same adapter CI uses")+
+                intro("A <b>ticket</b> is a portable run contract (<code>tickets/*.md</code>) — the very same file CI executes via <code>scripts/run-ticket-proof.ps1</code>. Click a row to read it, or <b>▶ Run</b> to launch it through that exact adapter, so a run here is identical to a run in CI. Tickets are authored by <b>Create</b> or by hand.")+
                 "<div class='panel pad' id='tk-body'></div><div id='tk-detail' style='margin-top:14px'></div>";
               try{
                 const d=await api("/api/tickets");
@@ -602,7 +634,9 @@ internal static class DashboardHtml
             function stepOf(logs){ let cur=0,tot=0; for(const l of logs){ const m=l.match(/\[Step (\d+)\/(\d+)\]/); if(m){cur=+m[1];tot=+m[2];} } return {cur,tot}; }
             async function loadLive(){
               clearInterval(liveTimer); clearInterval(tickTimer);
-              $("#tab-live").innerHTML=headHTML("Live telemetry",'<span class="dot run" style="display:inline-block;margin-right:6px"></span>polling every 2s · launched runs spawn the CLI (need your target app + .env)')+"<div id='live'></div>";
+              $("#tab-live").innerHTML=headHTML("Live telemetry",'<span class="dot run" style="display:inline-block;margin-right:6px"></span>polling every 2s · launched runs spawn the CLI (need your target app + .env)')+
+                intro("Watch runs in progress. Launching a test spawns the CLI — it needs your <b>target app running</b> and a <code>.env</code> with the LLM provider key. Each channel streams its <b>step progress</b>, log lines, and <b>live screenshots</b>; finished channels show the exit code. Queued runs wait for a free slot (set by <b>max parallel</b> in the Catalog).")+
+                "<div id='live'></div>";
               const render=async()=>{
                 try{
                   const d=await api("/api/jobs");

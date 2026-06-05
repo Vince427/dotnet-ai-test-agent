@@ -15,11 +15,13 @@ inc.2 `VisionActionDecider`, inc.2b `OpenAiVisionClient` + `--vision`) · V8 sel
 (`--show-prompt` + MCP `show_prompt` + `TestPlanValidator.Warnings`) · **V7 inc.2** (dashboard:
 `GET /api/prompt`, catalog `warnings[]` as ⚠ notes, ⌘ Prompt modal, Create echoes warnings).
 
-**Open branch awaiting merge → `claude/dashboard-ux`** (dashboard UX clarity, presentational only):
-connection-lost banner + clear fetch-error message (replaces bare "failed to fetch", self-clears on
-next poll); **Create** decluttered to essentials + a collapsible **Advanced options** section. No
-backend/API change; all 13 form ids preserved; 246 tests + 2 gated; QA APPROVE.
-**To resume: open/merge this PR, then `git pull`.**
+**Merged to `main`:** dashboard UX clarity (PR #10 — connection-lost banner + clear fetch-error message).
+
+**Open branch awaiting merge → `claude/create-form-guided`** (dashboard: guided fully-explained UI):
+every tab opens with a plain-language `intro()` explainer; **Create** rebuilt as a guided 4-section
+form — every field + every dropdown option explained, action-verb legend, and the new **Category**
+(`CreateTestRequest.Category`, whitelisted in `BuildYaml`) + **Risk** fields exposed. 247 tests + 2
+gated; QA APPROVE. **To resume: open/merge this PR, then `git pull`.**
 
 **Next executable (pick up here):**
 1. V7 inc.2b (optional) — also surface the prompt preview + warnings in the **static workbench**

@@ -45,7 +45,9 @@ UI that is a **view + launcher** over the existing CLI contract and run artifact
   `TestPlanValidator` advisories for that test, location prefix stripped), and `CreateTest`
   echoes `warnings` in its OK response. These are advisory only — the plan stays valid.
 - Created "tickets" must be **validated YAML** (`TestPlanValidator`) before persisting,
-  written under `tests/created/`. YAML stays the source of truth.
+  written under `tests/created/`. YAML stays the source of truth. `CreateTest` accepts a
+  `category` field (whitelisted to the `TestCategory` taxonomy in `BuildYaml`, default
+  `Scenario`) and `risk`; the Create form is a guided, fully-explained surface over these.
 - The **Tickets** tab + Create are the Symphony bridge: `CreateTest` writes a YAML test
   **and** a `tickets/created/<id>.md` ticket (flat `key: value` frontmatter compatible with
   `scripts/run-ticket-proof.ps1`); `GetTickets`/`GetTicket` list/view them; `RunTicket`

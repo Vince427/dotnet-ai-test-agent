@@ -6,7 +6,18 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 
 ## [Unreleased]
 
+### Added
+- **Dashboard Category field**. The Create form now lets you pick the test **Category**
+  (Scenario / Smoke / Monkey / Audit) instead of every dashboard-authored test being hardcoded to
+  `Scenario`; the value is whitelisted server-side in `BuildYaml` (unknown → `Scenario`). +1 test.
+
 ### Changed
+- **Dashboard: guided, fully-explained UI**. Every tab now opens with a plain-language explainer
+  banner (what it's for + how to use it). The **Create** tab was rebuilt as a guided form: four
+  labelled sections (Identity & triage / Target application / What the agent does / Evidence & demo),
+  every field and every dropdown option explained inline, an action-verb legend (which verbs need a
+  target), and the previously-missing **Category** and **Risk** fields exposed (Risk now also
+  round-trips on Edit). No hidden "advanced" disclosure — everything is visible and described.
 - **Dashboard UX clarity**. Network-level fetch failures now surface a clear, recoverable banner
   ("Cannot reach the dashboard server — restart it; this clears automatically") instead of a bare
   *failed to fetch*; it self-clears on the next successful poll. The **Create** tab was decluttered —

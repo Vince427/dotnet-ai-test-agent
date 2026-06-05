@@ -32,6 +32,10 @@ public sealed class RunnerOptions
     /// <summary>Wrap the decider in the V3 Tier-2 <c>VisionActionDecider</c> (vision fallback).</summary>
     public bool Vision { get; set; }
 
+    /// <summary>When set, run a key-free vision-bridge loop (`--vision-bridge &lt;dir&gt;`): each step
+    /// writes an annotated screenshot + index to this dir for an external VLM (agent) to decide. No `.env`.</summary>
+    public string? VisionBridgeDir { get; set; }
+
     /// <summary>Serve the read-only MCP adapter over stdio (`--mcp`).</summary>
     public bool McpOnly { get; set; }
 
@@ -85,6 +89,7 @@ public sealed class RunnerOptions
         string? junitOutputPath = null;
         var watch = false;
         var vision = false;
+        string? visionBridgeDir = null;
         var mcpOnly = false;
         var showPromptOnly = false;
         var composeRecordingOnly = false;
@@ -123,6 +128,8 @@ public sealed class RunnerOptions
                 watch = true;
             else if (arg == "--vision")
                 vision = true;
+            else if (arg == "--vision-bridge")
+                visionBridgeDir = ReadValue(args, ref i, "--vision-bridge");
             else if (arg == "--mcp")
                 mcpOnly = true;
             else if (arg == "--show-prompt")
@@ -331,6 +338,7 @@ public sealed class RunnerOptions
             BridgePort = bridgePort,
             BridgeIoDir = bridgeIoDir,
             Vision = vision,
+            VisionBridgeDir = visionBridgeDir,
             McpOnly = mcpOnly,
             ShowPromptOnly = showPromptOnly,
             ComposeRecordingOnly = composeRecordingOnly,

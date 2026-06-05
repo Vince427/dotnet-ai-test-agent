@@ -7,6 +7,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **Vision bridge — key-free, agent-in-the-loop VLM (`--vision-bridge <dir>`)**. Runs the vision loop
+  with **no provider API key**: each step `BridgeVisionDecider` captures the screen, masks secrets, draws
+  the numbered overlay, and writes `vision-req-N.png` + an identifiers-only index to the folder, then
+  waits for `vision-resp-N.json` (box + action) from an external agent — e.g. Claude Code reading the
+  PNG on your desktop — and maps the box back to the element. The vision counterpart of `--bridge-llm`;
+  no `.env`. Secrets are masked in the PNG and absent from the index (verified on-disk by tests). Env-
+  bound to *run* (drives a real window), but the file protocol is unit-tested headlessly. See
+  `docs/vision-bridge.md`. +4 tests.
 - **V9.5 recording mode (increment 2b) — live UIA capture (`--record`)**. The env-bound half that
   produces the `session.json` `--compose-recording` consumes. `UIAutomation/UiaSessionRecorder.cs`
   attaches to a window by title via FlaUI/UIA3 and subscribes to automation events (Invoke → `Invoked`,

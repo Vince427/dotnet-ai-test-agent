@@ -15,6 +15,10 @@ Owns the executable orchestration loop and manual CLI surface.
   masked, numbered-box overlay + identifiers-only index; the chosen box maps back to an element.
   Enabled with the `--vision` CLI flag (off by default); `OpenAiVisionClient` is the real
   multimodal client (`VISION_MODEL` / `llm.vision_model`, falls back to `LLM_MODEL`).
+  `BridgeVisionDecider` (`--vision-bridge <dir>`) is the **key-free** alternative — it IS the decider
+  (not a Tier-2 fallback), writing an annotated screenshot + identifiers-only index per step to a
+  folder and awaiting `vision-resp-N.json` from an external agent (the vision peer of `--bridge-llm`;
+  no `.env`). Env-bound to run; the file protocol is unit-tested. See `docs/vision-bridge.md`.
 - `src/AgentRunner/ActionExecutor.cs` (the "act" seam: `IActionExecutor` +
   `ActionExecutionResult`). Validates the action (allow-list + target existence) then
   dispatches the verb to the driver; returns the outcome the loop records. Extracted out of

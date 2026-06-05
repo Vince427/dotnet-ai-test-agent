@@ -43,8 +43,10 @@ internal static class Program
         // --record prints the captured session JSON to stdout when no --out is given; keep stdout clean.
         var recordToStdout =
             HasArgument(args, "--record") && !HasArgument(args, "--out");
+        // --vision-bridge is a runtime loop but key-free (the external agent is the VLM), so it needs no .env.
+        var keyFreeRuntime = HasArgument(args, "--vision-bridge");
         var config = WorkflowConfig.Load(
-            loadDotEnv: !manualOnlyRequested,
+            loadDotEnv: !manualOnlyRequested && !keyFreeRuntime,
             // Keep stdout clean for commands whose stdout IS the payload: --mcp (JSON-RPC),
             // --show-prompt (the prompt text), --compose-recording (the YAML), --record (the session
             // JSON), and any --format json command.
@@ -169,21 +171,38 @@ internal static class Program
         // when unset, keeping runs dependency-free. Disposed last so it flushes.
         using var telemetry = RunnerTelemetry.TryStartExport(config);
         var secretRedactor = new SecretRedactor();
-        var llmService = new LlmService(config, secretRedactor);
         using var driver = new FlaUiDesktopDriver();
 
-        // --vision: wrap the decider in the V3 Tier-2 fallback. It uses the LLM only for Tier-1
-        // (text) and escalates to a multimodal VLM (annotated screenshot + overlay index) when the
-        // Tier-1 UIA target can't be resolved. The driver supplies the screenshot on demand.
-        IActionDecider decider = llmService;
-        if (options.Vision)
+        IActionDecider decider;
+        if (!string.IsNullOrWhiteSpace(options.VisionBridgeDir))
         {
-            decider = new VisionActionDecider(
-                llmService,
-                new OpenAiVisionClient(config),
+            // --vision-bridge: key-free, agent-in-the-loop vision. Every step writes an annotated
+            // screenshot + index to the folder; an external VLM (e.g. Claude Code on this desktop)
+            // reads it and writes the box choice. No LLM, no .env — the bridge IS the decider.
+            decider = new BridgeVisionDecider(
+                options.VisionBridgeDir!,
                 () => driver.CaptureScreenshot(),
-                secretRedactor);
-            Console.WriteLine("Vision fallback enabled (V3 Tier-2): escalates to the VLM when UIA resolution is ambiguous.");
+                secretRedactor,
+                log: Console.Error.WriteLine);
+            Console.WriteLine($"Vision bridge enabled (key-free): writing annotated screenshots + index to '{options.VisionBridgeDir}' and awaiting vision-resp-N.json from an external agent.");
+        }
+        else
+        {
+            var llmService = new LlmService(config, secretRedactor);
+
+            // --vision: wrap the decider in the V3 Tier-2 fallback. It uses the LLM only for Tier-1
+            // (text) and escalates to a multimodal VLM (annotated screenshot + overlay index) when the
+            // Tier-1 UIA target can't be resolved. The driver supplies the screenshot on demand.
+            decider = llmService;
+            if (options.Vision)
+            {
+                decider = new VisionActionDecider(
+                    llmService,
+                    new OpenAiVisionClient(config),
+                    () => driver.CaptureScreenshot(),
+                    secretRedactor);
+                Console.WriteLine("Vision fallback enabled (V3 Tier-2): escalates to the VLM when UIA resolution is ambiguous.");
+            }
         }
 
         var orchestrator = new RunOrchestrator(driver, decider, config);

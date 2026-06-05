@@ -68,4 +68,47 @@ tests:
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error => error.Contains("risk"));
     }
+
+    [Fact]
+    public void ValidateEmitsPolicyWarningsWithoutFailing()
+    {
+        var plan = TestPlanLoader.Parse("""
+suite: edge
+
+tests:
+  W-001:
+    goal: "do it"
+    framework: "qtwidgets"
+    max_steps: 250
+    allowed_actions: ["Click", "Done"]
+""");
+
+        var result = TestPlanValidator.Validate(plan, "tests/edge.yaml");
+
+        Assert.True(result.IsValid); // warnings are non-fatal
+        Assert.Contains(result.Warnings, w => w.Contains("framework 'qtwidgets'"));
+        Assert.Contains(result.Warnings, w => w.Contains("max_steps 250"));
+        Assert.Contains(result.Warnings, w => w.Contains("no success_condition"));
+    }
+
+    [Fact]
+    public void ValidateEmitsNoWarningsForACleanPlan()
+    {
+        var plan = TestPlanLoader.Parse("""
+suite: clean
+
+tests:
+  C-001:
+    goal: "do it"
+    framework: "wpf"
+    success_condition: "Done"
+    max_steps: 10
+    allowed_actions: ["Click", "Done"]
+""");
+
+        var result = TestPlanValidator.Validate(plan, "tests/clean.yaml");
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Warnings);
+    }
 }

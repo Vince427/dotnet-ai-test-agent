@@ -30,14 +30,18 @@ internal static class Program
             HasArgument(args, "--to-junit") ||
             HasArgument(args, "--dashboard") ||
             HasArgument(args, "--bridge-llm") ||
-            HasArgument(args, "--mcp");
+            HasArgument(args, "--mcp") ||
+            HasArgument(args, "--show-prompt");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
         var config = WorkflowConfig.Load(
             loadDotEnv: !manualOnlyRequested,
-            // --mcp speaks JSON-RPC on stdout; never write the config diagnostic there.
-            logConfig: !jsonManualOutputRequested && !HasArgument(args, "--mcp"));
+            // Keep stdout clean for commands whose stdout IS the payload: --mcp (JSON-RPC),
+            // --show-prompt (the prompt text), and any --format json manual command.
+            logConfig: !jsonManualOutputRequested
+                       && !HasArgument(args, "--mcp")
+                       && !HasArgument(args, "--show-prompt"));
         RunnerOptions options;
         try
         {
@@ -138,6 +142,9 @@ internal static class Program
         if (options.McpOnly)
             return RunMcp(config);
 
+        if (options.ShowPromptOnly)
+            return ShowPrompt(config, options);
+
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
         // The driver is IDisposable, so Program owns its lifetime.
@@ -164,6 +171,53 @@ internal static class Program
 
         var orchestrator = new RunOrchestrator(driver, decider, config);
         return await orchestrator.RunAsync(options);
+    }
+
+    // Manual command: print the prompt the LLM would receive for a test (--show-prompt), without
+    // running anything. Key-free (reuses PromptBuilder via PromptPreview). Needs --test-id; honors
+    // --plan to narrow the search, else scans tests/. Text by default, JSON with --format json.
+    private static int ShowPrompt(WorkflowConfig config, RunnerOptions options)
+    {
+        var testId = options.TestId;
+        if (string.IsNullOrWhiteSpace(testId))
+        {
+            Console.Error.WriteLine("--show-prompt requires --test-id.");
+            return 2;
+        }
+
+        var repoRoot = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        var paths = string.IsNullOrWhiteSpace(options.PlanPath)
+            ? TestPlanLoader.DiscoverPlanPaths(repoRoot)
+            : new List<string> { options.PlanPath! };
+
+        TestDefinition? test = null;
+        foreach (var path in paths)
+        {
+            try { test = TestPlanLoader.Load(path).FindById(testId!); }
+            catch { continue; }
+            if (test != null) break;
+        }
+
+        if (test == null)
+        {
+            Console.Error.WriteLine($"Test '{testId}' was not found under tests/.");
+            return 2;
+        }
+
+        var prompt = PromptPreview.BuildForTest(test, new SecretRedactor(), config.PromptTemplate);
+
+        if (options.OutputFormat == CommandOutputFormat.Json)
+        {
+            var json = JsonSerializer.Serialize(
+                new { kind = "promptPreview", testId, prompt },
+                new JsonSerializerOptions { WriteIndented = true });
+            Console.WriteLine(json);
+        }
+        else
+        {
+            Console.WriteLine(prompt);
+        }
+        return 0;
     }
 
     // Manual command: serve the read-only MCP adapter over stdio (--mcp). An adapter over the
@@ -323,6 +377,10 @@ internal static class Program
                 {
                     planOutput.Errors.Add(error);
                 }
+                foreach (var warning in validation.Warnings)
+                {
+                    planOutput.Warnings.Add(warning);
+                }
             }
             catch (Exception ex)
             {
@@ -331,8 +389,10 @@ internal static class Program
 
             planOutput.Valid = planOutput.Errors.Count == 0;
             output.Errors.AddRange(planOutput.Errors);
+            output.Warnings.AddRange(planOutput.Warnings);
         }
 
+        output.WarningCount = output.Warnings.Count;
         output.ErrorCount = output.Errors.Count;
         output.Valid = output.ErrorCount == 0;
         WriteValidationOutput(options, output);
@@ -362,8 +422,12 @@ internal static class Program
                 Console.Error.WriteLine(error);
         }
 
+        // Policy advisories (non-fatal) go to stderr so stdout stays clean for OK lines.
+        foreach (var warning in output.Warnings)
+            Console.Error.WriteLine("WARN " + warning);
+
         if (output.Valid)
-            Console.WriteLine($"Validation passed: plans={output.PlanCount} tests={output.TestCount}");
+            Console.WriteLine($"Validation passed: plans={output.PlanCount} tests={output.TestCount} warnings={output.WarningCount}");
         else
             Console.Error.WriteLine($"Validation failed: plans={output.PlanCount} tests={output.TestCount} errors={output.ErrorCount}");
     }

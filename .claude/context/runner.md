@@ -41,9 +41,13 @@ Owns the executable orchestration loop and manual CLI surface.
 ## Invariants
 
 - Manual modes `--validate-plan`, `--list-tests`, `--render-ui`,
-  `--write-guard-demos`, and `--mcp` must not require `.env`, LLM access, FlaUI, or a target
-  app. `--mcp` (and `--format json`) must keep **stdout** free of diagnostics (JSON-RPC/JSON only;
-  logs go to stderr).
+  `--write-guard-demos`, `--mcp`, and `--show-prompt` must not require `.env`, LLM access, FlaUI,
+  or a target app. `--mcp`, `--show-prompt`, and `--format json` must keep **stdout** free of
+  diagnostics (JSON-RPC/JSON/prompt only; logs go to stderr).
+- `--show-prompt --test-id <id>` renders the runtime prompt via `PromptPreview` (reuses
+  `PromptBuilder`; key-free). `TestPlanValidator` adds non-fatal `Warnings` (unknown framework,
+  high `max_steps`, missing `success_condition`) — surfaced by `--validate-plan` (`WARN` on
+  stderr) and the MCP `validate_plan`/`show_prompt` tools.
 - `TestPlanLoader.DiscoverPlanPaths` excludes `tests/archived/` everywhere (so
   `--list-tests`/`--suite`, the dashboard catalog, and CI all skip archived tests).
   Archiving a test = moving its YAML under `tests/archived/`; it stays in Git, reversible.

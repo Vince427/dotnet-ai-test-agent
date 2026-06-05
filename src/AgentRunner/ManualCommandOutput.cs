@@ -9,8 +9,10 @@ public sealed class PlanValidationOutput
     public int PlanCount { get; set; }
     public int TestCount { get; set; }
     public int ErrorCount { get; set; }
+    public int WarningCount { get; set; }
     public List<PlanValidationPlanOutput> Plans { get; set; } = [];
     public List<string> Errors { get; set; } = [];
+    public List<string> Warnings { get; set; } = [];
 }
 
 public sealed class PlanValidationPlanOutput
@@ -20,6 +22,7 @@ public sealed class PlanValidationPlanOutput
     public int TestCount { get; set; }
     public bool Valid { get; set; }
     public List<string> Errors { get; set; } = [];
+    public List<string> Warnings { get; set; } = [];
 }
 
 public sealed class TestListOutput

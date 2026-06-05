@@ -31,6 +31,9 @@ public sealed class RunnerOptions
 
     /// <summary>Serve the read-only MCP adapter over stdio (`--mcp`).</summary>
     public bool McpOnly { get; set; }
+
+    /// <summary>Print the prompt the LLM would receive for the selected test (`--show-prompt`).</summary>
+    public bool ShowPromptOnly { get; set; }
     public string? JUnitOutputPath { get; set; }
     public string? UiOutputPath { get; set; }
     public string? GuardDemoOutputRoot { get; set; }
@@ -65,6 +68,7 @@ public sealed class RunnerOptions
         var watch = false;
         var vision = false;
         var mcpOnly = false;
+        var showPromptOnly = false;
         var evidenceLevel = EvidenceLevel.Standard;
         var outputFormat = CommandOutputFormat.Text;
         int? maxSteps = null;
@@ -96,6 +100,8 @@ public sealed class RunnerOptions
                 vision = true;
             else if (arg == "--mcp")
                 mcpOnly = true;
+            else if (arg == "--show-prompt")
+                showPromptOnly = true;
             else if (arg == "--write-guard-demos")
             {
                 writeGuardDemosOnly = true;
@@ -192,15 +198,18 @@ public sealed class RunnerOptions
         if (dashboardOnly) modeCount++;
         if (bridgeLlmOnly) modeCount++;
         if (mcpOnly) modeCount++;
+        if (showPromptOnly) modeCount++;
         if (modeCount > 1)
-            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, or --mcp.");
-        if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly)
-            throw new ArgumentException("--format json is only supported with --validate-plan or --list-tests.");
+            throw new ArgumentException("Use only one of --render-ui, --validate-plan, --list-tests, --write-guard-demos, --to-junit, --dashboard, --bridge-llm, --mcp, or --show-prompt.");
+        if (outputFormat == CommandOutputFormat.Json && !validatePlanOnly && !listTestsOnly && !showPromptOnly)
+            throw new ArgumentException("--format json is only supported with --validate-plan, --list-tests, or --show-prompt.");
         if (watch && string.IsNullOrWhiteSpace(uiOutputPath))
             throw new ArgumentException("--watch is only supported with --render-ui.");
 
         TestDefinition? selectedTest = null;
-        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly;
+        // --show-prompt and --mcp resolve their own test(s) across plans, so don't run the
+        // single-plan runtime selection (which would throw if the id isn't in the auto-picked plan).
+        var runtimeTestSelection = !validatePlanOnly && !listTestsOnly && !showPromptOnly && !mcpOnly;
         if (runtimeTestSelection &&
             (!string.IsNullOrWhiteSpace(planPath) ||
             !string.IsNullOrWhiteSpace(suite) ||
@@ -273,6 +282,7 @@ public sealed class RunnerOptions
             BridgeIoDir = bridgeIoDir,
             Vision = vision,
             McpOnly = mcpOnly,
+            ShowPromptOnly = showPromptOnly,
             JUnitOutputPath = toJUnitOnly
                 ? ResolveOutputPath(junitOutputPath ?? "artifacts/junit-results.xml", config)
                 : null,

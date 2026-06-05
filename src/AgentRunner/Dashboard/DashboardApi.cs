@@ -689,7 +689,8 @@ public sealed class DashboardApi
         AppendScalar(sb, "framework", req.Framework);
         AppendScalar(sb, "target_window", req.TargetWindow);
         AppendScalar(sb, "risk", req.Risk);
-        sb.AppendLine("    authoring_agent: \"dashboard\"");
+        var authoringAgent = string.IsNullOrWhiteSpace(req.AuthoringAgent) ? "dashboard" : req.AuthoringAgent!;
+        sb.Append("    authoring_agent: ").AppendLine(Quote(authoringAgent));
         // Category shapes the agent persona/prompt; whitelist to the known taxonomy, default Scenario.
         var category = req.Category switch
         {
@@ -717,7 +718,11 @@ public sealed class DashboardApi
             sb.Append("    ").Append(key).Append(": [").Append(string.Join(", ", values.Select(Quote))).AppendLine("]");
     }
 
-    private static string Quote(string value) => "\"" + value.Replace("\"", "'") + "\"";
+    // Strip control chars (incl. newlines) before quoting so a crafted value can't break out of the
+    // single-line quoted scalar and inject sibling YAML keys (e.g. a forged target_window). Applies to
+    // both dashboard-authored and recorder-composed drafts. Then escape any embedded double quotes.
+    private static string Quote(string value) =>
+        "\"" + new string(value.Where(c => !char.IsControl(c)).ToArray()).Replace("\"", "'") + "\"";
 
     public sealed class CreateTestRequest
     {
@@ -728,7 +733,8 @@ public sealed class DashboardApi
         public string? Framework { get; set; }
         public string? TargetWindow { get; set; }
         public string? Risk { get; set; }
-        public string? Category { get; set; }   // Smoke | Monkey | Audit | Scenario (default)
+        public string? Category { get; set; }        // Smoke | Monkey | Audit | Scenario (default)
+        public string? AuthoringAgent { get; set; }   // who authored it (default "dashboard"); e.g. "recorder"
         public string? Goal { get; set; }
         public string? SuccessCondition { get; set; }
         public int? MaxSteps { get; set; }

@@ -1,0 +1,1 @@
+{"window":"App W","framework":"wpf","title":"My Flow","actions":[{"verb":"EnterText","target":"txtPassword","name":"Password","value":"hunter2"},{"verb":"Click","name":"OK"}]}

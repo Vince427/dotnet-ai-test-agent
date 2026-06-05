@@ -31,17 +31,22 @@ internal static class Program
             HasArgument(args, "--dashboard") ||
             HasArgument(args, "--bridge-llm") ||
             HasArgument(args, "--mcp") ||
-            HasArgument(args, "--show-prompt");
+            HasArgument(args, "--show-prompt") ||
+            HasArgument(args, "--compose-recording");
         var jsonManualOutputRequested =
             manualOnlyRequested &&
             HasOptionValue(args, "--format", "json");
+        // --compose-recording prints the YAML draft to stdout when no --out is given, so keep stdout clean.
+        var composeToStdout =
+            HasArgument(args, "--compose-recording") && !HasArgument(args, "--out");
         var config = WorkflowConfig.Load(
             loadDotEnv: !manualOnlyRequested,
             // Keep stdout clean for commands whose stdout IS the payload: --mcp (JSON-RPC),
-            // --show-prompt (the prompt text), and any --format json manual command.
+            // --show-prompt (the prompt text), --compose-recording (the YAML), and any --format json command.
             logConfig: !jsonManualOutputRequested
                        && !HasArgument(args, "--mcp")
-                       && !HasArgument(args, "--show-prompt"));
+                       && !HasArgument(args, "--show-prompt")
+                       && !composeToStdout);
         RunnerOptions options;
         try
         {
@@ -145,6 +150,9 @@ internal static class Program
         if (options.ShowPromptOnly)
             return ShowPrompt(config, options);
 
+        if (options.ComposeRecordingOnly)
+            return ComposeRecording(config, options);
+
         // --- Runtime agent loop ---
         // Wire the real driver + LLM decider, then hand off to the orchestrator.
         // The driver is IDisposable, so Program owns its lifetime.
@@ -217,6 +225,71 @@ internal static class Program
         {
             Console.WriteLine(prompt);
         }
+        return 0;
+    }
+
+    // Manual command: compose a recorded-session JSON into a validated YAML test draft
+    // (--compose-recording <session.json> [--out <draft.yaml>], V9.5 recording mode). Key-free, no
+    // app needed: capture is the env-bound step that produces the JSON; this is the pure transform.
+    // Stdout is the YAML when no --out is given (diagnostics go to stderr).
+    private static int ComposeRecording(WorkflowConfig config, RunnerOptions options)
+    {
+        var input = options.RecordingInputPath;
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            Console.Error.WriteLine("--compose-recording requires a path to a recorded-session JSON.");
+            return 2;
+        }
+
+        var baseDir = config.WorkflowDirectory ?? Directory.GetCurrentDirectory();
+        var inputPath = Path.IsPathRooted(input!) ? input! : Path.GetFullPath(Path.Combine(baseDir, input!));
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Recorded-session file not found: {inputPath}");
+            return 2;
+        }
+
+        RecordedSession? session;
+        try
+        {
+            session = JsonSerializer.Deserialize<RecordedSession>(
+                File.ReadAllText(inputPath),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("Invalid recorded-session JSON: " + ex.Message);
+            return 2;
+        }
+
+        if (session == null)
+        {
+            Console.Error.WriteLine("Recorded-session JSON was empty.");
+            return 2;
+        }
+
+        var result = RecordingComposer.Compose(session, redactor: new SecretRedactor());
+        if (!result.IsValid)
+        {
+            Console.Error.WriteLine("Composed draft did not validate:");
+            foreach (var e in result.Errors) Console.Error.WriteLine("  ERROR " + e);
+            return 1;
+        }
+        foreach (var w in result.Warnings) Console.Error.WriteLine("  WARN " + w);
+
+        if (!string.IsNullOrWhiteSpace(options.RecordingOutputPath))
+        {
+            var outPath = options.RecordingOutputPath!;
+            var dir = Path.GetDirectoryName(outPath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(outPath, result.Yaml);
+            Console.Error.WriteLine($"Wrote YAML draft for {result.TestId} to {outPath}");
+        }
+        else
+        {
+            Console.WriteLine(result.Yaml);
+        }
+
         return 0;
     }
 

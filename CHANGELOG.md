@@ -7,6 +7,14 @@ This project versions by capability milestones (see `docs/roadmap.md`), not SemV
 ## [Unreleased]
 
 ### Added
+- **V9.5 recording mode (increment 1) — `--compose-recording`**. Turns a recorded manual session
+  (a portable `session.json`: window + ordered interactions) into a **validated, goal-based YAML test
+  draft** — the biggest authoring on-ramp (record once, edit the draft, run it). `--compose-recording
+  <session.json> [--out <draft.yaml>]` prints the YAML to stdout (or writes `--out`); diagnostics +
+  policy warnings go to stderr. Pure + key-free: reuses the dashboard's YAML emitter (one source of
+  truth) and `TestPlanValidator`; the goal is synthesised in plain language from the steps with secret
+  field values redacted; `allowed_actions` = the verbs used (+ `Done`). Live UIA event capture (the
+  env-bound half that emits the JSON) is the next increment. +5 tests.
 - **V8 inc.2 (partial) — screenshot in selector-healing evidence**. When a target drifts
   (`action_target_not_found`) and `SelectorHealer` proposes a closest-match selector, `summary.md`
   now has a **Selector Healing Suggestions** section listing each `old → new` proposal with its

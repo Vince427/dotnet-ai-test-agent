@@ -1,0 +1,23 @@
+suite: examples-maui
+
+tests:
+  EX-MAUI-WINDOWS-PROFILE-001:
+    title: "MAUI Windows example: profile form saves"
+    priority: "P1"
+    framework: "maui"
+    target_window: "Sample.MauiApp"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Fill the profile form with display name 'Ada Lovelace', email 'ada@example.com', enable Active, save the profile, and verify the profile status."
+    success_condition: "Profile saved"
+    max_steps: 14
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait", "Scroll", "Explore"]
+    tags: ["examples", "maui", "windows", "profile", "form", "checkbox"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "MAUI app package is not installed or not launched"
+      - "Profile form controls are not visible"
+      - "LLM endpoint is not configured for runtime execution"

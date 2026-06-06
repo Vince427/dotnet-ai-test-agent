@@ -1,9 +1,9 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [ValidateSet('winforms', 'wpf', 'all')]
+    [ValidateSet('winforms', 'wpf', 'maui', 'all')]
     [string]$Framework = 'all',
 
-    [ValidateSet('login', 'profile', 'controls', 'modal', 'disabled', 'async', 'all')]
+    [ValidateSet('login', 'profile', 'validation', 'controls', 'modal', 'disabled', 'async', 'all')]
     [string]$Scenario = 'all',
 
     [ValidateSet('minimal', 'standard', 'full')]
@@ -39,6 +39,11 @@ $frameworks = @{
         Exe = '.\src\Samples\Sample.WpfApp\bin\Debug\net8.0-windows\Sample.WpfApp.exe'
         Window = 'WPF AI Test Target'
     }
+    maui = @{
+        Project = '.\src\Samples\Sample.MauiApp\Sample.MauiApp.csproj'
+        Exe = '.\src\Samples\Sample.MauiApp\bin\Debug\net8.0-windows10.0.19041.0\win10-x64\Sample.MauiApp.exe'
+        Window = 'Sample.MauiApp'
+    }
 }
 
 $scenarios = @{
@@ -46,11 +51,19 @@ $scenarios = @{
         File = 'login.yaml'
         winforms = 'EX-WINFORMS-LOGIN-001'
         wpf = 'EX-WPF-LOGIN-001'
+        maui = 'EX-MAUI-WINDOWS-LOGIN-001'
     }
     profile = @{
         File = 'profile-save.yaml'
         winforms = 'EX-WINFORMS-PROFILE-001'
         wpf = 'EX-WPF-PROFILE-001'
+        maui = 'EX-MAUI-WINDOWS-PROFILE-001'
+    }
+    validation = @{
+        File = 'profile-validation.yaml'
+        winforms = 'EX-WINFORMS-PROFILE-VALIDATION-001'
+        wpf = 'EX-WPF-PROFILE-VALIDATION-001'
+        maui = 'EX-MAUI-WINDOWS-PROFILE-VALIDATION-001'
     }
     controls = @{
         File = 'controls-selection.yaml'
@@ -150,6 +163,12 @@ function Invoke-Example {
 
     $profile = $frameworks[$FrameworkName]
     $scenarioInfo = $scenarios[$ScenarioName]
+
+    if (-not $scenarioInfo.ContainsKey($FrameworkName)) {
+        Write-Host "Skipping $FrameworkName/$ScenarioName; no focused example plan is defined yet."
+        return 0
+    }
+
     $planPath = ".\tests\examples\$FrameworkName\$($scenarioInfo.File)"
     $testId = $scenarioInfo[$FrameworkName]
     $sampleProcess = $null
@@ -235,7 +254,7 @@ try {
     }
 
     $selectedFrameworks = if ($Framework -eq 'all') { @('winforms', 'wpf') } else { @($Framework) }
-    $selectedScenarios = if ($Scenario -eq 'all') { @('login', 'profile', 'controls', 'modal', 'disabled', 'async') } else { @($Scenario) }
+    $selectedScenarios = if ($Scenario -eq 'all') { @('login', 'profile', 'validation', 'controls', 'modal', 'disabled', 'async') } else { @($Scenario) }
 
     foreach ($frameworkName in $selectedFrameworks) {
         foreach ($scenarioName in $selectedScenarios) {

@@ -1,0 +1,22 @@
+suite: examples-maui
+
+tests:
+  EX-MAUI-WINDOWS-LOGIN-001:
+    title: "MAUI Windows example: login succeeds"
+    priority: "P1"
+    framework: "maui"
+    target_window: "Sample.MauiApp"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Log in using username 'admin' and password 'password123'."
+    success_condition: "Login successful"
+    max_steps: 10
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["examples", "maui", "windows", "login", "happy-path"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "MAUI app package is not installed or not launched"
+      - "LLM endpoint is not configured for runtime execution"

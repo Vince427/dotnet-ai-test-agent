@@ -1,0 +1,21 @@
+suite: oss-gerbertools
+
+tests:
+  OSS-GERBERTOOLS-VIEWER-SMOKE:
+    title: "GerberTools GerberViewer opens sample Gerber files"
+    priority: "P0"
+    framework: "winforms"
+    target_window: "TINRS Gerber Viewer"
+    authoring_agent: "codex"
+    risk: "medium"
+    ci_profile: "local-windows"
+    category: "OSS real app"
+    goal: "Assert that the GerberTools GerberViewer .NET Framework 4.8 desktop app is open and exposes the Layers panel for the sample Gerber files, then finish."
+    max_steps: 5
+    allowed_actions: ["Explore", "Assert", "Done", "Wait", "Click"]
+    tags: ["oss", "gerbertools", "winforms", "net48", "real-app", "smoke"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+      - "GerberViewer.exe is not built"
+      - "Sample Gerber files are not available"

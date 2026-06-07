@@ -1,0 +1,13 @@
+{
+  "window": "TINRS Gerber Viewer",
+  "framework": "winforms",
+  "title": "GerberTools GerberViewer smoke replay",
+  "actions": [
+    {
+      "verb": "Assert",
+      "target": "LayerList",
+      "name": "Layers",
+      "value": "Layers"
+    }
+  ]
+}

@@ -2,9 +2,27 @@
 
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-This project versions by capability milestones (see `docs/roadmap.md`), not SemVer yet.
+This project versions by Semantic Versioning (SemVer) starting with `1.0.0` (see `CONTRACT.md` for our SemVer and deprecation policy).
+
+## Migration Note Convention
+
+Starting with version `1.0.0`, any breaking changes or contract changes will include a dedicated **Migration** note under that release in the CHANGELOG. The convention is:
+- **Migration**:
+  - **What changed**: Clear explanation of the breaking change, field rename, CLI flag removal, or JSON property update.
+  - **Why**: Rationale for the breaking change.
+  - **Action Required**: Step-by-step instructions on how users, scripts, or CI pipelines must adapt to the change.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-06-07
+
+### Release Summary
+Milestone `1.0.0` marks the stabilization of the AgentLoop platform. It establishes:
+1. **Authoritative Public Contract (`CONTRACT.md`)**: Freezes the CLI arguments, exit codes, YAML test schema, JSON formats, and MCP tools to ensure integration stability.
+2. **Deterministic Replay & Self-Healing**: Introduces the `--record` → `--compose-recording` → `--replay` → `--heal-apply` loop, enabling robust and key-free UI test authoring and maintenance.
+3. **Moat Features**: Delivers Tier-2 VLM vision (`--vision` and key-free `--vision-bridge`), localhost-only dashboard (`--dashboard`), OpenTelemetry observability (`OBS-1`), and JUnit/Workbench reporting.
+4. **Reliability Gates**: Locks stability with golden contract tests, reproducibility tests, and `TestFactGuard` to protect against unintentional test changes.
+5. **SemVer Adoption**: Pledges to follow a strict Semantic Versioning policy for all public surfaces.
 
 ### Added
 - **Deterministic replay (`--replay <session.json>`)**. A key-free `ReplayActionDecider` replays a

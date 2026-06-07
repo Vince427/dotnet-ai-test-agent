@@ -5,6 +5,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 
 public sealed class TestPlan
 {
+    public string? SchemaVersion { get; set; }
     public string? Suite { get; set; }
     public List<TestDefinition> Tests { get; } = [];
 

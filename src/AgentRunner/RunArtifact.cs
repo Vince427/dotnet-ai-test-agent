@@ -9,6 +9,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 /// </summary>
 public class RunArtifact
 {
+    public string Version { get; set; } = "1.0";
     public string RunId { get; set; } = Guid.NewGuid().ToString("N")[..8];
     public EvidenceLevel EvidenceLevel { get; set; } = EvidenceLevel.Standard;
     public string? GoalDescription { get; set; }

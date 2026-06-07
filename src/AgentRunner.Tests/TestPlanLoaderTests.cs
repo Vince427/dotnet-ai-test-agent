@@ -110,4 +110,90 @@ tests:
 
         Assert.Contains("max_steps", ex.Message);
     }
+
+    [Fact]
+    public void ParseReadsSchemaVersionFromYaml()
+    {
+        var plan = TestPlanLoader.Parse("""
+schema_version: "1.2.3"
+suite: smoke
+
+tests:
+  LOGIN-001:
+    goal: "Log in."
+""");
+
+        Assert.Equal("1.2.3", plan.SchemaVersion);
+        Assert.Equal("smoke", plan.Suite);
+    }
+
+    [Fact]
+    public void ParseIgnoresUnknownFieldsAndFillsDefaultsInYaml()
+    {
+        var plan = TestPlanLoader.Parse("""
+schema_version: "1.0"
+suite: smoke
+unknown_root_property: "some_val"
+
+tests:
+  LOGIN-001:
+    goal: "Log in."
+    unknown_test_property: "some_val"
+    unknown_test_list:
+      - item1
+      - item2
+""");
+
+        var test = Assert.Single(plan.Tests);
+        Assert.Equal("LOGIN-001", test.Id);
+        Assert.Equal("Log in.", test.Goal);
+        // Defaults filled
+        Assert.Equal(30, test.MaxSteps);
+        Assert.Equal(TestCategory.Scenario, test.Category);
+        Assert.Empty(test.AllowedActions);
+    }
+
+    [Fact]
+    public void RunArtifactLoaderIgnoresUnknownFieldsInJson()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "agentloop-loader-unknown-" + Guid.NewGuid().ToString("N"));
+        var runDir = Path.Combine(dir, "runs", "r2");
+        Directory.CreateDirectory(runDir);
+        File.WriteAllText(Path.Combine(runDir, "report.json"), """
+{
+  "version": "1.0",
+  "runId": "r2",
+  "evidenceLevel": "Standard",
+  "testId": "LOGIN-001",
+  "result": "Succeeded",
+  "finalScore": 100,
+  "startedAt": "2026-05-05T22:00:00Z",
+  "unknown_property_at_root": "hello",
+  "steps": [
+    {
+      "stepNumber": 1,
+      "actionType": "Click",
+      "unknown_property_in_step": 123
+    }
+  ]
+}
+""");
+
+        try
+        {
+            var runs = RunArtifactLoader.LoadFromDirectory(Path.Combine(dir, "runs"));
+
+            Assert.Single(runs);
+            Assert.Equal("r2", runs[0].RunId);
+            Assert.Equal("1.0", runs[0].Version);
+            Assert.Equal("Succeeded", runs[0].Result);
+            var step = Assert.Single(runs[0].Steps);
+            Assert.Equal(1, step.StepNumber);
+            Assert.Equal("Click", step.ActionType);
+        }
+        finally
+        {
+            try { Directory.Delete(dir, true); } catch { }
+        }
+    }
 }

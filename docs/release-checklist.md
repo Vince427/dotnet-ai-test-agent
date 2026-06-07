@@ -31,12 +31,12 @@ each surface to where it lives in code:
         (and the `report.json`/`summary.md`/JUnit shapes are documented in `CONTRACT.md` §3);
   - [x] assert CLI exit codes (invalid args → 2; known-good plan validates → 0) headlessly;
   - [x] assert schema ⇄ loader/validator agreement (`max_steps` bounds, required `goal`, action vocabulary).
-- [ ] **`schema_version`** on YAML + a `version` on artifacts, with a **tolerant loader**
+- [x] **`schema_version`** on YAML + a `version` on artifacts, with a **tolerant loader**
       (ignore unknown fields, fill defaults) so new tool reads old files.
 - [x] **SemVer policy documented**: `1.x` = additive-only (new flags / **optional** fields
       with defaults); breaking changes only at `2.0`; **deprecate with a `WARN` for ≥1 minor
       before removing/renaming** anything in the contract. (See `CONTRACT.md` § SemVer policy.)
-- [ ] **CHANGELOG** has a clear `1.0.0` section + a "Migration" note convention.
+- [x] **CHANGELOG** has a clear `1.0.0` section + a "Migration" note convention.
 - [ ] **Tag `v1.0.0`** (and, when ready, `dotnet tool install -g …@1.0.0` so users pin a version).
 
 ## Keep-it-true after 1.0 (every PR)

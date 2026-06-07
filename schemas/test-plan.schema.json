@@ -7,6 +7,10 @@
   "additionalProperties": false,
   "required": ["tests"],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "The version of the test plan schema used, e.g. '1.0'."
+    },
     "suite": {
       "type": "string",
       "minLength": 1,

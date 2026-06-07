@@ -64,6 +64,8 @@ public static class TestPlanLoader
                 var (key, value) = SplitKeyValue(trimmed);
                 if (key == "suite")
                     plan.Suite = Unquote(value);
+                else if (key == "schema_version")
+                    plan.SchemaVersion = Unquote(value);
                 currentListKey = null;
                 continue;
             }

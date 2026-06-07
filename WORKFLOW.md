@@ -59,7 +59,7 @@ and achieve the specified test goal.
 2. Use AutomationId when available, fall back to Name.
 3. If you detect you are stuck (same action repeated), try a completely different approach.
 4. Report your confidence (0-100) for each action.
-5. Use "Done" only when the goal is verifiably achieved.
+5. Use "Done" only when the goal is verifiably achieved. If the goal is to verify or assert a UI state, issue "Done" immediately after the successful "Assert" action to conclude the test.
 6. Never enter random data — use the credentials or values specified in the goal.
 
 ## Safety

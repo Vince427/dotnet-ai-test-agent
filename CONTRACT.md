@@ -55,10 +55,14 @@ existing ones are not renamed or repurposed before `2.0` (deprecate with a `WARN
 | `--mcp-allow-write` (or `AGENTLOOP_MCP_ALLOW_WRITE=1`) | — | Modifier of `--mcp`: enable the opt-in `create_test` write tool. NOT a standalone mode. |
 | `--compose-recording <session.json> [--out <draft.yaml>]` | path | Transform a recorded session into a YAML draft. Key-free. |
 | `--record [--window <title>] [--out <session.json>] [--seconds <n>]` | — | Live UIA capture (env-bound). |
+| `--replay <session.json>` | path | Replay a recorded UIA session deterministically. Key-free. |
+| `--heal-apply` | — | Apply the self-healing suggestion to the target YAML test plan. |
+| `--run <runId>` | string | Select a specific run ID to apply healing suggestions from. Modifier of `--heal-apply`. |
+| `--yes` | — | Skip confirmation prompt when applying healing. Modifier of `--heal-apply`. |
 
 The "manual" / one-shot modes (`--render-ui`, `--validate-plan`, `--list-tests`, `--analytics`,
 `--write-guard-demos`, `--to-junit`, `--dashboard`, `--bridge-llm`, `--mcp`, `--show-prompt`,
-`--compose-recording`, `--record`) are **mutually exclusive** — combining two is exit `2`.
+`--compose-recording`, `--record`, `--replay`, `--heal-apply`) are **mutually exclusive** — combining two is exit `2`.
 (`--mcp-allow-write` is a modifier of `--mcp`, not a mode, so it does not count.)
 
 ### `--format json` (stdout payload)
@@ -93,7 +97,7 @@ of `tests:` keyed by test id; an optional top-level `suite:`.
 - **Fields**: `title, priority (P0–P3), framework (winforms|wpf|maui|avalonia), target_window,
   source_issue, source_pr, authoring_agent, risk (low|medium|high|critical), ci_profile,
   category (Scenario|Smoke|Audit|Monkey), goal, success_condition, max_steps (1–100),
-  allowed_actions, tags, blocked_if, existing_tests`.
+  allowed_actions, tags, blocked_if, existing_tests, selectors, schema_version`.
 - **`allowed_actions` vocabulary**: `EnterText, Click, DoubleClick, Scroll, Wait, Assert, Done,
   Explore` (must match `Core.ActionVocabulary`).
 - `max_steps` bounds: schema `minimum: 1`, `maximum: 100`; the loader rejects `<= 0`; the validator
@@ -113,14 +117,15 @@ Written under `runs/<runId>/` by a run; read by the dashboard, workbench, JUnit 
 ### `report.json` (camelCase, string enums)
 
 Top-level: `runId, evidenceLevel, goalDescription, goalIdentifier, testId, testTitle, testPriority,
-framework, suite, targetWindow, startedAt, endedAt, result, finalScore, errorMessage, traceId,
-existingTests, sourceIssue, sourcePr, steps[]`.
+  framework, suite, targetWindow, startedAt, endedAt, result, finalScore, errorMessage, traceId,
+  existingTests, sourceIssue, sourcePr, steps[], version`.
 
 `result` is one of `Running, Succeeded, Failed, Aborted, LoopDetected`.
 
 Each `steps[]` item: `stepNumber, timestamp, uiStateSnapshot, actionType, actionTarget, actionValue,
-reasoning, outcome, failureCode, failureMessage, guardStatus, guardCode, guardMessage, scoreDelta,
-cumulativeScore, screenshotPath, uiTreePath, overlayPath, overlayIndexPath, healingSuggestion`.
+  reasoning, outcome, failureCode, failureMessage, guardStatus, guardCode, guardMessage, scoreDelta,
+  cumulativeScore, screenshotPath, uiTreePath, overlayPath, overlayIndexPath, healingSuggestion`.
+  * `healingSuggestion` contains: `oldTarget`, `newTarget`, `newName`, `controlType`, `confidence`, `rationale`.
 
 ### `summary.md`
 
@@ -145,12 +150,12 @@ params (stable):
 
 | Tool | Params | Returns |
 |---|---|---|
-| `list_tests` | — | `{ count, tests[] }` (id, title, framework, priority, category, suite, tags, planPath). |
+| `list_tests` | — | `{ count, tests[] }` (id, title, framework, priority, category, suite, tags, planPath, selectors). |
 | `validate_plan` | `path?` (repo-relative) | `{ valid, planCount, testCount, errorCount, warningCount, plans[], errors[], warnings[] }`. |
 | `list_runs` | — | `{ count, runs[] }` (runId, testId, result, finalScore, startedAt, endedAt, steps). |
 | `get_run` | `runId` (required) | the run's `report.json` passed through. |
 | `show_prompt` | `testId` (required), `path?` | `{ testId, prompt }`. |
-| `create_test` *(opt-in write)* | `id` (required, safe-segment), `goal`, `framework`, `title`, `targetWindow`, `category`, `allowedActions[]`, `tags[]`, `successCondition`, `maxSteps` | `{ ok, id, planPath, warnings[] }` — writes a validated `tests/created/<id>.yaml`. |
+| `create_test` *(opt-in write)* | `id` (required, safe-segment), `goal`, `framework`, `title`, `targetWindow`, `category`, `allowedActions[]`, `tags[]`, `successCondition`, `maxSteps`, `suite`, `priority` | `{ ok, id, planPath, warnings[] }` — writes a validated `tests/created/<id>.yaml`. |
 
 `create_test` is the only write tool and is **disabled by default**: it is advertised + callable only
 when `--mcp-allow-write` (or `AGENTLOOP_MCP_ALLOW_WRITE=1`) is set; otherwise it is not listed and a call

@@ -64,21 +64,35 @@ public sealed class UiaSessionRecorder : IDisposable
     /// </summary>
     public bool Attach(string windowTitle, TimeSpan timeout)
     {
+        _automation?.Dispose();
         _automation = new UIA3Automation();
-        var desktop = _automation.GetDesktop();
+        try
+        {
+            var desktop = _automation.GetDesktop();
 
-        var retry = Retry.WhileNull(
-            () => desktop.FindFirstDescendant(cf => cf.ByName(windowTitle))?.AsWindow(),
-            timeout,
-            TimeSpan.FromMilliseconds(300));
+            var retry = Retry.WhileNull(
+                () => desktop.FindFirstDescendant(cf => cf.ByName(windowTitle))?.AsWindow(),
+                timeout,
+                TimeSpan.FromMilliseconds(300));
 
-        _window = retry.Result;
-        if (_window == null)
-            return false;
+            _window = retry.Result;
+            if (_window == null)
+            {
+                _automation?.Dispose();
+                _automation = null;
+                return false;
+            }
 
-        WindowTitle = SafeGet(() => _window.Title) ?? windowTitle;
-        Subscribe(_automation, _window);
-        return true;
+            WindowTitle = SafeGet(() => _window.Title) ?? windowTitle;
+            Subscribe(_automation, _window);
+            return true;
+        }
+        catch
+        {
+            _automation?.Dispose();
+            _automation = null;
+            throw;
+        }
     }
 
     private void Subscribe(AutomationBase automation, Window window)

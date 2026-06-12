@@ -266,6 +266,45 @@ tests:
                 $"Schema allows action '{action}' that ActionVocabulary rejects.");
     }
 
+    [Fact]
+    public void SchemaCategoryEnumMatchesTestCategoryEnum()
+    {
+        var schema = LoadSchema();
+        var schemaCategories = schema
+            .GetProperty("$defs").GetProperty("testDefinition")
+            .GetProperty("properties").GetProperty("category")
+            .GetProperty("enum")
+            .EnumerateArray().Select(e => e.GetString()!).ToArray();
+
+        var codeCategories = System.Enum.GetNames(typeof(TestCategory));
+
+        Assert.Equal(
+            codeCategories.OrderBy(c => c),
+            schemaCategories.OrderBy(c => c));
+    }
+
+    [Fact]
+    public void SchemaPriorityEnumMatchesValidatorEnforcement()
+    {
+        var schema = LoadSchema();
+        var schemaPriorities = schema
+            .GetProperty("$defs").GetProperty("testDefinition")
+            .GetProperty("properties").GetProperty("priority")
+            .GetProperty("enum")
+            .EnumerateArray().Select(e => e.GetString()!).ToArray();
+
+        foreach (var p in schemaPriorities)
+        {
+            var plan = TestPlanLoader.Parse($"""
+tests:
+  T-1:
+    goal: "g"
+    priority: "{p}"
+""");
+            Assert.True(TestPlanValidator.Validate(plan, "p").IsValid);
+        }
+    }
+
     private static JsonElement LoadSchema()
     {
         var schemaPath = Path.Combine(RepoRoot, "schemas", "test-plan.schema.json");

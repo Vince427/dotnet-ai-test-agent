@@ -21,6 +21,9 @@ public static class TestPlanValidator
     private static readonly HashSet<string> KnownFrameworks =
         new(new[] { "winforms", "wpf", "maui", "avalonia" }, StringComparer.OrdinalIgnoreCase);
 
+    private static readonly HashSet<string> KnownPriorities =
+        new(new[] { "P0", "P1", "P2", "P3" }, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Above this, a run is likely to be slow/expensive — advisory only.</summary>
     private const int HighMaxSteps = 100;
 
@@ -65,6 +68,8 @@ public static class TestPlanValidator
                 result.Errors.Add($"{sourceName}:{label}: max_steps must be a positive integer.");
             if (!string.IsNullOrWhiteSpace(test.Risk) && !IsKnownRisk(test.Risk!))
                 result.Errors.Add($"{sourceName}:{label}: risk must be one of low, medium, high, critical.");
+            if (!string.IsNullOrWhiteSpace(test.Priority) && !KnownPriorities.Contains(test.Priority!))
+                result.Errors.Add($"{sourceName}:{label}: priority must be one of P0, P1, P2, P3.");
 
             ValidateList(result, sourceName, label, "allowed_actions", test.AllowedActions);
             ValidateList(result, sourceName, label, "tags", test.Tags);

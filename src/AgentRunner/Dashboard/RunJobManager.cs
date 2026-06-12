@@ -131,10 +131,18 @@ public class RunJobManager(string repoRoot) : IDisposable
             OnProcessExited(job, code);
         };
 
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        job.Pid = process.Id;
+        try
+        {
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            job.Pid = process.Id;
+        }
+        catch
+        {
+            process.Dispose();
+            throw;
+        }
     }
 
     /// <summary>Marks a job finished and starts the next queued one. Test-visible.</summary>

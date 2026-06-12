@@ -43,7 +43,7 @@ Milestone `1.0.0` marks the stabilization of the AgentLoop platform. It establis
   `TestFactGuard`** — if the edit changed anything but `selectors`, the write is refused. Local-only,
   key-free, single-test files only. New `selectors` YAML field (schema + loader + emitter). Wires the
   fact-gate into a real consumer; `HealApplier` is pure + tested. +4 tests; verified end-to-end.
-- **Reproducibility gate (`ReproducibilityTests`)** — borrowed from open-cognitive-bench's run-twice-diff
+- **Reproducibility gate (`ReproducibilityTests`)** — borrowed from [open-cognitive-bench](https://github.com/Vince427/open-cognitive-bench)'s run-twice-diff
   idea: the key-free deterministic surfaces (plan discovery, `--compose-recording` YAML, `--analytics`,
   `--show-prompt`, and the static workbench HTML) must produce **identical** output across two runs on the
   same input. ContractTests pin the *shape*; these pin run-to-run *stability*, so a future change that

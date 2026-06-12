@@ -176,8 +176,8 @@ public class WorkflowConfig
                         if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#")) continue;
                         var parts = line.Split(['='], 2);
                         if (parts.Length != 2) continue;
-                        var key = parts[0].Trim();
-                        var val = parts[1].Trim();
+                        var key = Unquote(parts[0].Trim());
+                        var val = Unquote(parts[1].Trim());
                         Environment.SetEnvironmentVariable(key, val);
                         if (logConfig)
                             Console.WriteLine($"[{DateTime.UtcNow:O}] [INFO] config_env_set=\"{key}\"");
@@ -189,6 +189,18 @@ public class WorkflowConfig
                 dir = parent.FullName;
             }
         }
+    }
+
+    private static string Unquote(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length >= 2 &&
+            ((trimmed[0] == '"' && trimmed[^1] == '"') ||
+             (trimmed[0] == '\'' && trimmed[^1] == '\'')))
+        {
+            return trimmed[1..^1];
+        }
+        return trimmed;
     }
 
     private static string? ResolveEnvVar(string? value)

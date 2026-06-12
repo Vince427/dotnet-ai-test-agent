@@ -18,19 +18,38 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
 {
     private UIA3Automation? _automation;
     private Window? _window;
+    private UiSnapshot? _cachedSnapshot;
+    private bool _isDirty = true;
 
     public bool AttachToWindow(string windowTitle, TimeSpan timeout)
     {
+        _automation?.Dispose();
         _automation = new UIA3Automation();
-        var desktop = _automation.GetDesktop();
+        try
+        {
+            var desktop = _automation.GetDesktop();
 
-        var retry = Retry.WhileNull(
-            () => desktop.FindFirstDescendant(cf => cf.ByName(windowTitle))?.AsWindow(),
-            timeout,
-            TimeSpan.FromMilliseconds(300));
+            var retry = Retry.WhileNull(
+                () => desktop.FindFirstDescendant(cf => cf.ByName(windowTitle))?.AsWindow(),
+                timeout,
+                TimeSpan.FromMilliseconds(300));
 
-        _window = retry.Result;
-        return _window != null;
+            _window = retry.Result;
+            if (_window == null)
+            {
+                _automation?.Dispose();
+                _automation = null;
+                return false;
+            }
+            _isDirty = true;
+            return true;
+        }
+        catch
+        {
+            _automation?.Dispose();
+            _automation = null;
+            throw;
+        }
     }
 
     /// <summary>
@@ -38,6 +57,11 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     /// </summary>
     public UiSnapshot Capture()
     {
+        if (!_isDirty && _cachedSnapshot != null)
+        {
+            return _cachedSnapshot;
+        }
+
         EnsureWindow();
         var elements = GetAllElements();
 
@@ -62,7 +86,9 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         }
         catch { /* bounds unavailable; masking will be skipped */ }
 
-        return new UiSnapshot(_window!.Title, elements, statusText, windowBounds);
+        _cachedSnapshot = new UiSnapshot(_window!.Title, elements, statusText, windowBounds);
+        _isDirty = false;
+        return _cachedSnapshot;
     }
 
     /// <summary>
@@ -148,6 +174,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         var box = el?.AsTextBox() ?? throw new InvalidOperationException("TextBox not found: " + automationId);
         box.Focus();
         box.Text = value;
+        _isDirty = true;
     }
 
     public void Click(string automationId)
@@ -165,6 +192,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         {
             Mouse.Click(el.GetClickablePoint());
         }
+        _isDirty = true;
     }
 
     public void DoubleClick(string automationId)
@@ -173,6 +201,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
         el.Focus();
         Mouse.DoubleClick(el.GetClickablePoint());
+        _isDirty = true;
     }
 
     public void Scroll(string automationId, string direction)
@@ -182,6 +211,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         el.Focus();
         var amount = string.Equals(direction, "up", StringComparison.OrdinalIgnoreCase) ? 3 : -3;
         Mouse.Scroll(amount);
+        _isDirty = true;
     }
 
     public string ReadText(string automationId)

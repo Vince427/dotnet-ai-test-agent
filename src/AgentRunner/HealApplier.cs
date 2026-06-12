@@ -75,6 +75,8 @@ public static class HealApplier
         if (replacements == null || replacements.Count == 0)
             return yamlText;
 
+        var isCrlf = yamlText.Contains("\r\n");
+        var lineSeparator = isCrlf ? "\r\n" : "\n";
         var lines = yamlText.Replace("\r\n", "\n").Split('\n');
         var inMultilineSelectors = false;
 
@@ -104,7 +106,7 @@ public static class HealApplier
                 lines[i] = ReplaceTokens(line, replacements);
         }
 
-        return string.Join("\n", lines);
+        return string.Join(lineSeparator, lines);
     }
 
     // Replace each Old with New only as a whole token (quoted or bare), so 'btn' doesn't hit 'btnLogin'.
@@ -114,7 +116,7 @@ public static class HealApplier
         {
             var old = Regex.Escape(r.Old);
             // bounded by quote, bracket, comma, whitespace, or line ends — never a substring of a longer id
-            line = Regex.Replace(line, $@"(?<=[""'\[,\s]|^){old}(?=[""'\],\s]|$)", r.New);
+            line = Regex.Replace(line, $@"(?<=[""'\[,\s]|^){old}(?=[""'\],\s]|$)", m => r.New);
         }
         return line;
     }

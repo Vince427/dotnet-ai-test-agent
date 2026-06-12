@@ -27,6 +27,10 @@ param(
     [ValidateRange(1, 60)]
     [int]$StartupDelaySeconds = 4,
 
+    [switch]$SkipBuild,
+
+    [switch]$SkipUnitTests,
+
     [switch]$DryRun
 )
 
@@ -44,6 +48,14 @@ $sampleProfiles = @{
     wpf = @{
         Exe = '.\src\Samples\Sample.WpfApp\bin\Debug\net8.0-windows\Sample.WpfApp.exe'
         Window = 'WPF AI Test Target'
+    }
+    avalonia = @{
+        Exe = '.\src\Samples\Sample.AvaloniaApp\bin\Debug\net8.0\Sample.AvaloniaApp.exe'
+        Window = 'Avalonia AI Test Target'
+    }
+    'avalonia-windows' = @{
+        Exe = '.\src\Samples\Sample.AvaloniaApp\bin\Debug\net8.0\Sample.AvaloniaApp.exe'
+        Window = 'Avalonia AI Test Target'
     }
 }
 
@@ -207,7 +219,7 @@ function Get-SampleProfile {
 
     $normalizedFramework = $Framework.ToLowerInvariant()
     if (-not $sampleProfiles.ContainsKey($normalizedFramework)) {
-        throw "Sample launch is only supported for framework values: winforms, wpf."
+        throw "Sample launch is only supported for framework values: winforms, wpf, avalonia, avalonia-windows."
     }
 
     return $sampleProfiles[$normalizedFramework]
@@ -363,13 +375,17 @@ function New-CommentSummary {
         [string]$RunDir,
         [string]$WorkbenchPath,
         [bool]$RuntimeSkipped,
-        [bool]$DryRunMode
+        [bool]$DryRunMode,
+        [string]$TicketId
     )
 
     $lines = [System.Collections.Generic.List[string]]::new()
     $ticketLabel = if ($Ticket.Title) { $Ticket.Title } else { [System.IO.Path]::GetFileName($Ticket.Path) }
     $lines.Add("## Ticket-to-evidence proof") | Out-Null
     $lines.Add("") | Out-Null
+    if ($TicketId) {
+        $lines.Add("- Ticket ID: $TicketId") | Out-Null
+    }
     $lines.Add("- Ticket: $ticketLabel") | Out-Null
     $lines.Add("- Plan: $(if ($ResolvedPlan) { $ResolvedPlan } else { 'suite=' + $ResolvedSuite })") | Out-Null
     $lines.Add("- Test: $ResolvedTestId") | Out-Null
@@ -401,6 +417,7 @@ Push-Location $repoRoot
 try {
     $ticket = Read-TicketMarkdown -Path $TicketPath
     $frontMatter = $ticket.FrontMatter
+    $ticketId = Get-TicketValue -FrontMatter $frontMatter -Keys @('ticket_id', 'ticketid', 'id')
 
     $planValue = if ($Plan) { $Plan } else { Get-TicketValue -FrontMatter $frontMatter -Keys @('plan', 'plan_path', 'planpath', 'test_plan', 'testplan') }
     $resolvedPlan = Resolve-RepoPath -Path $planValue
@@ -469,15 +486,25 @@ try {
     }
     $selectionArgs += @('--test-id', $resolvedTestId)
 
-    Invoke-ProofCommand `
-        -Label 'Build solution' `
-        -FilePath 'dotnet' `
-        -Arguments @('build', '.\DesktopAiTestAgent.sln', '--no-restore', '-v', 'minimal') | Out-Null
+    if (-not $SkipBuild) {
+        Invoke-ProofCommand `
+            -Label 'Build agent' `
+            -FilePath 'dotnet' `
+            -Arguments @('build', '.\src\AgentRunner\AgentRunner.csproj', '--no-restore', '-v', 'minimal') | Out-Null
+    }
+    else {
+        Add-StepResult -Name 'Build agent' -Status 'skipped' -Details 'SkipBuild requested'
+    }
 
-    Invoke-ProofCommand `
-        -Label 'Run unit tests' `
-        -FilePath 'dotnet' `
-        -Arguments @('test', '.\DesktopAiTestAgent.sln', '--no-restore', '-v', 'minimal') | Out-Null
+    if (-not $SkipUnitTests) {
+        Invoke-ProofCommand `
+            -Label 'Run unit tests' `
+            -FilePath 'dotnet' `
+            -Arguments @('test', '.\src\AgentRunner.Tests\AgentRunner.Tests.csproj', '--no-restore', '-v', 'minimal') | Out-Null
+    }
+    else {
+        Add-StepResult -Name 'Run unit tests' -Status 'skipped' -Details 'SkipUnitTests requested'
+    }
 
     $validateArgs = @(
         'run',
@@ -608,7 +635,8 @@ try {
         -RunDir $runDir `
         -WorkbenchPath $resolvedWorkbenchOutput `
         -RuntimeSkipped $runtimeSkipped `
-        -DryRunMode $isDryRun
+        -DryRunMode $isDryRun `
+        -TicketId $ticketId
 
     if ($isDryRun) {
         Write-Host "==> Ticket comment summary preview"

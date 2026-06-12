@@ -83,9 +83,9 @@ public sealed class BridgeVisionDecider : IActionDecider
 
     private async Task<string?> WaitForReplyAsync(int n)
     {
-        var deadline = Environment.TickCount + _timeoutMs;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         var path = Path.Combine(_ioDir, $"vision-resp-{n}.json");
-        while (Environment.TickCount < deadline)
+        while (sw.ElapsedMilliseconds < _timeoutMs)
         {
             if (File.Exists(path))
             {

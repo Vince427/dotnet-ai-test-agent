@@ -9,7 +9,7 @@ tests:
     authoring_agent: "codex"
     risk: "medium"
     ci_profile: "local-windows"
-    category: "OSS real app"
+    category: "Smoke"
     goal: "Assert that the GerberTools GerberViewer .NET Framework 4.8 desktop app is open and exposes the Layers panel for the sample Gerber files, then finish."
     max_steps: 5
     allowed_actions: ["Explore", "Assert", "Done", "Wait", "Click"]

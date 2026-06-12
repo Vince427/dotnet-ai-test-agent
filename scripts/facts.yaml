@@ -1,0 +1,15 @@
+# Required facts for YAML test specifications.
+# Every test in tests/**/*.yaml (excluding tests/archived/) must have each of
+# these fields present and non-empty. This is the fact-set the CI gate checks.
+#
+# Modeled on open-cognitive-bench's drift-guard: the gate GUARANTEES these facts
+# survive every rewrite; a prompt can only REDUCE the loss.
+#
+# Reference: https://github.com/Vince427/open-cognitive-bench
+# See also:  CONTRACT.md (the public API contract these fields belong to)
+
+# Core identity
+- goal
+- framework
+- max_steps
+- allowed_actions

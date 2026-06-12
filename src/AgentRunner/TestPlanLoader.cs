@@ -159,6 +159,8 @@ public static class TestPlanLoader
             case "category":
                 if (Enum.TryParse<TestCategory>(cleanValue, true, out var category))
                     test.Category = category;
+                else
+                    throw new InvalidOperationException($"Test '{test.Id}' category '{cleanValue}' is not supported. Supported: Smoke, Monkey, Audit, Scenario.");
                 break;
             case "allowed_actions":
                 test.AllowedActions = ParseInlineList(cleanValue);

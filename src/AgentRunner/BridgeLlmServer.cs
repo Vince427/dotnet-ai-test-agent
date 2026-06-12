@@ -111,10 +111,10 @@ public sealed class BridgeLlmServer : IDisposable
 
     private string? WaitForReply(int n)
     {
-        var deadline = Environment.TickCount + _timeoutMs;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         var json = Path.Combine(_ioDir, $"resp-{n}.json");
         var txt = Path.Combine(_ioDir, $"resp-{n}.txt");
-        while (Environment.TickCount < deadline && !_cts.IsCancellationRequested)
+        while (sw.ElapsedMilliseconds < _timeoutMs && !_cts.IsCancellationRequested)
         {
             foreach (var path in new[] { json, txt })
             {

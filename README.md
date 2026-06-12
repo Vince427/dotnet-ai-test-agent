@@ -147,6 +147,15 @@ The real `.env` file is ignored by git.
 - `scripts`: local validation, proof, and demo commands.
 - `docs`: public docs and generated static Workbench output.
 
+## Related Projects
+
+- [open-cognitive-bench](https://github.com/Vince427/open-cognitive-bench) — executable
+  guardrails for AI coding agents. This project's `TestFactGuard` (the fact-gate that
+  refuses a YAML rewrite when a declared fact is dropped) and `ReproducibilityTests`
+  (run-twice-diff stability gate) are direct applications of open-cognitive-bench's
+  core thesis: *gate it — don't prompt it*. See also `drift-guard/` for the
+  dependency-free Python fact-gate this project's C# guard is modelled on.
+
 ## Agent Contributors
 
 Start with `AGENTS.md`. More detailed local agent guidance lives in `CLAUDE.md`

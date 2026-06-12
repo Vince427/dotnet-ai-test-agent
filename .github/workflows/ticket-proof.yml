@@ -38,15 +38,20 @@ jobs:
 
       - name: Restore
         shell: pwsh
-        run: dotnet restore .\DesktopAiTestAgent.sln
+        run: |
+          dotnet restore src/AgentRunner/AgentRunner.csproj
+          dotnet restore src/AgentRunner.Tests/AgentRunner.Tests.csproj
 
       - name: Build
         shell: pwsh
-        run: dotnet build .\DesktopAiTestAgent.sln --no-restore -v minimal
+        run: |
+          dotnet build src/AgentRunner/AgentRunner.csproj -c Release --no-restore -v minimal
+          dotnet build src/AgentRunner.Tests/AgentRunner.Tests.csproj -c Release --no-restore -v minimal
 
       - name: Test
         shell: pwsh
-        run: dotnet test .\DesktopAiTestAgent.sln --no-build -v minimal
+        run: |
+          dotnet test src/AgentRunner.Tests/AgentRunner.Tests.csproj -c Release --no-build -v minimal
 
       - name: Validate YAML plans
         shell: pwsh

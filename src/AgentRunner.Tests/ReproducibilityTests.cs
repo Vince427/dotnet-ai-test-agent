@@ -80,7 +80,7 @@ public sealed class ReproducibilityTests
         };
         var runs = SampleRuns();
         string Render() => AgentLoopWorkbenchGenerator.RenderHtml(
-            RepoRoot, System.IO.Path.Combine(RepoRoot, "docs", "symphony.html"), [], tests, runs);
+            RepoRoot, System.IO.Path.Combine(RepoRoot, "docs", "agentloop.html"), [], tests, runs);
 
         // Strip the single volatile line ("Generated <UTC> from ...") — the only run-to-run difference,
         // the direct analogue of the bench's report.md run-id timestamp.

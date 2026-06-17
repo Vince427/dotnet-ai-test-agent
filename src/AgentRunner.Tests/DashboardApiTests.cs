@@ -274,7 +274,7 @@ public sealed class DashboardApiTests : IDisposable
     }
 
     [Fact]
-    public void CreateTest_AlsoEmitsSymphonyTicket()
+    public void CreateTest_AlsoEmitsAgentLoopTicket()
     {
         var res = _api.CreateTest("""
             {"id":"TKT-001","suite":"created","title":"Ticketed test","framework":"winforms",

@@ -33,7 +33,7 @@ dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- -
 # List all tests
 dotnet run --project .\src\AgentRunner\AgentRunner.csproj -f net8.0-windows -- --list-tests
 
-# Render the static Workbench (open the generated docs/symphony.html)
+# Render the static Workbench (open the generated docs/agentloop.html)
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render-ui.ps1
 ```
 

@@ -45,7 +45,7 @@ interaction/recording (V9/V9.5), analytics (V11), and MCP/plugin adapters.
 ## V1.5 - Static AgentLoop Workbench - Done
 
 - Generate a local static workbench from `tests/*.yaml` and `runs/*/report.json`.
-- Existing filenames may still use `symphony` until the rename migration is complete.
+- All filenames now use AgentLoop (rename migration complete).
 - Keep it read-only first: backlog list, latest runs, status, score, guards, screenshots and summaries.
 - No database, no auth, no server requirement, no SaaS cockpit.
 - UX rule: make the UI simple and obvious, but provide guided choices for suites, test ids, frameworks, result filters, and prompt previews.

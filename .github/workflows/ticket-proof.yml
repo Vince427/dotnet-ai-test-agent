@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ticket_ref:
-        description: GitHub issue, Symphony ticket, or trace key for this proof run
+        description: GitHub issue, AgentLoop ticket, or trace key for this proof run
         required: false
         type: string
       ticket_path:

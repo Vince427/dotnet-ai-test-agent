@@ -7,9 +7,7 @@ DocFX is intentionally deferred until API reference generation becomes useful.
 
 - `docs/index.html`: quickstart and navigation.
 - Markdown docs such as `mvp.md`, `architecture.md`, `testzoo.md`, and `roadmap.md`.
-- `docs/symphony.html`: generated AgentLoop Workbench demo. The filename is
-  still `symphony.html` during the safe rename window; the visible product
-  language is AgentLoop.
+- `docs/agentloop.html`: generated AgentLoop Workbench demo.
 
 ## Workflow
 
@@ -40,7 +38,7 @@ Regenerate the static Workbench before sharing a docs snapshot:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render-ui.ps1
 ```
 
-Open `docs/index.html` or `docs/symphony.html` locally.
+Open `docs/index.html` or `docs/agentloop.html` locally.
 
 ## Boundaries
 

@@ -1,7 +1,7 @@
 # Ticket-To-Evidence CI
 
 This document describes the deterministic CI lane for turning a GitHub issue or
-external task such as an OpenAI Symphony ticket into reviewable proof artifacts
+external task such as an OpenAI AgentLoop ticket into reviewable proof artifacts
 without making AI, desktop focus, or hosted runtime automation part of the core
 product.
 
@@ -53,7 +53,7 @@ runtime evidence, not deterministic dry-run proof.
 
 ## GitHub Issues And External Orchestrators
 
-GitHub issues and external tickets such as OpenAI Symphony tasks should carry
+GitHub issues and external tickets such as OpenAI AgentLoop tasks should carry
 planning context, acceptance criteria, and links to evidence. They should not
 replace YAML plans, CLI output, or artifact files.
 
@@ -69,7 +69,7 @@ A typical handoff is:
 
 An orchestrator may drive this flow through GitHub APIs or issue comments, but
 the product remains manual-first: the same commands can be run from PowerShell
-without OpenAI Symphony, OpenRouter, or a plugin.
+without OpenAI AgentLoop, OpenRouter, or a plugin.
 
 ## Evidence Contract
 

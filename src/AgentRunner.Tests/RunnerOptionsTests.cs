@@ -121,10 +121,10 @@ public sealed class RunnerOptionsTests
         var tempDir = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-render-" + Guid.NewGuid().ToString("N"));
         var config = new WorkflowConfig { WorkflowDirectory = tempDir };
 
-        var options = RunnerOptions.Parse(["--render-ui", "docs/symphony.html"], config);
+        var options = RunnerOptions.Parse(["--render-ui", "docs/agentloop.html"], config);
 
         Assert.True(options.RenderUiOnly);
-        Assert.Equal(Path.Combine(tempDir, "docs", "symphony.html"), options.UiOutputPath);
+        Assert.Equal(Path.Combine(tempDir, "docs", "agentloop.html"), options.UiOutputPath);
     }
 
     [Fact]

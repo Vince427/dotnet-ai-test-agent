@@ -1,5 +1,5 @@
 param(
-    [string]$Output = '.\docs\symphony.html',
+    [string]$Output = '.\docs\agentloop.html',
     [string]$Plan = ''
 )
 

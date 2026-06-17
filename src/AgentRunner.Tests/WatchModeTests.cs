@@ -10,7 +10,7 @@ public sealed class WatchModeTests
     [Fact]
     public void ParseAcceptsWatchWithRenderUi()
     {
-        var options = RunnerOptions.Parse(["--render-ui", "docs/symphony.html", "--watch"], new WorkflowConfig());
+        var options = RunnerOptions.Parse(["--render-ui", "docs/agentloop.html", "--watch"], new WorkflowConfig());
 
         Assert.True(options.RenderUiOnly);
         Assert.True(options.Watch);
@@ -27,7 +27,7 @@ public sealed class WatchModeTests
     {
         var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
-            Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "agentloop.html"),
             new List<string>(),
             new List<TestDefinition>(),
             new List<RunArtifact>(),
@@ -42,7 +42,7 @@ public sealed class WatchModeTests
     {
         var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
-            Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "agentloop.html"),
             new List<string>(),
             new List<TestDefinition>(),
             new List<RunArtifact>());

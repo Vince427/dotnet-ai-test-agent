@@ -12,7 +12,7 @@ namespace DesktopAiTestAgent.AgentRunner;
 public sealed class AgentLoopWorkbenchOptions
 {
     public string RepoRoot { get; set; } = Directory.GetCurrentDirectory();
-    public string OutputPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html");
+    public string OutputPath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "docs", "agentloop.html");
     public List<string> PlanPaths { get; set; } = [];
     public string RunsRoot { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), "runs");
 

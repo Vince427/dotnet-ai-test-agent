@@ -253,9 +253,9 @@ Milestone `1.0.0` marks the stabilization of the AgentLoop platform. It establis
   secret-safe even for password fields. This is the prerequisite a VLM decider consumes ("pick
   box N") for the next increment. `RunStep` gains `OverlayPath`/`OverlayIndexPath`; the summary
   evidence list shows `overlay`. +7 tests. See `docs/competitive-analysis.md` for why V3 is P0.
-- **Dashboard ↔ Symphony tickets**: the dashboard now speaks the same ticket contract CI
+- **Dashboard ↔ AgentLoop tickets**: the dashboard now speaks the same ticket contract CI
   uses. **Create** writes a `tests/created/<id>.yaml` test **and** a `tickets/created/<id>.md`
-  Symphony ticket (frontmatter `ticket_id/plan/test_id/framework/target_window/evidence_level/
+  AgentLoop ticket (frontmatter `ticket_id/plan/test_id/framework/target_window/evidence_level/
   launch_sample/expected_artifacts` + body) referencing it. A new **Tickets** tab lists/views
   `tickets/*.md` and **Run**s one via `scripts/run-ticket-proof.ps1` — the exact adapter CI
   runs — so a dashboard-authored ticket is CI-functional unchanged (verified end-to-end with
@@ -391,7 +391,7 @@ Milestone `1.0.0` marks the stabilization of the AgentLoop platform. It establis
 - **Symphony→AgentLoop code rename (A5, decision D3)**: the workbench C# types/files
   `SymphonyWorkbench{Options,Result,Generator}` were renamed to `AgentLoopWorkbench*` to drop
   the legacy loop name (collides with the unrelated `openai/symphony`). The generated
-  `docs/symphony.html` artifact name and the deliberate "Symphony **ticket**" model name are
+  `docs/agentloop.html` artifact name and the deliberate "AgentLoop **ticket**" model name are
   kept on purpose. No behaviour change.
 - **Act-stage refactor (post global-audit, A4)**: the action dispatch is extracted out of
   `RunOrchestrator.RunCoreAsync` into a testable `ActionExecutor` (`IActionExecutor` +

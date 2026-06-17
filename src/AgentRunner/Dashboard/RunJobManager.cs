@@ -56,7 +56,7 @@ public class RunJobManager(string repoRoot) : IDisposable
         }, () => BuildStartInfo(planPath, testId, window));
 
     /// <summary>
-    /// Run a Symphony ticket via scripts/run-ticket-proof.ps1 — the SAME adapter CI uses,
+    /// Run an AgentLoop ticket via scripts/run-ticket-proof.ps1 — the SAME adapter CI uses,
     /// so the dashboard and CI share one path. The script invokes the CLI, whose logs carry
     /// the session id we correlate to a runId.
     /// </summary>

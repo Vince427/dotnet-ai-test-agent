@@ -1,7 +1,7 @@
 # Ticket-To-Evidence Workflow
 
 This workflow makes ticket-driven agent work repeatable without making
-OpenAI Symphony, MCP, a plugin, or an LLM the product core. External
+OpenAI AgentLoop, MCP, a plugin, or an LLM the product core. External
 orchestrators can coordinate sessions and hooks, but the local contract stays:
 
 ```text
@@ -86,7 +86,7 @@ same payload.
 
 ## Hook Shape
 
-The hook names are intentionally generic so OpenAI Symphony, a GitHub Action,
+The hook names are intentionally generic so OpenAI AgentLoop, a GitHub Action,
 a local script, or another agent wrapper can implement them.
 
 ```yaml

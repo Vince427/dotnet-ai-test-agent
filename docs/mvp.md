@@ -9,8 +9,7 @@ be used by a human locally, by CI, by the AgentLoop Workbench, or by AI agents:
 YAML specs -> CLI runner -> artifacts -> AgentLoop Workbench
 ```
 
-Some current files and commands still use `symphony` while the rename migrates.
-New docs should use AgentLoop for the orchestrator and workbench.
+All files and commands now use AgentLoop for the orchestrator and workbench.
 
 ## MVP User Flow
 

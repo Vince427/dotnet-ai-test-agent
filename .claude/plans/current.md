@@ -2,12 +2,21 @@
 
 This file gives `/suite` and other agents a small executable backlog. The
 source of truth remains `docs/roadmap.md`; keep this file focused on near-term
-parallel work.
+parallel work. For the **engineering-health backlog** (debt, doc-drift, proof
+gaps, the 1.0 tag) see the companion **`.claude/plans/improvement-plan.md`**.
 
-## RESUME SNAPSHOT — 2026-06-05 (read this first)
+## RESUME SNAPSHOT — 2026-06-17 (read this first)
 
-**`main` HEAD = `248d8e0`** (Merge PR #31, `--heal-apply`). Build clean on net48 + net8 + Avalonia +
-MAUI; **338 tests + 3 gated** on `main`; **CI green**. Single contributor identity: `Vince427` (noreply).
+**`main` HEAD = `5c6c10a`** (Merge PR #36, MAUI + profile-validation example plans;
+on top of PR #35 plan-next, `--replay`, replay-secret substitution). Build clean on
+net48 + net8 + Avalonia + MAUI; **~309 `[Fact]/[Theory]` + gated E2E** on `main`
+(exact total is `dotnet test` output — see improvement-plan P0-2, stop quoting a frozen
+number); **CI green**. Single contributor identity: `Vince427` (noreply).
+
+> ⚠️ **Known doc-drift to reconcile (improvement-plan P0-2):** `docs/status.md` still
+> says "~167 tests" + a stale `claude/runner-orchestrator` branch line; the
+> `DISCOVERY_LOG` `--heal-apply` entry is marked OPEN but it shipped (PR #31). Fix these
+> before trusting any quoted status number.
 
 **How to try it (interactive):** `--dashboard 8090` (catalog/create/runs/live UI) · `--vision-bridge <dir>`
 = Claude Code plays the VLM, no key (`docs/vision-bridge.md`) · `--record`/`--compose-recording` (record→YAML)

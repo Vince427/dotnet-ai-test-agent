@@ -23,7 +23,7 @@ param(
     [string]$TestId = 'EX-WINFORMS-LOGIN-001',
     [ValidateSet('minimal', 'standard', 'full')]
     [string]$EvidenceLevel = 'full',
-    [string]$Workbench = '.\docs\symphony.html',
+    [string]$Workbench = '.\docs\agentloop.html',
     [int]$StartupWaitSeconds = 4,
     [switch]$NoOpen
 )

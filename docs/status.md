@@ -23,9 +23,9 @@ one-screen "where are we": see [CHANGELOG](../CHANGELOG.md), [roadmap](roadmap.m
 - **Observability** — opt-in OpenTelemetry (spans + metrics, OTLP/HttpProtobuf); `traceId`
   in `report.json`, linked from the dashboard and the static workbench.
 - **Local dashboard** (`--dashboard`, localhost-only) — Catalog, Create (→ validated YAML
-  **+ Symphony ticket**), Tickets (view/run via the CI script), Runs, Live (logs/screenshots),
+  **+ AgentLoop ticket**), Tickets (view/run via the CI script), Runs, Live (logs/screenshots),
   Files explorer. Mission-control UI with tooltips.
-- **Symphony ticket contract** — `tickets/*.md` + `WORKFLOW.md` policy + `run-ticket-proof.ps1`
+- **AgentLoop ticket contract** — `tickets/*.md` + `WORKFLOW.md` policy + `run-ticket-proof.ps1`
   adapter; the dashboard creates/runs the same tickets CI consumes.
 - **CI integration** — `--to-junit` with existing-test/source/trace links; full pipeline runs
   with **no paid provider**.

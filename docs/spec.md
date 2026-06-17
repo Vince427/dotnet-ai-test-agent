@@ -146,9 +146,8 @@ QA/docs proof, not as a replacement for real WinForms/WPF E2E runs.
 
 ## Mini UI
 
-The AgentLoop Workbench is a local static UI over YAML and artifacts. Existing
-filenames may still use `symphony` until the rename migration is complete, but
-new product language should use AgentLoop for the orchestrator and workbench.
+The AgentLoop Workbench is a local static UI over YAML and artifacts. All
+filenames now use AgentLoop (rename migration complete).
 
 It should:
 

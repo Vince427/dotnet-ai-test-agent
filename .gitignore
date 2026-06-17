@@ -24,7 +24,7 @@ packages/
 runs/
 screenshots/
 coverage/
-docs/symphony.html
+docs/agentloop.html
 .env
 .env.*
 !.env.template

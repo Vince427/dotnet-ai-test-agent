@@ -1,8 +1,8 @@
 # Architecture
 
 Desktop AI Test Agent follows an AgentLoop architecture adapted for UI testing.
-Early docs and filenames may still mention Symphony; new product language should
-use AgentLoop for the internal orchestration loop and static workbench.
+The rename from Symphony to AgentLoop is complete. All code, filenames, and docs
+now use AgentLoop for the internal orchestration loop and static workbench.
 
 ## Core Principle
 

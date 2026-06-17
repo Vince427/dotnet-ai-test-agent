@@ -198,7 +198,7 @@ public sealed class DashboardApi
         var path = Path.Combine(dir, req.Id + ".yaml");
         File.WriteAllText(path, yaml);
 
-        // Also emit a Symphony-style ticket (.md) referencing this plan, so the SAME
+        // Also emit an AgentLoop-style ticket (.md) referencing this plan, so the SAME
         // contract that CI runs via scripts/run-ticket-proof.ps1 is produced here.
         var ticketDir = Path.Combine(_repoRoot, "tickets", "created");
         Directory.CreateDirectory(ticketDir);
@@ -244,7 +244,7 @@ public sealed class DashboardApi
     /// <see cref="TestPlanValidator.StripLocationPrefix"/>, the single owner of the prefix shape.</summary>
     private static string FriendlyWarning(string warning) => TestPlanValidator.StripLocationPrefix(warning);
 
-    /// <summary>List the Symphony tickets under tickets/ (frontmatter parsed).</summary>
+    /// <summary>List the AgentLoop tickets under tickets/ (frontmatter parsed).</summary>
     public ApiResponse GetTickets()
     {
         var ticketsRoot = Path.Combine(_repoRoot, "tickets");
@@ -333,7 +333,7 @@ public sealed class DashboardApi
         return fm;
     }
 
-    /// <summary>Emit a Symphony ticket markdown referencing the just-created plan.</summary>
+    /// <summary>Emit an AgentLoop ticket markdown referencing the just-created plan.</summary>
     internal static string BuildTicketMarkdown(CreateTestRequest req, string planRelPath)
     {
         var ev = req.EvidenceLevel is "minimal" or "standard" or "full" ? req.EvidenceLevel : "standard";

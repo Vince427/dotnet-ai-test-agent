@@ -9,7 +9,7 @@ public sealed class AgentLoopWorkbenchInteractiveTests
     private static string Render(IReadOnlyList<RunArtifact> runs) =>
         AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
-            Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "agentloop.html"),
             new List<string>(),
             new List<TestDefinition>(),
             runs);
@@ -143,7 +143,7 @@ public sealed class AgentLoopWorkbenchInteractiveTests
         var result = AgentLoopWorkbenchGenerator.Generate(new AgentLoopWorkbenchOptions
         {
             RepoRoot = tempDir,
-            OutputPath = Path.Combine(tempDir, "docs", "symphony.html"),
+            OutputPath = Path.Combine(tempDir, "docs", "agentloop.html"),
             RunsRoot = Path.Combine(tempDir, "runs")
         });
 

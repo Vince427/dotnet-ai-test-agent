@@ -35,7 +35,7 @@ public sealed class AgentLoopWorkbenchGeneratorTests
 
         var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
-            Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "agentloop.html"),
             [Path.Combine(Directory.GetCurrentDirectory(), "tests", "smoke.yaml")],
             tests,
             runs);
@@ -69,7 +69,7 @@ public sealed class AgentLoopWorkbenchGeneratorTests
 
         var html = AgentLoopWorkbenchGenerator.RenderHtml(
             Directory.GetCurrentDirectory(),
-            Path.Combine(Directory.GetCurrentDirectory(), "docs", "symphony.html"),
+            Path.Combine(Directory.GetCurrentDirectory(), "docs", "agentloop.html"),
             [],
             tests,
             [],
@@ -103,7 +103,7 @@ tests:
     allowed_actions: ["Click", "Done"]
 """);
 
-        var outputPath = Path.Combine(tempDir, "docs", "symphony.html");
+        var outputPath = Path.Combine(tempDir, "docs", "agentloop.html");
         AgentLoopWorkbenchGenerator.Generate(new AgentLoopWorkbenchOptions
         {
             RepoRoot = tempDir,
@@ -152,7 +152,7 @@ tests:
 }
 """);
 
-        var outputPath = Path.Combine(tempDir, "docs", "symphony.html");
+        var outputPath = Path.Combine(tempDir, "docs", "agentloop.html");
         var result = AgentLoopWorkbenchGenerator.Generate(new AgentLoopWorkbenchOptions
         {
             RepoRoot = tempDir,

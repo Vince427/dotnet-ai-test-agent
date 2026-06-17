@@ -2,9 +2,9 @@
 
 A complete map of the components and how data flows. (Renders on GitHub via Mermaid.)
 Naming note: the loop is **AgentLoop** (decision D3). The code symbols were renamed off the
-legacy `Symphony*` name; the only retained `symphony` token is the generated `docs/symphony.html`
-artifact (a possibly-published Pages URL) and the deliberate "Symphony ticket" model name. All
-of it is **our own** code, unrelated to `openai/symphony` (a coding-agent orchestrator).
+legacy `Symphony*` name; the generated artifact is now `docs/agentloop.html` and the model
+name is "AgentLoop ticket". All of it is **our own** code, unrelated to `openai/symphony`
+(a coding-agent orchestrator).
 
 ## End-to-end flow
 

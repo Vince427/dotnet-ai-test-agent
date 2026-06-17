@@ -198,9 +198,9 @@ internal static class DashboardHtml
             <nav class="rail">
               <button data-tab="catalog" class="active" title="Browse the tests found under tests/*.yaml, grouped by suite. Click Launch to run one.">
                 <span class="ico">▦</span> Catalog</button>
-              <button data-tab="create" title="Author a new test as a guided form. It writes a validated YAML test under tests/created/ AND a Symphony ticket under tickets/created/ — you can also edit them by hand.">
+              <button data-tab="create" title="Author a new test as a guided form. It writes a validated YAML test under tests/created/ AND an AgentLoop ticket under tickets/created/ — you can also edit them by hand.">
                 <span class="ico">+</span> Create</button>
-              <button data-tab="tickets" title="Symphony tickets (tickets/*.md): a portable contract — view one, or Run it through the same scripts/run-ticket-proof.ps1 that CI uses.">
+              <button data-tab="tickets" title="AgentLoop tickets (tickets/*.md): a portable contract — view one, or Run it through the same scripts/run-ticket-proof.ps1 that CI uses.">
                 <span class="ico">◆</span> Tickets</button>
               <button data-tab="runs" title="Recorded run history from runs/: result, score, steps, screenshots, and the OpenTelemetry trace link.">
                 <span class="ico">≡</span> Runs</button>
@@ -593,9 +593,9 @@ internal static class DashboardHtml
               }catch(e){ v.innerHTML=`<div class='empty'>${esc(e.message)}</div>`; }
             }
 
-            // TICKETS — Symphony contract (same files CI runs via run-ticket-proof.ps1)
+            // TICKETS — AgentLoop contract (same files CI runs via run-ticket-proof.ps1)
             async function loadTickets(){
-              $("#tab-tickets").innerHTML=headHTML("Tickets","Symphony tickets under tickets/ — view one, or Run it through the same adapter CI uses")+
+              $("#tab-tickets").innerHTML=headHTML("Tickets","AgentLoop tickets under tickets/ — view one, or Run it through the same adapter CI uses")+
                 intro("A <b>ticket</b> is a portable run contract (<code>tickets/*.md</code>) — the very same file CI executes via <code>scripts/run-ticket-proof.ps1</code>. Click a row to read it, or <b>▶ Run</b> to launch it through that exact adapter, so a run here is identical to a run in CI. Tickets are authored by <b>Create</b> or by hand.")+
                 "<div class='panel pad' id='tk-body'></div><div id='tk-detail' style='margin-top:14px'></div>";
               try{

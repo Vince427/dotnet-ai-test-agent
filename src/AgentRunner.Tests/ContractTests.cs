@@ -305,6 +305,77 @@ tests:
         }
     }
 
+    [Fact]
+    public void YamlLoaderIsTolerantOfUnknownFields()
+    {
+        // Assert that parsing a test plan with unknown fields (e.g. legacy_field)
+        // works without error and successfully loads known fields.
+        var plan = TestPlanLoader.Parse("""
+suite: smoke
+schema_version: "1.0"
+unknown_plan_field: "ignore_me"
+
+tests:
+  CONTRACT-TOLERANT-001:
+    goal: "Confirm tolerant loading"
+    framework: "winforms"
+    unknown_test_field: "ignore_me_too"
+    max_steps: 5
+""");
+
+        Assert.NotNull(plan);
+        Assert.Equal("smoke", plan.Suite);
+        Assert.Equal("1.0", plan.SchemaVersion);
+        Assert.Single(plan.Tests);
+        var test = plan.Tests[0];
+        Assert.Equal("CONTRACT-TOLERANT-001", test.Id);
+        Assert.Equal("Confirm tolerant loading", test.Goal);
+        Assert.Equal("winforms", test.Framework);
+        Assert.Equal(5, test.MaxSteps);
+    }
+
+    [Fact]
+    public void RunArtifactLoaderIsTolerantOfUnknownProperties()
+    {
+        // Assert that JSON deserialization of run reports is tolerant of unknown properties.
+        var json = """
+{
+  "version": "1.0",
+  "runId": "abc12345",
+  "testId": "T-1",
+  "unknownProperty": "someValue",
+  "steps": [
+    {
+      "stepNumber": 1,
+      "outcome": "Succeeded",
+      "unknownStepProp": 42
+    }
+  ]
+}
+""";
+        var tempDir = Path.Combine(Path.GetTempPath(), "tolerant-json-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var reportPath = Path.Combine(tempDir, "report.json");
+            File.WriteAllText(reportPath, json);
+
+            var runs = RunArtifactLoader.LoadFromDirectory(tempDir);
+            Assert.Single(runs);
+            var run = runs[0];
+            Assert.Equal("1.0", run.Version);
+            Assert.Equal("abc12345", run.RunId);
+            Assert.Equal("T-1", run.TestId);
+            Assert.Single(run.Steps);
+            Assert.Equal(1, run.Steps[0].StepNumber);
+            Assert.Equal("Succeeded", run.Steps[0].Outcome);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
     private static JsonElement LoadSchema()
     {
         var schemaPath = Path.Combine(RepoRoot, "schemas", "test-plan.schema.json");

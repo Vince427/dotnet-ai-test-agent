@@ -1,0 +1,26 @@
+suite: case-studies-keepass
+
+tests:
+  CS-KEEPASS-CREATION-001:
+    title: "KeePass: Create new password database"
+    priority: "P0"
+    framework: "winforms"
+    target_window: "KeePass"
+    authoring_agent: "codex"
+    risk: "low"
+    ci_profile: "local-windows"
+    category: "Scenario"
+    goal: "Create a new password database, set a master password, and save the database file."
+    success_condition: "New Database Created"
+    max_steps: 12
+    allowed_actions: ["EnterText", "Click", "Assert", "Done", "Wait"]
+    tags: ["case-studies", "keepass", "winforms", "database-creation"]
+    existing_tests: []
+    blocked_if:
+      - "Target window not found"
+    selectors:
+      - "FileMenu"
+      - "NewMenuItem"
+      - "MasterPasswordTextBox"
+      - "RepeatPasswordTextBox"
+      - "SaveButton"

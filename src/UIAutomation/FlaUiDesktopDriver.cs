@@ -20,6 +20,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     private Window? _window;
     private UiSnapshot? _cachedSnapshot;
     private bool _isDirty = true;
+    private string _attachedWindowTitle = "Attached Window";
 
     public bool AttachToWindow(string windowTitle, TimeSpan timeout)
     {
@@ -41,6 +42,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
                 _automation = null;
                 return false;
             }
+            _attachedWindowTitle = SafeGet(() => _window.Title) ?? windowTitle;
             _isDirty = true;
             return true;
         }
@@ -86,7 +88,8 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         }
         catch { /* bounds unavailable; masking will be skipped */ }
 
-        _cachedSnapshot = new UiSnapshot(_window!.Title, elements, statusText, windowBounds);
+        var title = SafeGet(() => _window!.Title) ?? _attachedWindowTitle;
+        _cachedSnapshot = new UiSnapshot(title, elements, statusText, windowBounds);
         _isDirty = false;
         return _cachedSnapshot;
     }
@@ -99,55 +102,62 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         EnsureWindow();
         var result = new List<UiElement>();
 
-        foreach (var el in _window!.FindAllDescendants())
+        try
         {
-            try
+            foreach (var el in _window!.FindAllDescendants())
             {
-                var uiEl = new UiElement
-                {
-                    AutomationId = SafeGet(() => el.AutomationId),
-                    Name = SafeGet(() => el.Name),
-                    ControlType = SafeGet(() => el.ControlType.ToString()) ?? "Unknown",
-                    IsEnabled = SafeGetBool(() => el.IsEnabled, true),
-                    IsOffscreen = SafeGetBool(() => el.IsOffscreen, false),
-                    IsPassword = SafeGetBool(() => el.Properties.IsPassword.Value, false),
-                };
-
-                // Try to read value for text-like controls
-                var ctName = uiEl.ControlType;
-                if (ctName == "Edit" || ctName == "Document")
-                {
-                    try { uiEl.Value = el.AsTextBox()?.Text; } catch { }
-                }
-                else if (ctName == "Text")
-                {
-                    try { uiEl.Value = el.AsLabel()?.Text; } catch { }
-                }
-                else if (ctName == "ComboBox")
-                {
-                    try { uiEl.Value = el.AsComboBox()?.SelectedItem?.Text; } catch { }
-                }
-
-                // Bounding box
                 try
                 {
-                    var rect = el.BoundingRectangle;
-                    uiEl.BoundingBox = $"{rect.X},{rect.Y},{rect.Width},{rect.Height}";
+                    var uiEl = new UiElement
+                    {
+                        AutomationId = SafeGet(() => el.AutomationId),
+                        Name = SafeGet(() => el.Name),
+                        ControlType = SafeGet(() => el.ControlType.ToString()) ?? "Unknown",
+                        IsEnabled = SafeGetBool(() => el.IsEnabled, true),
+                        IsOffscreen = SafeGetBool(() => el.IsOffscreen, false),
+                        IsPassword = SafeGetBool(() => el.Properties.IsPassword.Value, false),
+                    };
+
+                    // Try to read value for text-like controls
+                    var ctName = uiEl.ControlType;
+                    if (ctName == "Edit" || ctName == "Document")
+                    {
+                        try { uiEl.Value = el.AsTextBox()?.Text; } catch { }
+                    }
+                    else if (ctName == "Text")
+                    {
+                        try { uiEl.Value = el.AsLabel()?.Text; } catch { }
+                    }
+                    else if (ctName == "ComboBox")
+                    {
+                        try { uiEl.Value = el.AsComboBox()?.SelectedItem?.Text; } catch { }
+                    }
+
+                    // Bounding box
+                    try
+                    {
+                        var rect = el.BoundingRectangle;
+                        uiEl.BoundingBox = $"{rect.X},{rect.Y},{rect.Width},{rect.Height}";
+                    }
+                    catch { }
+
+                    // Skip empty elements with no useful info
+                    if (string.IsNullOrEmpty(uiEl.AutomationId) &&
+                        string.IsNullOrEmpty(uiEl.Name) &&
+                        string.IsNullOrEmpty(uiEl.Value))
+                        continue;
+
+                    result.Add(uiEl);
                 }
-                catch { }
-
-                // Skip empty elements with no useful info
-                if (string.IsNullOrEmpty(uiEl.AutomationId) &&
-                    string.IsNullOrEmpty(uiEl.Name) &&
-                    string.IsNullOrEmpty(uiEl.Value))
-                    continue;
-
-                result.Add(uiEl);
+                catch
+                {
+                    // Skip elements that throw during inspection
+                }
             }
-            catch
-            {
-                // Skip elements that throw during inspection
-            }
+        }
+        catch
+        {
+            // Ignore tree-walk enumeration errors and return whatever elements we collected
         }
 
         return result;

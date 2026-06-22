@@ -25,6 +25,7 @@ runs/
 screenshots/
 coverage/
 docs/agentloop.html
+keepass/
 .env
 .env.*
 !.env.template

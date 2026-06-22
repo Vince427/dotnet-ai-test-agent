@@ -102,9 +102,32 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         EnsureWindow();
         var result = new List<UiElement>();
 
+        // 1. Gather elements from the main window
+        GatherElementsFrom(_window, result);
+
+        // 2. Fallback/append elements from the active foreground window of the same process if it is different
         try
         {
-            foreach (var el in _window!.FindAllDescendants())
+            var desktop = _automation!.GetDesktop();
+            var activeWindow = desktop.FindFirstChild(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Window))?.AsWindow();
+            if (activeWindow != null && 
+                activeWindow.Properties.ProcessId.Value == _window!.Properties.ProcessId.Value &&
+                activeWindow.AutomationId != _window.AutomationId)
+            {
+                GatherElementsFrom(activeWindow, result);
+            }
+        }
+        catch { }
+
+        return result;
+    }
+
+    private void GatherElementsFrom(AutomationElement? root, List<UiElement> result)
+    {
+        if (root is null) return;
+        try
+        {
+            foreach (var el in root.FindAllDescendants())
             {
                 try
                 {
@@ -147,6 +170,10 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
                         string.IsNullOrEmpty(uiEl.Value))
                         continue;
 
+                    // Prevent duplicates
+                    if (result.Exists(x => x.AutomationId == uiEl.AutomationId && x.Name == uiEl.Name && x.ControlType == uiEl.ControlType))
+                        continue;
+
                     result.Add(uiEl);
                 }
                 catch
@@ -157,24 +184,45 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         }
         catch
         {
-            // Ignore tree-walk enumeration errors and return whatever elements we collected
+            // Ignore tree-walk enumeration errors
         }
-
-        return result;
     }
 
     public byte[] CaptureScreenshot()
     {
         EnsureWindow();
-        // Bring the target window forward first: Capture.Element grabs SCREEN pixels at the element's
-        // bounds, so an occluded window would otherwise capture whatever sits in front of it (and the
-        // vision path would then "see" the wrong window). Best-effort — never let this fail the capture.
-        try { _window!.SetForeground(); System.Threading.Thread.Sleep(150); } catch { /* keep the shot */ }
-        using var ms = new MemoryStream();
-        var captureImage = FlaUI.Core.Capturing.Capture.Element(_window!);
-        captureImage.Bitmap.Save(ms, ImageFormat.Png);
-        captureImage.Dispose();
-        return ms.ToArray();
+        try
+        {
+            try { _window!.SetForeground(); System.Threading.Thread.Sleep(150); } catch { }
+            using var ms = new MemoryStream();
+            using var captureImage = FlaUI.Core.Capturing.Capture.Element(_window!);
+            captureImage.Bitmap.Save(ms, ImageFormat.Png);
+            return ms.ToArray();
+        }
+        catch
+        {
+            // Fallback to full screen capture using GDI+ if UIA capture fails or times out
+            try
+            {
+                using var ms = new MemoryStream();
+                var bounds = System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+                using var bitmap = new System.Drawing.Bitmap(bounds.Width, bounds.Height);
+                using (var g = System.Drawing.Graphics.FromImage(bitmap))
+                {
+                    g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size);
+                }
+                bitmap.Save(ms, ImageFormat.Png);
+                return ms.ToArray();
+            }
+            catch
+            {
+                // Return an empty 1x1 PNG if everything fails
+                using var ms = new MemoryStream();
+                using var bitmap = new System.Drawing.Bitmap(1, 1);
+                bitmap.Save(ms, ImageFormat.Png);
+                return ms.ToArray();
+            }
+        }
     }
 
     public void EnterText(string automationId, string value)
@@ -182,7 +230,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         EnsureWindow();
         var el = FindElement(automationId);
         var box = el?.AsTextBox() ?? throw new InvalidOperationException("TextBox not found: " + automationId);
-        box.Focus();
+        try { box.Focus(); } catch { }
         box.Text = value;
         _isDirty = true;
     }
@@ -191,7 +239,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     {
         EnsureWindow();
         var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
-        el.Focus();
+        try { el.Focus(); } catch { }
 
         // Try Button.Invoke first, then fall back to mouse click
         try
@@ -200,7 +248,17 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
         }
         catch
         {
-            Mouse.Click(el.GetClickablePoint());
+            System.Drawing.Point point;
+            try
+            {
+                point = el.GetClickablePoint();
+            }
+            catch (FlaUI.Core.Exceptions.NoClickablePointException)
+            {
+                var rect = el.BoundingRectangle;
+                point = new System.Drawing.Point((int)(rect.X + rect.Width / 2), (int)(rect.Y + rect.Height / 2));
+            }
+            Mouse.Click(point);
         }
         _isDirty = true;
     }
@@ -209,8 +267,19 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     {
         EnsureWindow();
         var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
-        el.Focus();
-        Mouse.DoubleClick(el.GetClickablePoint());
+        try { el.Focus(); } catch { }
+        
+        System.Drawing.Point point;
+        try
+        {
+            point = el.GetClickablePoint();
+        }
+        catch (FlaUI.Core.Exceptions.NoClickablePointException)
+        {
+            var rect = el.BoundingRectangle;
+            point = new System.Drawing.Point((int)(rect.X + rect.Width / 2), (int)(rect.Y + rect.Height / 2));
+        }
+        Mouse.DoubleClick(point);
         _isDirty = true;
     }
 
@@ -218,7 +287,7 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
     {
         EnsureWindow();
         var el = FindElement(automationId) ?? throw new InvalidOperationException("Element not found: " + automationId);
-        el.Focus();
+        try { el.Focus(); } catch { }
         var amount = string.Equals(direction, "up", StringComparison.OrdinalIgnoreCase) ? 3 : -3;
         Mouse.Scroll(amount);
         _isDirty = true;
@@ -237,16 +306,45 @@ public sealed class FlaUiDesktopDriver : IAutomationDriver, IDisposable
 
     /// <summary>
     /// Multi-strategy element resolution: try AutomationId first, then Name.
+    /// Also search the active window of the same process if not found in the main window.
     /// </summary>
     private AutomationElement? FindElement(string identifier)
     {
-        // Strategy 1: by AutomationId
-        var el = _window!.FindFirstDescendant(cf => cf.ByAutomationId(identifier));
+        // Strategy 1: Search in target window
+        var el = SearchInWindow(_window, identifier);
         if (el is not null) return el;
 
-        // Strategy 2: by Name
-        el = _window!.FindFirstDescendant(cf => cf.ByName(identifier));
-        return el;
+        // Strategy 2: Fallback to the active modal/foreground window if it belongs to the same process
+        try
+        {
+            var desktop = _automation!.GetDesktop();
+            var activeWindow = desktop.FindFirstChild(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Window))?.AsWindow();
+            if (activeWindow != null && activeWindow.Properties.ProcessId.Value == _window!.Properties.ProcessId.Value)
+            {
+                el = SearchInWindow(activeWindow, identifier);
+                if (el is not null) return el;
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    private AutomationElement? SearchInWindow(AutomationElement? win, string identifier)
+    {
+        if (win is null) return null;
+        try
+        {
+            var el = win.FindFirstDescendant(cf => cf.ByAutomationId(identifier));
+            if (el is not null) return el;
+            
+            el = win.FindFirstDescendant(cf => cf.ByName(identifier));
+            return el;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void EnsureWindow()

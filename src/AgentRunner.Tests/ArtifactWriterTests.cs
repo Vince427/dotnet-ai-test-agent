@@ -173,6 +173,88 @@ public sealed class ArtifactWriterTests
         Assert.DoesNotContain("Selector Healing", summary);
     }
 
+    [Fact]
+    public void WriteReportOverwritesAtomicallyAndLeavesNoTempFile()
+    {
+        var tempDir = CreateTempDirectory();
+        var writer = new ArtifactWriter(tempDir);
+        var runDir = Path.Combine(tempDir, "atomic1");
+
+        // First a long report, then overwrite with a short one: an in-place write
+        // could leave a valid-JSON-but-stale tail; an atomic swap fully replaces it.
+        writer.WriteReport(new RunArtifact
+        {
+            RunId = "atomic1",
+            GoalDescription = new string('x', 5000),
+            TargetWindow = "Sample"
+        });
+        writer.WriteReport(new RunArtifact
+        {
+            RunId = "atomic1",
+            GoalDescription = "short",
+            TargetWindow = "Sample"
+        });
+
+        var reportPath = Path.Combine(runDir, "report.json");
+        var json = File.ReadAllText(reportPath);
+
+        // Fully replaced — no leftover from the longer previous content.
+        Assert.DoesNotContain("xxxxx", json);
+        // Still valid JSON after the overwrite.
+        using var _ = JsonDocument.Parse(json);
+        // No leftover sidecar temp file beside the artifact.
+        Assert.Empty(Directory.GetFiles(runDir, "*.tmp"));
+    }
+
+    [Fact]
+    public void WriteReportFirstWriteCreatesFileAndLeavesNoTempFile()
+    {
+        var tempDir = CreateTempDirectory();
+        var writer = new ArtifactWriter(tempDir);
+        var runDir = Path.Combine(tempDir, "first-write");
+
+        // Target does not exist yet -> exercises the File.Move branch (not File.Replace).
+        writer.WriteReport(new RunArtifact
+        {
+            RunId = "first-write",
+            GoalDescription = "first",
+            TargetWindow = "Sample"
+        });
+
+        var reportPath = Path.Combine(runDir, "report.json");
+        Assert.True(File.Exists(reportPath));
+        using var _ = JsonDocument.Parse(File.ReadAllText(reportPath));
+        Assert.Empty(Directory.GetFiles(runDir, "*.tmp"));
+    }
+
+    [Fact]
+    public void SaveUiTreeSnapshotRedactsValueFromIsPasswordFlagEvenWithNonSensitiveId()
+    {
+        var tempDir = CreateTempDirectory();
+        var writer = new ArtifactWriter(tempDir, new SecretRedactor());
+        // Non-sensitive identifier ("pin") but IsPassword=true: redaction must key off the
+        // flag, end-to-end through the atomic write, so the secret never lands on disk.
+        var snapshot = new UiSnapshot(
+            "Sample Window",
+            [
+                new UiElement
+                {
+                    AutomationId = "pin",
+                    Name = "PIN",
+                    ControlType = "Edit",
+                    Value = "907411",
+                    IsPassword = true,
+                    IsEnabled = true
+                }
+            ]);
+
+        var path = writer.SaveUiTreeSnapshot("pwd-flag", 1, snapshot);
+
+        var json = File.ReadAllText(path);
+        Assert.Contains("[REDACTED]", json);
+        Assert.DoesNotContain("907411", json);
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), "desktop-ai-test-agent-artifacts-" + Guid.NewGuid().ToString("N"));

@@ -67,6 +67,14 @@ public class RunStep
     public string? ScreenshotPath { get; set; }
     public string? UiTreePath { get; set; }
 
+    /// <summary>P3-B1: perceptual hash (dHash, 64-bit, 16-hex) of this step's screenshot —
+    /// lets analytics detect visual regressions / state changes without keeping the image.</summary>
+    public string? ScreenshotDHash { get; set; }
+
+    /// <summary>P3-B1: Hamming distance between this step's dHash and the previous screenshotted
+    /// step's (0 = visually identical frame, higher = more change). Null on the first screenshot.</summary>
+    public int? ScreenshotDiffFromPrevious { get; set; }
+
     /// <summary>Annotated screenshot with numbered element boxes (V3 Tier-2, `full` evidence).</summary>
     public string? OverlayPath { get; set; }
 

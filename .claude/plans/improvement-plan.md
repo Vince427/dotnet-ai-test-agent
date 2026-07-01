@@ -263,7 +263,17 @@ no runtime call). **Adopting `SkippableFact` would be a regression in elegance �
 
 ### Lot B — quality signals (build on existing analytics; B3 depends on B2)
 
-#### P3-B1 — Perceptual screenshot diff (dHash 64-bit + Hamming)
+#### P3-B1 — Perceptual screenshot diff (dHash 64-bit + Hamming) — ✅ DONE 2026-07-01
+**Delivered.** `src/UIAutomation/ScreenshotDiffService.cs` (pure, stateless: 9×8 grayscale
+Rec.709 → 64-bit dHash, `HammingDistance`, `Classify` bands 0–4 same / 5–10 minor / 11+
+different). `RunStep` carries `ScreenshotDHash` (16-hex) + `ScreenshotDiffFromPrevious`
+(Hamming vs the previous screenshotted step); `RunOrchestrator` computes them best-effort
+after each capture (a hash failure never loses the run); `summary.md` surfaces `Δvis:N(band)`
+and `report.json` carries the raw fields. Tests: `ScreenshotDiffServiceTests` — full suite
+372 pass / 0 fail / 3 skipped. *Deferred within B1:* deeper `--analytics` aggregation of
+visual drift (the fields are present for it to consume).
+
+<!-- original spec -->
 **RIG-TV ref.** `ScreenshotDiffService.cs` — resize 9×8 grayscale (Rec.709 luminance),
 64-bit difference hash, Hamming distance; documented thresholds (0–4 identical, 11–20
 different scene); optional crop region to ignore noise.

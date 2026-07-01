@@ -325,6 +325,27 @@ public sealed class RunOrchestrator(
                     var screenshotPath = artifactWriter.SaveScreenshot(runArtifact.RunId, step, screenshotBytes);
                     runStep.ScreenshotPath = screenshotPath;
 
+                    // P3-B1: perceptual dHash of this frame + Hamming distance to the previous
+                    // screenshotted step, so analytics can flag visual regressions / detect a
+                    // stuck (unchanged) UI without storing or diffing the image itself. Best-effort
+                    // — a hashing failure must never lose the run.
+                    try
+                    {
+                        var dhash = UIAutomation.ScreenshotDiffService.ComputeDHash(screenshotBytes);
+                        runStep.ScreenshotDHash = dhash.ToString("x16");
+                        string? prev = null;
+                        for (var i = runArtifact.Steps.Count - 1; i >= 0; i--)
+                        {
+                            if (runArtifact.Steps[i].ScreenshotDHash != null) { prev = runArtifact.Steps[i].ScreenshotDHash; break; }
+                        }
+                        if (prev != null && ulong.TryParse(prev, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var prevHash))
+                            runStep.ScreenshotDiffFromPrevious = UIAutomation.ScreenshotDiffService.HammingDistance(prevHash, dhash);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Warning($"dHash failed: {ex.Message}");
+                    }
+
                     // V3 Tier-2: at full evidence, also emit the numbered-box overlay + its index
                     // (the no-key artifact a VLM later consumes to disambiguate). Built on top of
                     // the already-masked bytes so secrets stay masked under the annotations.

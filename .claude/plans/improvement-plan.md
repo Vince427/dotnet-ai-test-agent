@@ -285,7 +285,18 @@ Feed it into `--analytics`.
 **Acceptance.** Two runs of the same flow → near-zero Hamming on matching steps; an induced
 UI change → distance above threshold; unit tests on known image pairs.
 
-#### P3-B2 — Runtime retry-once → `FLAKY` verdict
+#### P3-B2 — Runtime retry-once → `FLAKY` verdict — ✅ DONE 2026-07-01
+**Delivered.** Opt-in `--retry-once` (`RunnerOptions.RetryOnce`, default off → deterministic/
+replay runs stay 1:1). `RunOrchestrator.RunAsync` now wraps a `RunAttemptAsync`: on a genuine
+run failure (exit 1/3) it re-runs once; if the retry passes, the run is re-stamped `Flaky`
+(`RunArtifact.Result="Flaky"`, `Attempts=2`) and returns **exit 0** (a recovered flake doesn't
+break CI — user decision 2026-07-01); a hard second failure keeps `Failed` + its exit code. The
+first failed attempt's artifact stays in its own run dir as evidence. The retry re-drives from
+the app's CURRENT state (best-effort, documented). Tests: `RunOrchestratorTests` fail→pass=Flaky/0,
+both-fail=Failed/3, no-flag=no-recovery. Full suite 375 pass / 0 fail / 3 skipped. Contract:
+additive (new opt-in flag + new `Flaky` Result + `Attempts`); default behavior byte-identical.
+
+<!-- original spec -->
 **RIG-TV ref.** `LoopRun.cs` — first FAIL is retried once; 2nd PASS ⇒ `FLAKY`, 2nd FAIL ⇒
 `FAIL`; verdict persisted.
 **Problem.** Today flaky is only inferred *post-hoc* across historical runs in

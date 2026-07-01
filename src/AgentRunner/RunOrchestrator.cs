@@ -34,6 +34,31 @@ public sealed class RunOrchestrator(
 
     public async Task<int> RunAsync(RunnerOptions options)
     {
+        var exitCode = await RunAttemptAsync(options);
+
+        // P3-B2: opt-in retry-once. A genuine run failure (exit 1/3) is re-run ONCE; if the retry
+        // passes, the run was FLAKY (transient) — recorded as such and treated as a pass (exit 0),
+        // so a recovered flake doesn't break CI. Off by default, so deterministic/replay runs stay
+        // 1:1. Note: the retry re-drives from the app's CURRENT state (best-effort — cleanest for
+        // idempotent flows or when the failure left the app recoverable).
+        if (options.RetryOnce && (exitCode == 1 || exitCode == 3))
+        {
+            var firstResult = LastArtifact?.Result;
+            var retryExit = await RunAttemptAsync(options);
+            if (retryExit == 0)
+            {
+                MarkLastArtifactFlaky(firstResult);
+                return 0;
+            }
+            return retryExit;
+        }
+
+        return exitCode;
+    }
+
+    /// <summary>One run attempt: the observe→decide→act→score loop wrapped in its own telemetry span.</summary>
+    private async Task<int> RunAttemptAsync(RunnerOptions options)
+    {
         // Root span for the whole run. Null when nobody is listening (telemetry off).
         using var runActivity = RunnerTelemetry.Source.StartActivity("agentloop.run", ActivityKind.Internal);
         var runStopwatch = Stopwatch.StartNew();
@@ -56,6 +81,20 @@ public sealed class RunOrchestrator(
             if (exitCode != 0)
                 runActivity?.SetStatus(ActivityStatusCode.Error, LastArtifact?.ErrorMessage);
         }
+    }
+
+    /// <summary>P3-B2: re-stamp the (passing) retry attempt's artifact as <c>Flaky</c> and persist it,
+    /// so the recovered-on-retry verdict is visible in report.json / summary.md. The first (failed)
+    /// attempt's artifact is left intact in its own run dir as evidence.</summary>
+    private void MarkLastArtifactFlaky(string? firstResult)
+    {
+        if (LastArtifact == null)
+            return;
+        LastArtifact.Result = "Flaky";
+        LastArtifact.Attempts = 2;
+        var writer = new ArtifactWriter(_config.WorkspaceRoot, new SecretRedactor());
+        writer.WriteReport(LastArtifact);
+        writer.WriteSummary(LastArtifact);
     }
 
     private async Task<int> RunCoreAsync(RunnerOptions options, Activity? runActivity)

@@ -235,6 +235,81 @@ public sealed class RunOrchestratorTests : IDisposable
         Assert.Equal("assertion_failed", orchestrator.LastArtifact!.Steps[0].FailureCode);
     }
 
+    [Fact]
+    public async Task RetryOnce_FailThenPass_MarksFlakyAndReturns0()
+    {
+        // FlipDriver fails the first attempt (no success text) and passes the second.
+        var driver = new FlipDriver();
+        var decider = new ScriptedDecider { Repeat = new AgentAction { ActionType = "Done" } };
+        var orchestrator = NewOrchestrator(driver, decider);
+
+        var goal = new AgentGoal
+        {
+            Description = "log in",
+            SuccessCondition = "Login successful",
+            MaxSteps = 2,
+            Identifier = "login"
+        };
+        var options = OptionsFor(goal);
+        options.RetryOnce = true;
+
+        var exit = await orchestrator.RunAsync(options);
+
+        Assert.Equal(0, exit); // recovered flake counts as pass
+        Assert.Equal("Flaky", orchestrator.LastArtifact!.Result);
+        Assert.Equal(2, orchestrator.LastArtifact!.Attempts);
+    }
+
+    [Fact]
+    public async Task RetryOnce_BothAttemptsFail_StaysFailedExit3()
+    {
+        // Success text never appears -> both attempts fail -> not flaky.
+        var driver = new FakeDriver
+        {
+            Snapshot = new UiSnapshot("Fake Window", [new UiElement { Name = "ok" }]) // no status text
+        };
+        var decider = new ScriptedDecider { Repeat = new AgentAction { ActionType = "Done" } };
+        var orchestrator = NewOrchestrator(driver, decider);
+
+        var goal = new AgentGoal
+        {
+            Description = "log in",
+            SuccessCondition = "Login successful",
+            MaxSteps = 1,
+            Identifier = "login"
+        };
+        var options = OptionsFor(goal);
+        options.RetryOnce = true;
+
+        var exit = await orchestrator.RunAsync(options);
+
+        Assert.Equal(3, exit);
+        Assert.Equal("Failed", orchestrator.LastArtifact!.Result);
+    }
+
+    [Fact]
+    public async Task NoRetryFlag_FailFirst_DoesNotRecover()
+    {
+        // Same flip driver, but retry is OFF -> the first-attempt failure stands.
+        var driver = new FlipDriver();
+        var decider = new ScriptedDecider { Repeat = new AgentAction { ActionType = "Done" } };
+        var orchestrator = NewOrchestrator(driver, decider);
+
+        var goal = new AgentGoal
+        {
+            Description = "log in",
+            SuccessCondition = "Login successful",
+            MaxSteps = 2,
+            Identifier = "login"
+        };
+
+        var exit = await orchestrator.RunAsync(OptionsFor(goal)); // RetryOnce defaults false
+
+        Assert.Equal(3, exit);
+        Assert.Equal("Failed", orchestrator.LastArtifact!.Result);
+        Assert.Equal(1, orchestrator.LastArtifact!.Attempts);
+    }
+
     // --- Test doubles ---
 
     private sealed class FakeDriver : IAutomationDriver
@@ -251,6 +326,26 @@ public sealed class RunOrchestratorTests : IDisposable
         public void Click(string automationId) => Clicked.Add(automationId);
         public string ReadText(string automationId) => ReadTextResult;
         public List<UiElement> GetAllElements() => Snapshot.Elements;
+        public byte[] CaptureScreenshot() => [];
+        public void Scroll(string automationId, string direction) { }
+        public void DoubleClick(string automationId) { }
+    }
+
+    /// <summary>Fails the first run attempt (no success text) then passes the second, so
+    /// <c>--retry-once</c> observes a fail→pass = FLAKY. Counts attempts via AttachToWindow.</summary>
+    private sealed class FlipDriver : IAutomationDriver
+    {
+        private int _attempt;
+
+        public bool AttachToWindow(string windowTitle, TimeSpan timeout) { _attempt++; return true; }
+        public UiSnapshot Capture() => new(
+            "Fake Window",
+            [new UiElement { Name = "ok" }],
+            statusText: _attempt >= 2 ? "Login successful" : "working");
+        public void EnterText(string automationId, string value) { }
+        public void Click(string automationId) { }
+        public string ReadText(string automationId) => "";
+        public List<UiElement> GetAllElements() => Capture().Elements;
         public byte[] CaptureScreenshot() => [];
         public void Scroll(string automationId, string direction) { }
         public void DoubleClick(string automationId) { }

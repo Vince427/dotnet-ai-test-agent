@@ -22,8 +22,12 @@ public class RunArtifact
     public string? TargetWindow { get; set; }
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? EndedAt { get; set; }
-    public string Result { get; set; } = "Running"; // Running, Succeeded, Failed, Aborted, LoopDetected
+    public string Result { get; set; } = "Running"; // Running, Succeeded, Failed, Aborted, LoopDetected, Flaky
     public int FinalScore { get; set; }
+
+    /// <summary>P3-B2: number of attempts this run took. 1 normally; 2 when <c>--retry-once</c> re-ran
+    /// a failed run. A <c>Flaky</c> result always has Attempts=2 (failed then passed on retry).</summary>
+    public int Attempts { get; set; } = 1;
     public string? ErrorMessage { get; set; }
 
     /// <summary>

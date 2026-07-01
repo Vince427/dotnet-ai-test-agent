@@ -307,7 +307,18 @@ field in `report.json`. Keep stochastic-runs-never-asserted-equal rule intact.
 **Acceptance.** A deterministically-injected transient failure yields `FLAKY`; a hard
 failure stays `FAIL`; the verdict field is in the artifact and surfaced by analytics.
 
-#### P3-B3 — `baseline.json` triage catalog (knownFlakes / dataDrift / preservedBugs)
+#### P3-B3 — `baseline.json` triage catalog (knownFlakes / dataDrift / preservedBugs) — ✅ DONE 2026-07-01
+**Delivered.** `src/AgentRunner/TriageBaseline.cs` (versioned 3-section catalog + tolerant
+`Load` — comments/trailing-commas/unknown fields OK, null when absent + `Classify` →
+knownFlake / dataDrift / preservedBug / newRegression). `RunAnalytics.Compute` takes an
+optional baseline (additive; default null → output unchanged), classifies each failing test,
+and reports `NewRegressionCount` + `BaselineApplied`; `TestAnalytics.Classification` carries
+the per-test verdict. CLI: `--analytics --baseline <path>` prints "NEW regressions=N (known
+failures filtered out)" and a per-test classification column. Template: `tests/baseline.example.json`.
+Tests: `TriageBaselineTests` (bucket mapping, new-regression counting, no-baseline unchanged,
+missing-path null, tolerant JSON). Full suite 380 pass / 0 fail / 3 skipped; net48 compiles.
+
+<!-- original spec -->
 **RIG-TV ref.** `loop/baseline.json` — versioned 3-section catalog consumed to filter known
 failures vs real regressions.
 **Problem.** `--analytics` + `LoopDetector` detect flakes but have no curated baseline to

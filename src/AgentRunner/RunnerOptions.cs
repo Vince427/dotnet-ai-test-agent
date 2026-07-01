@@ -37,6 +37,10 @@ public sealed class RunnerOptions
     /// recovered transient flake does not break CI. Off by default to keep deterministic/replay runs 1:1.</summary>
     public bool RetryOnce { get; set; }
 
+    /// <summary>P3-B3: path to a triage baseline (`--baseline &lt;path&gt;`) consumed by `--analytics`
+    /// to separate known failures (flakes / data-drift / preserved bugs) from NEW regressions.</summary>
+    public string? BaselinePath { get; set; }
+
     /// <summary>When set, run a key-free vision-bridge loop (`--vision-bridge &lt;dir&gt;`): each step
     /// writes an annotated screenshot + index to this dir for an external VLM (agent) to decide. No `.env`.</summary>
     public string? VisionBridgeDir { get; set; }
@@ -117,6 +121,7 @@ public sealed class RunnerOptions
         var watch = false;
         var vision = false;
         var retryOnce = false;
+        string? baselinePath = null;
         string? visionBridgeDir = null;
         string? replaySessionPath = null;
         var mcpOnly = false;
@@ -166,6 +171,8 @@ public sealed class RunnerOptions
                 vision = true;
             else if (arg == "--retry-once")
                 retryOnce = true;
+            else if (arg == "--baseline")
+                baselinePath = ReadValue(args, ref i, "--baseline");
             else if (arg == "--vision-bridge")
                 visionBridgeDir = ReadValue(args, ref i, "--vision-bridge");
             else if (arg == "--replay")
@@ -397,6 +404,7 @@ public sealed class RunnerOptions
             BridgeIoDir = bridgeIoDir,
             Vision = vision,
             RetryOnce = retryOnce,
+            BaselinePath = baselinePath,
             VisionBridgeDir = visionBridgeDir,
             ReplaySessionPath = replaySessionPath,
             McpOnly = mcpOnly,

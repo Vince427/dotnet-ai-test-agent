@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "//": "P3-B3 triage catalog. Copy to baseline.json and pass via --analytics --baseline <path>. Separates KNOWN failures from NEW regressions so analytics surfaces only what needs attention. Matched by test id (case-insensitive). reason/rate are documentation only.",
+  "knownFlakes": [
+    { "testId": "LOGIN-UIA-01", "reason": "occasional UIA Invoke race on slow CI agents", "rate": 0.05 }
+  ],
+  "dataDriftScenarios": [
+    { "testId": "REPORT-EXPORT-03", "reason": "fixture dataset rotated monthly; expected totals drift, not a code bug" }
+  ],
+  "preservedBugs": [
+    { "testId": "SETTINGS-SAVE-07", "reason": "known tracked defect ISSUE-142 (accepted until v1.1)" }
+  ]
+}

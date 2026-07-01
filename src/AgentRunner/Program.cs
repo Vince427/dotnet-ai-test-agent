@@ -369,7 +369,9 @@ internal static class Program
     private static int Analytics(WorkflowConfig config, RunnerOptions options)
     {
         var runs = RunArtifactLoader.LoadFromDirectory(config.WorkspaceRoot);
-        var result = RunAnalytics.Compute(runs);
+        // P3-B3: optional triage baseline to split known failures from NEW regressions.
+        var baseline = TriageBaseline.Load(options.BaselinePath);
+        var result = RunAnalytics.Compute(runs, baseline);
 
         if (options.OutputFormat == CommandOutputFormat.Json)
         {
@@ -378,6 +380,8 @@ internal static class Program
         }
 
         Console.WriteLine($"Run analytics: totalRuns={result.TotalRuns} tests={result.Tests.Count} flaky={result.FlakyTestCount} selectorDrift={result.SelectorDriftCount}");
+        if (result.BaselineApplied)
+            Console.WriteLine($"Triage (baseline applied): NEW regressions={result.NewRegressionCount} (known failures filtered out).");
         if (result.TotalRuns == 0)
         {
             Console.WriteLine("No runs found under " + config.WorkspaceRoot + ". Run a test (artifacts land in runs/) then re-run --analytics.");
@@ -390,7 +394,7 @@ internal static class Program
         Console.WriteLine();
         Console.WriteLine("Per-test (id / runs / passed / failed / flaky):");
         foreach (var t in result.Tests)
-            Console.WriteLine($"  {t.TestId}\t{t.Runs}\t{t.Passed}\t{t.Failed}\t{(t.Flaky ? "FLAKY" : "-")}");
+            Console.WriteLine($"  {t.TestId}\t{t.Runs}\t{t.Passed}\t{t.Failed}\t{(t.Flaky ? "FLAKY" : "-")}{(t.Classification != null ? "\t" + t.Classification : "")}");
 
         if (result.MostFailingTests.Count > 0)
         {

@@ -20,7 +20,7 @@ public static class RunAnalytics
         string.Equals(result, "Passed", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(result, "Succeeded", StringComparison.OrdinalIgnoreCase);
 
-    public static RunAnalyticsResult Compute(IReadOnlyList<RunArtifact> runs)
+    public static RunAnalyticsResult Compute(IReadOnlyList<RunArtifact> runs, TriageBaseline? baseline = null)
     {
         var result = new RunAnalyticsResult();
         if (runs == null || runs.Count == 0)
@@ -58,6 +58,20 @@ public static class RunAnalytics
         }
 
         result.FlakyTestCount = result.Tests.Count(t => t.Flaky);
+
+        // --- P3-B3: triage failing tests against the baseline catalog (when supplied) ---
+        // A test with any failing run is classified known (flake / data-drift / preserved-bug)
+        // or a NEW regression — the count that actually needs attention.
+        if (baseline != null)
+        {
+            result.BaselineApplied = true;
+            foreach (var t in result.Tests)
+            {
+                if (t.Failed > 0)
+                    t.Classification = baseline.Classify(t.TestId);
+            }
+            result.NewRegressionCount = result.Tests.Count(t => t.Classification == "newRegression");
+        }
 
         // Most-failing tests: most failures first, then lowest pass rate, then id for determinism.
         result.MostFailingTests = result.Tests
@@ -136,6 +150,12 @@ public sealed class RunAnalyticsResult
     public int TotalRuns { get; set; }
     public int FlakyTestCount { get; set; }
 
+    /// <summary>P3-B3: true when a triage baseline was applied (else classification is absent).</summary>
+    public bool BaselineApplied { get; set; }
+
+    /// <summary>P3-B3: failing tests listed nowhere in the baseline — the regressions that matter.</summary>
+    public int NewRegressionCount { get; set; }
+
     /// <summary>Steps carrying a healing suggestion across all runs (the selector-drift total).</summary>
     public int SelectorDriftCount { get; set; }
 
@@ -159,6 +179,10 @@ public sealed class TestAnalytics
     public int Passed { get; set; }
     public int Failed { get; set; }
     public bool Flaky { get; set; }
+
+    /// <summary>P3-B3: baseline triage of a failing test — knownFlake / dataDrift / preservedBug /
+    /// newRegression. Null when the test isn't failing or no baseline was applied.</summary>
+    public string? Classification { get; set; }
 }
 
 public sealed class SelectorDriftGroup

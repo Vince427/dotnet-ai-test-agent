@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Push-Location $repoRoot
 try {
+    . (Join-Path $PSScriptRoot 'process-tree.ps1')  # Stop-ProcessTree (clean teardown incl. children)
     $ensureFresh = Join-Path $PSScriptRoot 'ensure-fresh.ps1'
     $agentExe = "src\AgentRunner\bin\Debug\net8.0-windows\AgentRunner.exe"
 
@@ -48,8 +49,8 @@ try {
         }
         finally {
             if ($appProcess -and -not $appProcess.HasExited) {
-                Write-Host "Killing $($target.Name)..."
-                Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
+                Write-Host "Killing $($target.Name) (process tree)..."
+                Stop-ProcessTree -Id $appProcess.Id  # kill the app AND any children it spawned
             }
         }
     }

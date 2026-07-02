@@ -329,14 +329,24 @@ separate *known* flakes / data-drift from *new* regressions.
 **Acceptance.** A run whose only failures are listed in `baseline.json` reports "no new
 regressions"; an unlisted failure is flagged as new.
 
-### Deferred (Lot C — not in this scope, recorded for later)
+### Lot C (ops hardening)
 
-- **Clean process-tree teardown** (`ProcessTreeControl`: Toolhelp32 + Nt*Process,
-  `KillDescendants`) — kill orphaned child processes of a driven target app.
-- **Robust log polling** (`Wait-MarkerCountAbove`: baseline the marker count before the
-  action) — for the PS harness / dashboard live logs.
-- **Parallel suite execution + `AudienceLock`** (named mutex + per-resource semaphore) —
-  only if/when parallel batch execution is actually introduced.
+- **C1 — Clean process-tree teardown — ✅ DONE 2026-07-02.** `scripts/process-tree.ps1`
+  (`Stop-ProcessTree`): recursive CIM walk (`Win32_Process` by `ParentProcessId`), depth-first,
+  killing descendants before the parent — the RIG-TV `ProcessTreeControl` idea done idiomatically
+  for PS 5.1 (no native exe → no stderr-wrapping surprise). Wired into `run-all.ps1` teardown
+  (replaced `Stop-Process -Id`, which orphaned children). Verified: a `cmd`→`ping` 2-level tree is
+  fully killed (parent + child both gone); empty-children path is a no-op.
+- **C2 — Robust log polling — ✅ DONE 2026-07-02.** `scripts/log-wait.ps1` (`Get-MarkerCount` +
+  `Wait-MarkerCountAbove`): baseline the marker count BEFORE the action, poll until it RISES above
+  baseline (bounded timeout + poll interval) — immune to a marker left by a previous run in an
+  append log. Verified: 2 pre-existing markers ignored, returns true only on a fresh marker, times
+  out cleanly when absent. Delivered as a **utility** (no default caller — this repo prefers exit
+  codes + `report.json` as run signals; available for log-tailing consumers like the dashboard).
+- **C3 — Parallel suite execution + `AudienceLock`** (named mutex + per-resource semaphore) —
+  **DEFERRED by decision (2026-07-02):** a large architectural build (desktop isolation,
+  focus-stealing avoidance) that only pays off at scale; `AudienceLock` has no consumer until
+  parallelism exists. Revisit only when suite wall-clock becomes a real problem.
 
 ### Not adopted (out of scope or already covered)
 

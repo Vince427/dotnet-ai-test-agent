@@ -70,6 +70,21 @@ public sealed class RunnerOptionsTests
     }
 
     [Fact]
+    public void ParseSupportsRetryOnceFlag()
+    {
+        Assert.True(RunnerOptions.Parse(["--retry-once"], new WorkflowConfig()).RetryOnce);
+        Assert.False(RunnerOptions.Parse([], new WorkflowConfig()).RetryOnce); // off by default
+    }
+
+    [Fact]
+    public void ParseSupportsBaselinePath()
+    {
+        var o = RunnerOptions.Parse(["--analytics", "--baseline", "path/to/baseline.json"], new WorkflowConfig());
+        Assert.Equal("path/to/baseline.json", o.BaselinePath);
+        Assert.Null(RunnerOptions.Parse([], new WorkflowConfig()).BaselinePath); // unset by default
+    }
+
+    [Fact]
     public void ParseShowPrompt_DoesNotRunSinglePlanSelection()
     {
         // --show-prompt resolves its own test across plans, so a lone --test-id must NOT throw

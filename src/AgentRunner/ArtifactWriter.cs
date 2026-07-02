@@ -120,6 +120,8 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         }
         if (!string.IsNullOrEmpty(artifact.ErrorMessage))
             sb.AppendLine($"- **Error**: {artifact.ErrorMessage}");
+        if (!string.IsNullOrEmpty(artifact.RetryNote))
+            sb.AppendLine($"- **Retry** (attempts: {artifact.Attempts}): {artifact.RetryNote}");
         sb.AppendLine();
 
         sb.AppendLine("## Steps");
@@ -261,6 +263,11 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
             values.Add("overlay");
         if (step.HealingSuggestion != null)
             values.Add($"heal→{step.HealingSuggestion.NewTarget}");
+        if (step.ScreenshotDiffFromPrevious.HasValue)
+        {
+            var d = step.ScreenshotDiffFromPrevious.Value;
+            values.Add($"Δvis:{d}({UIAutomation.ScreenshotDiffService.Classify(d)})");
+        }
 
         return values.Count == 0 ? "-" : string.Join(", ", values);
     }

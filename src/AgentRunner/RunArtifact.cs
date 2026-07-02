@@ -22,8 +22,17 @@ public class RunArtifact
     public string? TargetWindow { get; set; }
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? EndedAt { get; set; }
-    public string Result { get; set; } = "Running"; // Running, Succeeded, Failed, Aborted, LoopDetected
+    public string Result { get; set; } = "Running"; // Running, Succeeded, Failed, Aborted, LoopDetected, Flaky
     public int FinalScore { get; set; }
+
+    /// <summary>P3-B2: number of attempts this run took. 1 normally; 2 when <c>--retry-once</c> re-ran
+    /// a failed run. A <c>Flaky</c> result always has Attempts=2 (failed then passed on retry).</summary>
+    public int Attempts { get; set; } = 1;
+
+    /// <summary>P3-B2: caveat set when <c>--retry-once</c> re-ran this run — the retry re-drives from
+    /// the app's CURRENT state, so a non-idempotent action from the failed attempt may have replayed.
+    /// Null when no retry happened.</summary>
+    public string? RetryNote { get; set; }
     public string? ErrorMessage { get; set; }
 
     /// <summary>
@@ -66,6 +75,14 @@ public class RunStep
     public int CumulativeScore { get; set; }
     public string? ScreenshotPath { get; set; }
     public string? UiTreePath { get; set; }
+
+    /// <summary>P3-B1: perceptual hash (dHash, 64-bit, 16-hex) of this step's screenshot —
+    /// lets analytics detect visual regressions / state changes without keeping the image.</summary>
+    public string? ScreenshotDHash { get; set; }
+
+    /// <summary>P3-B1: Hamming distance between this step's dHash and the previous screenshotted
+    /// step's (0 = visually identical frame, higher = more change). Null on the first screenshot.</summary>
+    public int? ScreenshotDiffFromPrevious { get; set; }
 
     /// <summary>Annotated screenshot with numbered element boxes (V3 Tier-2, `full` evidence).</summary>
     public string? OverlayPath { get; set; }

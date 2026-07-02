@@ -263,7 +263,17 @@ no runtime call). **Adopting `SkippableFact` would be a regression in elegance �
 
 ### Lot B — quality signals (build on existing analytics; B3 depends on B2)
 
-#### P3-B1 — Perceptual screenshot diff (dHash 64-bit + Hamming)
+#### P3-B1 — Perceptual screenshot diff (dHash 64-bit + Hamming) — ✅ DONE 2026-07-01
+**Delivered.** `src/UIAutomation/ScreenshotDiffService.cs` (pure, stateless: 9×8 grayscale
+Rec.709 → 64-bit dHash, `HammingDistance`, `Classify` bands 0–4 same / 5–10 minor / 11+
+different). `RunStep` carries `ScreenshotDHash` (16-hex) + `ScreenshotDiffFromPrevious`
+(Hamming vs the previous screenshotted step); `RunOrchestrator` computes them best-effort
+after each capture (a hash failure never loses the run); `summary.md` surfaces `Δvis:N(band)`
+and `report.json` carries the raw fields. Tests: `ScreenshotDiffServiceTests` — full suite
+372 pass / 0 fail / 3 skipped. *Deferred within B1:* deeper `--analytics` aggregation of
+visual drift (the fields are present for it to consume).
+
+<!-- original spec -->
 **RIG-TV ref.** `ScreenshotDiffService.cs` — resize 9×8 grayscale (Rec.709 luminance),
 64-bit difference hash, Hamming distance; documented thresholds (0–4 identical, 11–20
 different scene); optional crop region to ignore noise.
@@ -275,7 +285,18 @@ Feed it into `--analytics`.
 **Acceptance.** Two runs of the same flow → near-zero Hamming on matching steps; an induced
 UI change → distance above threshold; unit tests on known image pairs.
 
-#### P3-B2 — Runtime retry-once → `FLAKY` verdict
+#### P3-B2 — Runtime retry-once → `FLAKY` verdict — ✅ DONE 2026-07-01
+**Delivered.** Opt-in `--retry-once` (`RunnerOptions.RetryOnce`, default off → deterministic/
+replay runs stay 1:1). `RunOrchestrator.RunAsync` now wraps a `RunAttemptAsync`: on a genuine
+run failure (exit 1/3) it re-runs once; if the retry passes, the run is re-stamped `Flaky`
+(`RunArtifact.Result="Flaky"`, `Attempts=2`) and returns **exit 0** (a recovered flake doesn't
+break CI — user decision 2026-07-01); a hard second failure keeps `Failed` + its exit code. The
+first failed attempt's artifact stays in its own run dir as evidence. The retry re-drives from
+the app's CURRENT state (best-effort, documented). Tests: `RunOrchestratorTests` fail→pass=Flaky/0,
+both-fail=Failed/3, no-flag=no-recovery. Full suite 375 pass / 0 fail / 3 skipped. Contract:
+additive (new opt-in flag + new `Flaky` Result + `Attempts`); default behavior byte-identical.
+
+<!-- original spec -->
 **RIG-TV ref.** `LoopRun.cs` — first FAIL is retried once; 2nd PASS ⇒ `FLAKY`, 2nd FAIL ⇒
 `FAIL`; verdict persisted.
 **Problem.** Today flaky is only inferred *post-hoc* across historical runs in
@@ -286,7 +307,18 @@ field in `report.json`. Keep stochastic-runs-never-asserted-equal rule intact.
 **Acceptance.** A deterministically-injected transient failure yields `FLAKY`; a hard
 failure stays `FAIL`; the verdict field is in the artifact and surfaced by analytics.
 
-#### P3-B3 — `baseline.json` triage catalog (knownFlakes / dataDrift / preservedBugs)
+#### P3-B3 — `baseline.json` triage catalog (knownFlakes / dataDrift / preservedBugs) — ✅ DONE 2026-07-01
+**Delivered.** `src/AgentRunner/TriageBaseline.cs` (versioned 3-section catalog + tolerant
+`Load` — comments/trailing-commas/unknown fields OK, null when absent + `Classify` →
+knownFlake / dataDrift / preservedBug / newRegression). `RunAnalytics.Compute` takes an
+optional baseline (additive; default null → output unchanged), classifies each failing test,
+and reports `NewRegressionCount` + `BaselineApplied`; `TestAnalytics.Classification` carries
+the per-test verdict. CLI: `--analytics --baseline <path>` prints "NEW regressions=N (known
+failures filtered out)" and a per-test classification column. Template: `tests/baseline.example.json`.
+Tests: `TriageBaselineTests` (bucket mapping, new-regression counting, no-baseline unchanged,
+missing-path null, tolerant JSON). Full suite 380 pass / 0 fail / 3 skipped; net48 compiles.
+
+<!-- original spec -->
 **RIG-TV ref.** `loop/baseline.json` — versioned 3-section catalog consumed to filter known
 failures vs real regressions.
 **Problem.** `--analytics` + `LoopDetector` detect flakes but have no curated baseline to
@@ -319,6 +351,33 @@ regressions"; an unlisted failure is flagged as new.
 |---|---|---|
 | **A** | P3-A1, P3-A2, P3-A3 | Independent, low-risk hardening; no contract impact. |
 | **B** | P3-B1, then P3-B2, then P3-B3 | Quality signals; B3 needs B2's verdict field; all additive to analytics. |
+
+### P3 Lot B — QA round (2026-07-01, before GitHub push)
+
+A 4-judge adversarial panel (faithful 88 / guardian 84 / corrector 72 / real-effect 67) reviewed
+the Lot B diff. Guardian confirmed the dHash leaks nothing (64 bits of relative gradients).
+Fixes applied and re-verified (full suite 389 pass / 0 fail / 3 skipped; net48 compiles):
+- **The key contradiction (real-effect):** `IsPassing()` didn't count `Flaky` as passing, so a
+  recovered flake (exit 0) was double-punished as failed / newRegression in analytics → `Flaky`
+  now counts as passing.
+- **B2 retry:** the gate now also retries **exit 4 (Blocked / attach failure)** — the exact
+  "app not ready on a slow CI agent" flake B2 targets (faithful). `MarkLastArtifactFlaky` →
+  `PersistRetryOutcome`: **Attempts=2 always** (retry traceable on double-fail too), `Flaky` on
+  recovery, dead `firstResult` param removed, and a **`RetryNote`** caveat (the retry re-drove from
+  the app's current state — a non-idempotent action may have replayed) is stamped + surfaced in
+  `summary.md` (guardian).
+- **B3 `TriageBaseline.Load`:** empty/invalid JSON now fails **loud and clear** (was an uncaught
+  `JsonException`); added a 1 MB size cap (corrector + guardian). The `(unknown)` no-TestId bucket
+  is excluded from classification / `NewRegressionCount` (corrector false-positive).
+- **B1 dHash:** luminance divisor corrected `1000` → `1024` (coeffs sum to 1024; comment was wrong,
+  white now maps to 255). Does not change the hash; honesty + true 0–255 range (corrector).
+- **Tests added:** transient-attach-recovery=Flaky, persistent-attach=Blocked/exit4/Attempts2,
+  Flaky-verdict-on-disk (report.json), dHash plumbing populates `RunStep`, Flaky-counts-as-passing,
+  unknown-bucket-not-a-regression, invalid-JSON-throws, `--retry-once` / `--baseline` CLI parsing.
+- **Known minor (documented, not fixed):** the terminal success frame isn't dHashed (success is
+  detected on observe before a capture step) — per-step dHash covers action steps.
+- **Reported, NOT fixed (pre-existing, out of Lot B scope):** `RunAnalytics` selector-drift dedup
+  key `oldT + "" + newT` (empty separator) can merge distinct pairs — flagged for a separate fix.
 
 ### P3 Lot A — QA round (2026-06-30, before GitHub push)
 

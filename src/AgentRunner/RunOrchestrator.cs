@@ -34,6 +34,27 @@ public sealed class RunOrchestrator(
 
     public async Task<int> RunAsync(RunnerOptions options)
     {
+        var exitCode = await RunAttemptAsync(options);
+
+        // P3-B2: opt-in retry-once. A genuine run failure (exit 1/3) OR a transient attach failure
+        // (exit 4 Blocked — the classic "app not ready yet on a slow CI agent") is re-run ONCE; if
+        // the retry passes, the run was FLAKY (transient) — recorded as such and treated as a pass
+        // (exit 0), so a recovered flake doesn't break CI. Off by default, so deterministic/replay
+        // runs stay 1:1. The retry re-drives from the app's CURRENT state (best-effort — cleanest
+        // for idempotent flows; PersistRetryOutcome records a replay caveat).
+        if (options.RetryOnce && (exitCode == 1 || exitCode == 3 || exitCode == 4))
+        {
+            var retryExit = await RunAttemptAsync(options);
+            PersistRetryOutcome(recovered: retryExit == 0);
+            return retryExit == 0 ? 0 : retryExit;
+        }
+
+        return exitCode;
+    }
+
+    /// <summary>One run attempt: the observe→decide→act→score loop wrapped in its own telemetry span.</summary>
+    private async Task<int> RunAttemptAsync(RunnerOptions options)
+    {
         // Root span for the whole run. Null when nobody is listening (telemetry off).
         using var runActivity = RunnerTelemetry.Source.StartActivity("agentloop.run", ActivityKind.Internal);
         var runStopwatch = Stopwatch.StartNew();
@@ -56,6 +77,25 @@ public sealed class RunOrchestrator(
             if (exitCode != 0)
                 runActivity?.SetStatus(ActivityStatusCode.Error, LastArtifact?.ErrorMessage);
         }
+    }
+
+    /// <summary>P3-B2: after a retry, re-stamp the second attempt's artifact with <c>Attempts=2</c>
+    /// (so the retry is ALWAYS traceable, pass or fail) and, when it recovered, <c>Result="Flaky"</c>;
+    /// then persist it. Records a replay caveat, since the retry re-drove from the app's current state
+    /// (a non-idempotent action from the failed attempt may have replayed). The first failed attempt's
+    /// artifact is left intact in its own run dir as evidence.</summary>
+    private void PersistRetryOutcome(bool recovered)
+    {
+        if (LastArtifact == null)
+            return;
+        LastArtifact.Attempts = 2;
+        if (recovered)
+            LastArtifact.Result = "Flaky";
+        LastArtifact.RetryNote = "Re-driven from the app's current state on retry; a non-idempotent " +
+            "action from the failed attempt may have replayed.";
+        var writer = new ArtifactWriter(_config.WorkspaceRoot, new SecretRedactor());
+        writer.WriteReport(LastArtifact);
+        writer.WriteSummary(LastArtifact);
     }
 
     private async Task<int> RunCoreAsync(RunnerOptions options, Activity? runActivity)
@@ -324,6 +364,27 @@ public sealed class RunOrchestrator(
                         screenshotBytes = UIAutomation.ScreenshotMasker.MaskRegions(screenshotBytes, secretRegions);
                     var screenshotPath = artifactWriter.SaveScreenshot(runArtifact.RunId, step, screenshotBytes);
                     runStep.ScreenshotPath = screenshotPath;
+
+                    // P3-B1: perceptual dHash of this frame + Hamming distance to the previous
+                    // screenshotted step, so analytics can flag visual regressions / detect a
+                    // stuck (unchanged) UI without storing or diffing the image itself. Best-effort
+                    // — a hashing failure must never lose the run.
+                    try
+                    {
+                        var dhash = UIAutomation.ScreenshotDiffService.ComputeDHash(screenshotBytes);
+                        runStep.ScreenshotDHash = dhash.ToString("x16");
+                        string? prev = null;
+                        for (var i = runArtifact.Steps.Count - 1; i >= 0; i--)
+                        {
+                            if (runArtifact.Steps[i].ScreenshotDHash != null) { prev = runArtifact.Steps[i].ScreenshotDHash; break; }
+                        }
+                        if (prev != null && ulong.TryParse(prev, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var prevHash))
+                            runStep.ScreenshotDiffFromPrevious = UIAutomation.ScreenshotDiffService.HammingDistance(prevHash, dhash);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Warning($"dHash failed: {ex.Message}");
+                    }
 
                     // V3 Tier-2: at full evidence, also emit the numbered-box overlay + its index
                     // (the no-key artifact a VLM later consumes to disambiguate). Built on top of

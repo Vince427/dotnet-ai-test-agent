@@ -32,6 +32,15 @@ public sealed class RunnerOptions
     /// <summary>Wrap the decider in the V3 Tier-2 <c>VisionActionDecider</c> (vision fallback).</summary>
     public bool Vision { get; set; }
 
+    /// <summary>P3-B2: opt-in retry-once (`--retry-once`). A genuine run failure is re-run once;
+    /// if the retry passes, the run is recorded as <c>Flaky</c> and treated as a pass (exit 0), so a
+    /// recovered transient flake does not break CI. Off by default to keep deterministic/replay runs 1:1.</summary>
+    public bool RetryOnce { get; set; }
+
+    /// <summary>P3-B3: path to a triage baseline (`--baseline &lt;path&gt;`) consumed by `--analytics`
+    /// to separate known failures (flakes / data-drift / preserved bugs) from NEW regressions.</summary>
+    public string? BaselinePath { get; set; }
+
     /// <summary>When set, run a key-free vision-bridge loop (`--vision-bridge &lt;dir&gt;`): each step
     /// writes an annotated screenshot + index to this dir for an external VLM (agent) to decide. No `.env`.</summary>
     public string? VisionBridgeDir { get; set; }
@@ -111,6 +120,8 @@ public sealed class RunnerOptions
         string? junitOutputPath = null;
         var watch = false;
         var vision = false;
+        var retryOnce = false;
+        string? baselinePath = null;
         string? visionBridgeDir = null;
         string? replaySessionPath = null;
         var mcpOnly = false;
@@ -158,6 +169,10 @@ public sealed class RunnerOptions
                 watch = true;
             else if (arg == "--vision")
                 vision = true;
+            else if (arg == "--retry-once")
+                retryOnce = true;
+            else if (arg == "--baseline")
+                baselinePath = ReadValue(args, ref i, "--baseline");
             else if (arg == "--vision-bridge")
                 visionBridgeDir = ReadValue(args, ref i, "--vision-bridge");
             else if (arg == "--replay")
@@ -388,6 +403,8 @@ public sealed class RunnerOptions
             BridgePort = bridgePort,
             BridgeIoDir = bridgeIoDir,
             Vision = vision,
+            RetryOnce = retryOnce,
+            BaselinePath = baselinePath,
             VisionBridgeDir = visionBridgeDir,
             ReplaySessionPath = replaySessionPath,
             McpOnly = mcpOnly,

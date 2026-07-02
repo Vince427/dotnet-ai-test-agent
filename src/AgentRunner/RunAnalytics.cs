@@ -14,13 +14,19 @@ namespace DesktopAiTestAgent.AgentRunner;
 /// </summary>
 public static class RunAnalytics
 {
+    /// <summary>Bucket key for runs that carry no TestId (folded together, not a specific test).</summary>
+    private const string UnknownTestBucket = "(unknown)";
+
     /// <summary>A run result counts as "passing" when it is Passed or Succeeded (mirrors
     /// <c>--to-junit</c>'s pass semantics — see runner.md invariant).</summary>
     public static bool IsPassing(string? result) =>
         string.Equals(result, "Passed", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(result, "Succeeded", StringComparison.OrdinalIgnoreCase);
+        string.Equals(result, "Succeeded", StringComparison.OrdinalIgnoreCase) ||
+        // P3-B2: a run recovered by --retry-once exits 0 ("doesn't break CI"), so analytics must
+        // count it as passing too — otherwise a Flaky run is double-punished as failed/newRegression.
+        string.Equals(result, "Flaky", StringComparison.OrdinalIgnoreCase);
 
-    public static RunAnalyticsResult Compute(IReadOnlyList<RunArtifact> runs)
+    public static RunAnalyticsResult Compute(IReadOnlyList<RunArtifact> runs, TriageBaseline? baseline = null)
     {
         var result = new RunAnalyticsResult();
         if (runs == null || runs.Count == 0)
@@ -32,7 +38,7 @@ public static class RunAnalytics
         // Group by TestId (runs with no TestId fold into a single "(unknown)" bucket so they're
         // still counted, not silently dropped).
         var byTest = runs
-            .GroupBy(r => string.IsNullOrWhiteSpace(r.TestId) ? "(unknown)" : r.TestId!)
+            .GroupBy(r => string.IsNullOrWhiteSpace(r.TestId) ? UnknownTestBucket : r.TestId!)
             .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
 
         foreach (var group in byTest)
@@ -58,6 +64,23 @@ public static class RunAnalytics
         }
 
         result.FlakyTestCount = result.Tests.Count(t => t.Flaky);
+
+        // --- P3-B3: triage failing tests against the baseline catalog (when supplied) ---
+        // A test with any failing run is classified known (flake / data-drift / preserved-bug)
+        // or a NEW regression — the count that actually needs attention.
+        if (baseline != null)
+        {
+            result.BaselineApplied = true;
+            foreach (var t in result.Tests)
+            {
+                // Skip the "(unknown)" bucket: it folds together all runs with no TestId, so a
+                // single failure there is not a specific test regression — classifying it would be
+                // a false positive.
+                if (t.Failed > 0 && t.TestId != UnknownTestBucket)
+                    t.Classification = baseline.Classify(t.TestId);
+            }
+            result.NewRegressionCount = result.Tests.Count(t => t.Classification == "newRegression");
+        }
 
         // Most-failing tests: most failures first, then lowest pass rate, then id for determinism.
         result.MostFailingTests = result.Tests
@@ -136,6 +159,12 @@ public sealed class RunAnalyticsResult
     public int TotalRuns { get; set; }
     public int FlakyTestCount { get; set; }
 
+    /// <summary>P3-B3: true when a triage baseline was applied (else classification is absent).</summary>
+    public bool BaselineApplied { get; set; }
+
+    /// <summary>P3-B3: failing tests listed nowhere in the baseline — the regressions that matter.</summary>
+    public int NewRegressionCount { get; set; }
+
     /// <summary>Steps carrying a healing suggestion across all runs (the selector-drift total).</summary>
     public int SelectorDriftCount { get; set; }
 
@@ -159,6 +188,10 @@ public sealed class TestAnalytics
     public int Passed { get; set; }
     public int Failed { get; set; }
     public bool Flaky { get; set; }
+
+    /// <summary>P3-B3: baseline triage of a failing test — knownFlake / dataDrift / preservedBug /
+    /// newRegression. Null when the test isn't failing or no baseline was applied.</summary>
+    public string? Classification { get; set; }
 }
 
 public sealed class SelectorDriftGroup

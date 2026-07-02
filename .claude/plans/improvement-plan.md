@@ -406,5 +406,62 @@ skipped, net48 compiles, ensure-fresh paths exercised):
   redaction case.
 - Not adopted (judged over-classified / likely-wrong): `throw`→`exit` rewrite, PS style nits
   (CmdletBinding / if-expression), the net48 `ArgumentNullException`-on-null-backup claim.
+
+---
+
+## P4 — Agent-coding feedback loop (analysis 2026-07-02)
+
+> Question raised: beyond the auto build + unit/integration tests, can this system help an AGENT
+> that WRITES code get a verifiable feedback loop? Grounded comparison of this repo vs the sibling
+> `Raphi52/RIG-TV` on that specific axis.
+
+**Finding.** Two very unequal axes.
+- **Contract / don't-break-invariants axis — solid.** The `Stop`-hook (`.claude/settings.json` →
+  `verify.ps1`, build+test, blocks finishing while red), `ContractTests`, `TestFactGuard`, and the
+  machine-readable `runs/<id>/report.json` (per-step `failureCode`/`reasoning`/`guardCode`, plus the
+  new `Δvis` dHash, `Flaky` verdict, and `--analytics --baseline` newRegression triage) give an
+  agent a real, parseable "what broke and where" signal. Notably RIG-TV has **no** such out-of-model
+  gate (its `verify.ps1` is manual; no hooks).
+- **"Does it actually work in the real app?" axis — gated, not automatic.** The auto loop is
+  `dotnet build` + `dotnet test`, and the runner's unit tests use fakes (`FakeDriver`,
+  `ScriptedDecider`). The real-behavior E2E are `[InteractiveUiFact]` gated behind `RUN_E2E_UI=1`,
+  **outside CI and the Stop-hook** → an agent can be build-green + unit-green with a broken UI.
+  Being non-intrusive by design, we also have **no** equivalent of RIG-TV's `LoopBuild.cs`
+  (rebuild+redeploy the code-under-test).
+
+**What RIG-TV has that we don't (transferable subset):**
+1. **Run-to-run `regressions` / `fixed_now` diff** serialized into the batch result
+   (`last-batch-result.json` schema v3) — a PASS↔FAIL before/after signal an agent consumes
+   directly. We aggregate history in `--analytics` but do not diff before/after a change.
+2. Rebuild-the-code-under-test (`LoopBuild.cs`) — out of scope for us (non-intrusive contract).
+3. Autonomous respawn (`ml-loop.ps1` / `claude -p -AutoSpawn`) — but that orchestrator is
+   out-of-repo and, per RIG-TV's own `CLAUDE.md`, was never run end-to-end.
+
+### P4-1 — `RunDiffer`: run-to-run regressions / fixed diff (NEW — highest-leverage, small)
+**Problem.** `--analytics` (`RunAnalytics.Compute`) summarizes the whole `runs/` history (flaky /
+selector-drift / duration / newRegression-vs-baseline) but does not answer the agent's actual
+question after an edit: *"compared to the previous run set, what flipped PASS→FAIL (regressions) and
+FAIL→PASS (fixed)?"*
+**Action.** Add a `RunDiffer` (pure, key-free) that takes two run sets (e.g. latest per-test vs a
+prior snapshot) and emits `{ regressions:[testId], fixedNow:[testId], stillFailing:[testId] }`;
+surface via `--analytics --since <ref|timestamp>` (or a `runs/…/baseline snapshot`) in text + JSON.
+Ported idea from RIG-TV `last-batch-result.json` (schema v3), consumed by an agent to know if *its*
+change broke or fixed something. Additive to the analytics contract (new optional flag + new JSON
+keys); no change to default output.
+**Acceptance.** Two run snapshots with one test flipped each way → `regressions`/`fixedNow` each list
+exactly that test; unit-tested in `RunAnalyticsTests` on synthetic run lists; empty when identical.
+
+### P4-2 — Close the E2E feedback loop automatically → see **P1-1**
+The real-behavior signal only becomes part of the *automatic* agent loop once the gated
+`RUN_E2E_UI=1` suite runs on a scheduled/self-hosted Windows runner (already tracked as **P1-1**).
+Until then, "does it work in the real app?" stays manual.
+
+### P4-3 — The real-app proof → see **P0-1**
+The whole agent-coding-feedback story is only credible once demonstrated end-to-end on one
+uncontrolled real app (already the headline **P0-1** "credibility gap").
+
+**Not adopting:** RIG-TV's `LoopBuild.cs` (rebuild code-under-test) — conflicts with the
+non-intrusive product rule; and the autonomous `ml-loop.ps1`/`-AutoSpawn` respawn (unproven even in
+RIG-TV, and our `Stop`-hook already covers the "don't finish while red" guarantee it aimed at).
 </content>
 </invoke>

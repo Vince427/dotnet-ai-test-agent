@@ -33,7 +33,7 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         Directory.CreateDirectory(dir);
 
         var path = Path.Combine(dir, $"step_{stepNumber:D3}.png");
-        File.WriteAllBytes(path, pngBytes);
+        AtomicWriteAllBytes(path, pngBytes);
         return path;
     }
 
@@ -46,7 +46,7 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         Directory.CreateDirectory(dir);
 
         var path = Path.Combine(dir, $"step_{stepNumber:D3}.png");
-        File.WriteAllBytes(path, pngBytes);
+        AtomicWriteAllBytes(path, pngBytes);
         return path;
     }
 
@@ -60,7 +60,7 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         Directory.CreateDirectory(dir);
 
         var path = Path.Combine(dir, $"step_{stepNumber:D3}.json");
-        File.WriteAllText(path, JsonSerializer.Serialize(index, CreateJsonOptions()));
+        AtomicWriteAllText(path, JsonSerializer.Serialize(index, CreateJsonOptions()));
         return path;
     }
 
@@ -73,7 +73,7 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         Directory.CreateDirectory(dir);
 
         var path = Path.Combine(dir, $"step_{stepNumber:D3}.json");
-        File.WriteAllText(path, JsonSerializer.Serialize(_redactor.RedactSnapshot(snapshot), CreateJsonOptions()));
+        AtomicWriteAllText(path, JsonSerializer.Serialize(_redactor.RedactSnapshot(snapshot), CreateJsonOptions()));
         return path;
     }
 
@@ -87,7 +87,7 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
 
         var json = JsonSerializer.Serialize(artifact, CreateJsonOptions());
 
-        File.WriteAllText(Path.Combine(dir, "report.json"), json);
+        AtomicWriteAllText(Path.Combine(dir, "report.json"), json);
     }
 
     /// <summary>
@@ -141,7 +141,68 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
 
         AppendHealingSection(sb, artifact);
 
-        File.WriteAllText(Path.Combine(dir, "summary.md"), sb.ToString());
+        AtomicWriteAllText(Path.Combine(dir, "summary.md"), sb.ToString());
+    }
+
+    /// <summary>
+    /// Writes text to <paramref name="path"/> atomically: serialize to a sibling
+    /// <c>.tmp</c> file first, then swap it into place via <see cref="File.Replace"/>
+    /// (falling back to delete+move if Replace is transiently blocked, e.g. an AV
+    /// scanner holding the target). A concurrent reader (the <c>--dashboard</c> live
+    /// view, <c>--analytics</c>) therefore never observes a half-written file.
+    /// </summary>
+    private static void AtomicWriteAllText(string path, string contents)
+        => WriteThenSwap(path, tmp => File.WriteAllText(tmp, contents));
+
+    /// <summary>
+    /// Byte-array counterpart of <see cref="AtomicWriteAllText"/> (screenshots, overlays).
+    /// </summary>
+    private static void AtomicWriteAllBytes(string path, byte[] bytes)
+        => WriteThenSwap(path, tmp => File.WriteAllBytes(tmp, bytes));
+
+    /// <summary>
+    /// Writes to a UNIQUE sibling temp file (GUID-suffixed, so two concurrent writers to the
+    /// same target never clobber each other's temp), then swaps it into place. On ANY failure
+    /// the temp is cleaned up, so a crash mid-write leaves no orphaned <c>.tmp</c> behind.
+    /// </summary>
+    private static void WriteThenSwap(string path, Action<string> write)
+    {
+        var tmp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            write(tmp);
+            SwapIntoPlace(tmp, path);
+        }
+        catch
+        {
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch { /* best-effort cleanup */ }
+            throw;
+        }
+    }
+
+    private static void SwapIntoPlace(string tmp, string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Replace(tmp, path, null);
+            else
+                File.Move(tmp, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // File.Replace is atomic on NTFS but can fail under a transient lock (AV/indexer).
+#if NET8_0_OR_GREATER
+            // net8: overwrite-move is a single operation — no window where the target is absent.
+            File.Move(tmp, path, overwrite: true);
+#else
+            // net48 has no overwrite-move: a brief window exists where the target is absent.
+            // Acceptable on this already-degraded fallback (the primary File.Replace is atomic).
+            if (File.Exists(path))
+                File.Delete(path);
+            File.Move(tmp, path);
+#endif
+        }
     }
 
     private static JsonSerializerOptions CreateJsonOptions()

@@ -204,5 +204,138 @@ site + (optionally) link the P0-1 case-study artifacts from it.
 - Deterministic key-free core stays gated/golden in CI; **stochastic LLM runs are
   recorded, never asserted-equal**. Rewrites go through `TestFactGuard`. One YAML emitter
   (`DashboardApi.BuildYaml`). Any contract change → SemVer bump + CHANGELOG migration note.
+
+---
+
+## P3 — Ideas adopted from the RIG-TV sibling harness
+
+> Source: comparative analysis (2026-06-30) of the sibling Amitel project
+> [`Raphi52/RIG-TV`](https://github.com/Raphi52/RIG-TV) — a *specific* test harness for the
+> legacy `RigClientAccueil.exe` (net48 WinForms + WPF rewrite), driven via FlaUI/UIA + MSAA.
+> RIG-TV has no LLM/vision/MCP/dashboard/self-healing (we lead there). Its lead is on
+> **execution-operations hardening**: runtime flake handling, perceptual diff, atomic IO,
+> build-freshness, conditional skips. The items below are the transferable subset, filtered
+> against what we already have (verified on `main`: our flaky is post-hoc in `RunAnalytics`,
+> not runtime; no atomic artifact write; no dHash; no `SkippableFact`; no stale-binary guard;
+> `Directory.Build.props` is intentionally minimal + we use central package management).
+> Every item is **additive** — none touches the LLM/vision/MCP/dashboard/healing surfaces.
+> Scope chosen with the user: **Lot A + Lot B only** (Lot C deferred).
+
+### Lot A — fast hardening (low risk, mostly independent)
+
+#### P3-A1 — Atomic artifact writes (`.tmp` + `File.Replace`) — ✅ DONE 2026-06-30
+**RIG-TV ref.** `TestResultCacheService.Persist` — write to `<file>.tmp`, then `File.Replace`
+(fallback `Delete`+`Move` when Replace is blocked by AV lock).
+**Problem.** `ArtifactWriter` wrote `report.json` / `summary.md` / ui-tree / overlay in
+place. A reader (the `--dashboard` live view, or a parallel `--analytics`) could observe a
+half-written / corrupt JSON mid-write.
+**Done.** Added `AtomicWriteAllText` / `AtomicWriteAllBytes` + `SwapIntoPlace` helpers
+(write `.tmp` → `File.Replace`, fallback delete+move on `IOException`/`UnauthorizedAccess`).
+Routed all writes through them: `WriteReport`, `WriteSummary`, `SaveOverlayIndex`,
+`SaveUiTreeSnapshot`, `SaveScreenshot`, `SaveOverlay`.
+**Acceptance.** New test `WriteReportOverwritesAtomicallyAndLeavesNoTempFile`: overwriting a
+long report with a short one fully replaces content, parses as valid JSON, and leaves no
+`.tmp` sidecar.
+
+#### P3-A2 — Stale-binary guard before launch (`ensure-fresh.ps1`) — ✅ DONE 2026-06-30
+**RIG-TV ref.** `ensure-fresh.ps1` — compare EXE `LastWriteTime` vs max source
+`LastWriteTime` (excluding `bin`/`obj`); rebuild if stale; throw if build fails.
+**Problem (verified).** Most `run-*.ps1` use `dotnet build`/`dotnet run` (freshness already
+guaranteed by MSBuild). The exception is **`run-all.ps1`**, which explicitly *"Skip build …
+we are already built"* and `Start-Process` the prebuilt `bin\Debug\…\AgentRunner.exe` +
+sample exes directly — so an edit-then-run silently drives **old code**. That single script
+is the real stale-binary risk.
+**Done.** Added `scripts/ensure-fresh.ps1` (params `-Project -Exe -Framework -SourceRoot`;
+rebuild only when stale/missing; throw on build failure or missing-exe-after-build). Wired
+into `run-all.ps1`: freshness-check `AgentRunner.exe` once up front + each target app before
+its launch (after the `Stop-Process` so there is no file lock).
+**Acceptance.** Touch a `.cs` then run `run-all.ps1` → the stale project rebuilds before
+launch; a build failure aborts (`throw`, non-zero) with no run. Other `run-*.ps1` left
+unchanged (already fresh via `dotnet run`).
+
+#### P3-A3 — Visible SKIP for gated E2E — ✅ ALREADY SATISFIED (no change needed)
+**Original premise (WRONG).** Assumed the `RUN_E2E_UI=1` gate made E2E cases *invisible*.
+**Verified reality.** `InteractiveUiFactAttribute` / `InteractiveUiTheoryAttribute` already
+set xUnit's `Skip` property when the env var is unset, so the E2E already report as an
+explicit **Skipped** with reason ("honest — not a false green", per the attribute's own
+doc-comment). This is *cleaner* than RIG-TV's per-method `Skip.If` (compile-time attribute,
+no runtime call). **Adopting `SkippableFact` would be a regression in elegance — dropped.**
+
+### Lot B — quality signals (build on existing analytics; B3 depends on B2)
+
+#### P3-B1 — Perceptual screenshot diff (dHash 64-bit + Hamming)
+**RIG-TV ref.** `ScreenshotDiffService.cs` — resize 9×8 grayscale (Rec.709 luminance),
+64-bit difference hash, Hamming distance; documented thresholds (0–4 identical, 11–20
+different scene); optional crop region to ignore noise.
+**Problem.** We capture/mask/annotate screenshots but never compare them, so we have no
+visual-regression / state-change signal.
+**Action.** Port a stateless `ScreenshotDiffService` (static, pure) and surface a per-step
+dHash + diff in the run report / workbench (e.g. "UI unchanged between steps" / drift flag).
+Feed it into `--analytics`.
+**Acceptance.** Two runs of the same flow → near-zero Hamming on matching steps; an induced
+UI change → distance above threshold; unit tests on known image pairs.
+
+#### P3-B2 — Runtime retry-once → `FLAKY` verdict
+**RIG-TV ref.** `LoopRun.cs` — first FAIL is retried once; 2nd PASS ⇒ `FLAKY`, 2nd FAIL ⇒
+`FAIL`; verdict persisted.
+**Problem.** Today flaky is only inferred *post-hoc* across historical runs in
+`RunAnalytics`; a single suite run cannot distinguish a flake from a hard fail.
+**Action.** Add an opt-in retry-once policy in `RunOrchestrator` (off by default to preserve
+deterministic/replay semantics): on FAIL, re-run once; record `FLAKY` vs `FAIL` as a verdict
+field in `report.json`. Keep stochastic-runs-never-asserted-equal rule intact.
+**Acceptance.** A deterministically-injected transient failure yields `FLAKY`; a hard
+failure stays `FAIL`; the verdict field is in the artifact and surfaced by analytics.
+
+#### P3-B3 — `baseline.json` triage catalog (knownFlakes / dataDrift / preservedBugs)
+**RIG-TV ref.** `loop/baseline.json` — versioned 3-section catalog consumed to filter known
+failures vs real regressions.
+**Problem.** `--analytics` + `LoopDetector` detect flakes but have no curated baseline to
+separate *known* flakes / data-drift from *new* regressions.
+**Action.** Define a versioned `baseline.json` (sections `knownFlakes` with estimated rate,
+`dataDriftScenarios`, `preservedBugs`); have `--analytics` classify results against it
+(known vs new). Depends on P3-B2's verdict field.
+**Acceptance.** A run whose only failures are listed in `baseline.json` reports "no new
+regressions"; an unlisted failure is flagged as new.
+
+### Deferred (Lot C — not in this scope, recorded for later)
+
+- **Clean process-tree teardown** (`ProcessTreeControl`: Toolhelp32 + Nt*Process,
+  `KillDescendants`) — kill orphaned child processes of a driven target app.
+- **Robust log polling** (`Wait-MarkerCountAbove`: baseline the marker count before the
+  action) — for the PS harness / dashboard live logs.
+- **Parallel suite execution + `AudienceLock`** (named mutex + per-resource semaphore) —
+  only if/when parallel batch execution is actually introduced.
+
+### Not adopted (out of scope or already covered)
+
+- `render-kbis-pdf.ps1`, `New-RigProcessus.ps1` — RIG-specific (KBIS PDF, WPF scaffolding).
+- RIG-TV's operational `CLAUDE.md`/agent docs — we already have `.claude/context/**` + AGENTS.md.
+- Auto-inject test deps via `Directory.Build.props` — RIG-TV's choice; we deliberately keep
+  props minimal and use central package management (`Directory.Packages.props`).
+
+### P3 sequencing
+
+| Wave | Items | Why this order |
+|---|---|---|
+| **A** | P3-A1, P3-A2, P3-A3 | Independent, low-risk hardening; no contract impact. |
+| **B** | P3-B1, then P3-B2, then P3-B3 | Quality signals; B3 needs B2's verdict field; all additive to analytics. |
+
+### P3 Lot A — QA round (2026-06-30, before GitHub push)
+
+A 5-judge adversarial panel (faithful / real-effect / corrector / conformer / guardian) reviewed
+the Lot A diff. Hardening applied in response (all re-verified — full suite 360 pass / 0 fail / 3
+skipped, net48 compiles, ensure-fresh paths exercised):
+- **ensure-fresh.ps1**: throw on empty/wrong source tree (was a silent false "up to date");
+  resolve `-Project`/`-Exe`/`-SourceRoot` to absolute (CWD-independence + anti-traversal);
+  set `$LASTEXITCODE=0` on the up-to-date path; header documents the throw-to-abort contract.
+- **run-all.ps1**: pass `-SourceRoot src` so a change in a referenced project (Core, UIAutomation)
+  also marks `AgentRunner.exe` stale (the default scans only the project's own folder).
+- **ArtifactWriter**: GUID-unique temp name per write (no clobber between concurrent writers);
+  `try/finally` deletes the temp on a mid-write throw (no orphan); net8 fallback uses
+  overwrite-move (no absent-file window), net48 keeps the documented window.
+- **Tests**: added first-write (target-absent) atomic case + `IsPassword=true` end-to-end
+  redaction case.
+- Not adopted (judged over-classified / likely-wrong): `throw`→`exit` rewrite, PS style nits
+  (CmdletBinding / if-expression), the net48 `ArgumentNullException`-on-null-backup claim.
 </content>
 </invoke>

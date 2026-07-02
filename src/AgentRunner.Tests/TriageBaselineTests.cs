@@ -58,6 +58,51 @@ public sealed class TriageBaselineTests
     }
 
     [Fact]
+    public void FlakyRun_CountsAsPassing_NotANewRegression()
+    {
+        // A run recovered by --retry-once is Flaky/exit 0 ("doesn't break CI"), so analytics must
+        // treat it as passing — not failed, and never a new regression.
+        var runs = new List<RunArtifact> { new() { TestId = "recovered", Result = "Flaky" } };
+        var baseline = new TriageBaseline(); // empty: an unlisted failure would be a newRegression
+
+        var r = RunAnalytics.Compute(runs, baseline);
+
+        var t = r.Tests.Single(x => x.TestId == "recovered");
+        Assert.Equal(1, t.Passed);
+        Assert.Equal(0, t.Failed);
+        Assert.Null(t.Classification);
+        Assert.Equal(0, r.NewRegressionCount);
+    }
+
+    [Fact]
+    public void UnknownBucket_IsNotClassifiedAsRegression()
+    {
+        // Runs with no TestId fold into "(unknown)"; a failure there must not be a false regression.
+        var runs = new List<RunArtifact> { new() { TestId = null, Result = "Failed" } };
+
+        var r = RunAnalytics.Compute(runs, new TriageBaseline());
+
+        Assert.Equal(0, r.NewRegressionCount);
+        Assert.Null(r.Tests.Single().Classification);
+    }
+
+    [Fact]
+    public void Load_InvalidJson_ThrowsClearError()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "bad-baseline-" + Guid.NewGuid().ToString("N") + ".json");
+        File.WriteAllText(path, "{ this is not json");
+        try
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => TriageBaseline.Load(path));
+            Assert.Contains("not valid JSON", ex.Message);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void Load_MissingPath_ReturnsNull()
     {
         Assert.Null(TriageBaseline.Load(null));

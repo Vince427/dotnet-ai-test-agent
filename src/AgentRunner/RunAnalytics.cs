@@ -14,11 +14,17 @@ namespace DesktopAiTestAgent.AgentRunner;
 /// </summary>
 public static class RunAnalytics
 {
+    /// <summary>Bucket key for runs that carry no TestId (folded together, not a specific test).</summary>
+    private const string UnknownTestBucket = "(unknown)";
+
     /// <summary>A run result counts as "passing" when it is Passed or Succeeded (mirrors
     /// <c>--to-junit</c>'s pass semantics — see runner.md invariant).</summary>
     public static bool IsPassing(string? result) =>
         string.Equals(result, "Passed", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(result, "Succeeded", StringComparison.OrdinalIgnoreCase);
+        string.Equals(result, "Succeeded", StringComparison.OrdinalIgnoreCase) ||
+        // P3-B2: a run recovered by --retry-once exits 0 ("doesn't break CI"), so analytics must
+        // count it as passing too — otherwise a Flaky run is double-punished as failed/newRegression.
+        string.Equals(result, "Flaky", StringComparison.OrdinalIgnoreCase);
 
     public static RunAnalyticsResult Compute(IReadOnlyList<RunArtifact> runs, TriageBaseline? baseline = null)
     {
@@ -32,7 +38,7 @@ public static class RunAnalytics
         // Group by TestId (runs with no TestId fold into a single "(unknown)" bucket so they're
         // still counted, not silently dropped).
         var byTest = runs
-            .GroupBy(r => string.IsNullOrWhiteSpace(r.TestId) ? "(unknown)" : r.TestId!)
+            .GroupBy(r => string.IsNullOrWhiteSpace(r.TestId) ? UnknownTestBucket : r.TestId!)
             .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
 
         foreach (var group in byTest)
@@ -67,7 +73,10 @@ public static class RunAnalytics
             result.BaselineApplied = true;
             foreach (var t in result.Tests)
             {
-                if (t.Failed > 0)
+                // Skip the "(unknown)" bucket: it folds together all runs with no TestId, so a
+                // single failure there is not a specific test regression — classifying it would be
+                // a false positive.
+                if (t.Failed > 0 && t.TestId != UnknownTestBucket)
                     t.Classification = baseline.Classify(t.TestId);
             }
             result.NewRegressionCount = result.Tests.Count(t => t.Classification == "newRegression");

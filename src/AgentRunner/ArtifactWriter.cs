@@ -120,6 +120,8 @@ public class ArtifactWriter(string? baseDir = null, SecretRedactor? redactor = n
         }
         if (!string.IsNullOrEmpty(artifact.ErrorMessage))
             sb.AppendLine($"- **Error**: {artifact.ErrorMessage}");
+        if (!string.IsNullOrEmpty(artifact.RetryNote))
+            sb.AppendLine($"- **Retry** (attempts: {artifact.Attempts}): {artifact.RetryNote}");
         sb.AppendLine();
 
         sb.AppendLine("## Steps");

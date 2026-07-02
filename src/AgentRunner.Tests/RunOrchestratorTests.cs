@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using DesktopAiTestAgent.AgentRunner;
 using DesktopAiTestAgent.Core;
@@ -310,6 +313,97 @@ public sealed class RunOrchestratorTests : IDisposable
         Assert.Equal(1, orchestrator.LastArtifact!.Attempts);
     }
 
+    [Fact]
+    public async Task RetryOnce_TransientAttachFailure_RecoversAsFlaky()
+    {
+        // Attach fails the first attempt (exit 4 Blocked) then succeeds — the "app not ready on a
+        // slow CI agent" flake. --retry-once must re-run it and record Flaky.
+        var driver = new AttachFlipDriver();
+        var orchestrator = NewOrchestrator(driver, new ScriptedDecider());
+
+        var goal = new AgentGoal
+        {
+            Description = "log in",
+            SuccessCondition = "Login successful",
+            MaxSteps = 3,
+            Identifier = "login"
+        };
+        var options = OptionsFor(goal, asTest: true);
+        options.RetryOnce = true;
+
+        var exit = await orchestrator.RunAsync(options);
+
+        Assert.Equal(0, exit);
+        Assert.Equal("Flaky", orchestrator.LastArtifact!.Result);
+        Assert.Equal(2, orchestrator.LastArtifact!.Attempts);
+    }
+
+    [Fact]
+    public async Task RetryOnce_PersistentAttachFailure_StaysBlockedExit4()
+    {
+        // Attach never succeeds: --retry-once re-runs once (exit 4 is retriable) but both fail,
+        // so the run stays Blocked/exit 4 — with Attempts=2 recording that a retry happened.
+        var driver = new FakeDriver { AttachResult = false };
+        var orchestrator = NewOrchestrator(driver, new ScriptedDecider());
+
+        var goal = new AgentGoal { Description = "x", MaxSteps = 3, Identifier = "g" };
+        var options = OptionsFor(goal, asTest: true);
+        options.RetryOnce = true;
+
+        var exit = await orchestrator.RunAsync(options);
+
+        Assert.Equal(4, exit);
+        Assert.Equal("Blocked", orchestrator.LastArtifact!.Result);
+        Assert.Equal(2, orchestrator.LastArtifact!.Attempts);
+    }
+
+    [Fact]
+    public async Task RetryOnce_FlakyVerdict_IsWrittenToReportJsonOnDisk()
+    {
+        var driver = new FlipDriver();
+        var decider = new ScriptedDecider { Repeat = new AgentAction { ActionType = "Done" } };
+        var orchestrator = NewOrchestrator(driver, decider);
+
+        var goal = new AgentGoal
+        {
+            Description = "log in",
+            SuccessCondition = "Login successful",
+            MaxSteps = 2,
+            Identifier = "login"
+        };
+        var options = OptionsFor(goal);
+        options.RetryOnce = true;
+
+        await orchestrator.RunAsync(options);
+
+        // The verdict must survive to the on-disk artifact, not just the in-memory object.
+        var reportPath = Path.Combine(_workspace, orchestrator.LastArtifact!.RunId, "report.json");
+        var json = File.ReadAllText(reportPath);
+        Assert.Contains("\"result\": \"Flaky\"", json);
+        Assert.Contains("\"attempts\": 2", json);
+        Assert.Contains("retryNote", json);
+    }
+
+    [Fact]
+    public async Task StandardEvidence_PopulatesScreenshotDHashOnSteps()
+    {
+        // Exercises the orchestrator -> ScreenshotDiffService -> RunStep.ScreenshotDHash plumbing
+        // with a driver that returns a real PNG (not the empty bytes of FakeDriver).
+        var driver = new PngDriver();
+        var decider = new ScriptedDecider(
+            new AgentAction { ActionType = "EnterText", AutomationId = "txtUser", Value = "admin" },
+            new AgentAction { ActionType = "Done" });
+        var orchestrator = NewOrchestrator(driver, decider);
+
+        var goal = new AgentGoal { Description = "fill", MaxSteps = 5, Identifier = "g" };
+        var options = OptionsFor(goal);
+        options.EvidenceLevel = EvidenceLevel.Standard; // enable screenshot capture + dHash
+
+        await orchestrator.RunAsync(options);
+
+        Assert.Contains(orchestrator.LastArtifact!.Steps, s => s.ScreenshotDHash != null);
+    }
+
     // --- Test doubles ---
 
     private sealed class FakeDriver : IAutomationDriver
@@ -347,6 +441,44 @@ public sealed class RunOrchestratorTests : IDisposable
         public string ReadText(string automationId) => "";
         public List<UiElement> GetAllElements() => Capture().Elements;
         public byte[] CaptureScreenshot() => [];
+        public void Scroll(string automationId, string direction) { }
+        public void DoubleClick(string automationId) { }
+    }
+
+    /// <summary>Attach fails the first attempt (→ exit 4 Blocked) then succeeds with the success
+    /// text visible, so <c>--retry-once</c> recovers a transient attach failure as FLAKY.</summary>
+    private sealed class AttachFlipDriver : IAutomationDriver
+    {
+        private int _attempt;
+
+        public bool AttachToWindow(string windowTitle, TimeSpan timeout) { _attempt++; return _attempt >= 2; }
+        public UiSnapshot Capture() => new("Fake Window", [new UiElement { Name = "ok" }], statusText: "Login successful");
+        public void EnterText(string automationId, string value) { }
+        public void Click(string automationId) { }
+        public string ReadText(string automationId) => "";
+        public List<UiElement> GetAllElements() => Capture().Elements;
+        public byte[] CaptureScreenshot() => [];
+        public void Scroll(string automationId, string direction) { }
+        public void DoubleClick(string automationId) { }
+    }
+
+    /// <summary>Returns a real 8×8 PNG from CaptureScreenshot so the dHash plumbing has a decodable
+    /// image (FakeDriver returns empty bytes, which ComputeDHash rejects).</summary>
+    private sealed class PngDriver : IAutomationDriver
+    {
+        public bool AttachToWindow(string windowTitle, TimeSpan timeout) => true;
+        public UiSnapshot Capture() => new("Fake Window", [new UiElement { AutomationId = "txtUser", Name = "User" }]);
+        public void EnterText(string automationId, string value) { }
+        public void Click(string automationId) { }
+        public string ReadText(string automationId) => "";
+        public List<UiElement> GetAllElements() => Capture().Elements;
+        public byte[] CaptureScreenshot()
+        {
+            using var bmp = new Bitmap(8, 8);
+            using var ms = new MemoryStream();
+            bmp.Save(ms, ImageFormat.Png);
+            return ms.ToArray();
+        }
         public void Scroll(string automationId, string direction) { }
         public void DoubleClick(string automationId) { }
     }

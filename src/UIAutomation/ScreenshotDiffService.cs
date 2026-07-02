@@ -82,6 +82,8 @@ public static class ScreenshotDiffService
     }
 
     private static int Luminance(Color c)
-        // Rec.709 integer luminance (fixed-point /1000), matching the sibling harness.
-        => (218 * c.R + 732 * c.G + 74 * c.B) / 1000;
+        // Rec.709 integer luminance, fixed-point /1024 (coefficients 218+732+74 = 1024, so pure
+        // white maps to exactly 255). The absolute scale is irrelevant to the hash — both sides of
+        // each comparison use the same formula — but /1024 keeps the value in the true 0–255 range.
+        => (218 * c.R + 732 * c.G + 74 * c.B) / 1024;
 }

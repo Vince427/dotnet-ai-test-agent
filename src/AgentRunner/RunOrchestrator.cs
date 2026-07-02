@@ -36,21 +36,17 @@ public sealed class RunOrchestrator(
     {
         var exitCode = await RunAttemptAsync(options);
 
-        // P3-B2: opt-in retry-once. A genuine run failure (exit 1/3) is re-run ONCE; if the retry
-        // passes, the run was FLAKY (transient) — recorded as such and treated as a pass (exit 0),
-        // so a recovered flake doesn't break CI. Off by default, so deterministic/replay runs stay
-        // 1:1. Note: the retry re-drives from the app's CURRENT state (best-effort — cleanest for
-        // idempotent flows or when the failure left the app recoverable).
-        if (options.RetryOnce && (exitCode == 1 || exitCode == 3))
+        // P3-B2: opt-in retry-once. A genuine run failure (exit 1/3) OR a transient attach failure
+        // (exit 4 Blocked — the classic "app not ready yet on a slow CI agent") is re-run ONCE; if
+        // the retry passes, the run was FLAKY (transient) — recorded as such and treated as a pass
+        // (exit 0), so a recovered flake doesn't break CI. Off by default, so deterministic/replay
+        // runs stay 1:1. The retry re-drives from the app's CURRENT state (best-effort — cleanest
+        // for idempotent flows; PersistRetryOutcome records a replay caveat).
+        if (options.RetryOnce && (exitCode == 1 || exitCode == 3 || exitCode == 4))
         {
-            var firstResult = LastArtifact?.Result;
             var retryExit = await RunAttemptAsync(options);
-            if (retryExit == 0)
-            {
-                MarkLastArtifactFlaky(firstResult);
-                return 0;
-            }
-            return retryExit;
+            PersistRetryOutcome(recovered: retryExit == 0);
+            return retryExit == 0 ? 0 : retryExit;
         }
 
         return exitCode;
@@ -83,15 +79,20 @@ public sealed class RunOrchestrator(
         }
     }
 
-    /// <summary>P3-B2: re-stamp the (passing) retry attempt's artifact as <c>Flaky</c> and persist it,
-    /// so the recovered-on-retry verdict is visible in report.json / summary.md. The first (failed)
-    /// attempt's artifact is left intact in its own run dir as evidence.</summary>
-    private void MarkLastArtifactFlaky(string? firstResult)
+    /// <summary>P3-B2: after a retry, re-stamp the second attempt's artifact with <c>Attempts=2</c>
+    /// (so the retry is ALWAYS traceable, pass or fail) and, when it recovered, <c>Result="Flaky"</c>;
+    /// then persist it. Records a replay caveat, since the retry re-drove from the app's current state
+    /// (a non-idempotent action from the failed attempt may have replayed). The first failed attempt's
+    /// artifact is left intact in its own run dir as evidence.</summary>
+    private void PersistRetryOutcome(bool recovered)
     {
         if (LastArtifact == null)
             return;
-        LastArtifact.Result = "Flaky";
         LastArtifact.Attempts = 2;
+        if (recovered)
+            LastArtifact.Result = "Flaky";
+        LastArtifact.RetryNote = "Re-driven from the app's current state on retry; a non-idempotent " +
+            "action from the failed attempt may have replayed.";
         var writer = new ArtifactWriter(_config.WorkspaceRoot, new SecretRedactor());
         writer.WriteReport(LastArtifact);
         writer.WriteSummary(LastArtifact);

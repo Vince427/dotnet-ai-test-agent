@@ -47,13 +47,28 @@ public sealed class TriageBaseline
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return null;
 
+        // Guard against pointing --baseline at a huge file (a multi-GB read would hang the process).
+        const long maxBytes = 1_000_000;
+        var length = new FileInfo(path).Length;
+        if (length > maxBytes)
+            throw new InvalidOperationException($"baseline file too large ({length} bytes, cap {maxBytes}): {path}");
+
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true
         };
-        return JsonSerializer.Deserialize<TriageBaseline>(File.ReadAllText(path), options) ?? new TriageBaseline();
+        try
+        {
+            return JsonSerializer.Deserialize<TriageBaseline>(File.ReadAllText(path), options) ?? new TriageBaseline();
+        }
+        catch (JsonException ex)
+        {
+            // Tolerant of comments / trailing commas / unknown fields, but a genuinely broken file
+            // fails LOUD and clear — silently returning null would hide that triage never applied.
+            throw new InvalidOperationException($"baseline is not valid JSON ({path}): {ex.Message}", ex);
+        }
     }
 }
 

@@ -352,6 +352,33 @@ regressions"; an unlisted failure is flagged as new.
 | **A** | P3-A1, P3-A2, P3-A3 | Independent, low-risk hardening; no contract impact. |
 | **B** | P3-B1, then P3-B2, then P3-B3 | Quality signals; B3 needs B2's verdict field; all additive to analytics. |
 
+### P3 Lot B — QA round (2026-07-01, before GitHub push)
+
+A 4-judge adversarial panel (faithful 88 / guardian 84 / corrector 72 / real-effect 67) reviewed
+the Lot B diff. Guardian confirmed the dHash leaks nothing (64 bits of relative gradients).
+Fixes applied and re-verified (full suite 389 pass / 0 fail / 3 skipped; net48 compiles):
+- **The key contradiction (real-effect):** `IsPassing()` didn't count `Flaky` as passing, so a
+  recovered flake (exit 0) was double-punished as failed / newRegression in analytics → `Flaky`
+  now counts as passing.
+- **B2 retry:** the gate now also retries **exit 4 (Blocked / attach failure)** — the exact
+  "app not ready on a slow CI agent" flake B2 targets (faithful). `MarkLastArtifactFlaky` →
+  `PersistRetryOutcome`: **Attempts=2 always** (retry traceable on double-fail too), `Flaky` on
+  recovery, dead `firstResult` param removed, and a **`RetryNote`** caveat (the retry re-drove from
+  the app's current state — a non-idempotent action may have replayed) is stamped + surfaced in
+  `summary.md` (guardian).
+- **B3 `TriageBaseline.Load`:** empty/invalid JSON now fails **loud and clear** (was an uncaught
+  `JsonException`); added a 1 MB size cap (corrector + guardian). The `(unknown)` no-TestId bucket
+  is excluded from classification / `NewRegressionCount` (corrector false-positive).
+- **B1 dHash:** luminance divisor corrected `1000` → `1024` (coeffs sum to 1024; comment was wrong,
+  white now maps to 255). Does not change the hash; honesty + true 0–255 range (corrector).
+- **Tests added:** transient-attach-recovery=Flaky, persistent-attach=Blocked/exit4/Attempts2,
+  Flaky-verdict-on-disk (report.json), dHash plumbing populates `RunStep`, Flaky-counts-as-passing,
+  unknown-bucket-not-a-regression, invalid-JSON-throws, `--retry-once` / `--baseline` CLI parsing.
+- **Known minor (documented, not fixed):** the terminal success frame isn't dHashed (success is
+  detected on observe before a capture step) — per-step dHash covers action steps.
+- **Reported, NOT fixed (pre-existing, out of Lot B scope):** `RunAnalytics` selector-drift dedup
+  key `oldT + "" + newT` (empty separator) can merge distinct pairs — flagged for a separate fix.
+
 ### P3 Lot A — QA round (2026-06-30, before GitHub push)
 
 A 5-judge adversarial panel (faithful / real-effect / corrector / conformer / guardian) reviewed

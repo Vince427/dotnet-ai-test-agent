@@ -28,6 +28,11 @@ public class RunArtifact
     /// <summary>P3-B2: number of attempts this run took. 1 normally; 2 when <c>--retry-once</c> re-ran
     /// a failed run. A <c>Flaky</c> result always has Attempts=2 (failed then passed on retry).</summary>
     public int Attempts { get; set; } = 1;
+
+    /// <summary>P3-B2: caveat set when <c>--retry-once</c> re-ran this run — the retry re-drives from
+    /// the app's CURRENT state, so a non-idempotent action from the failed attempt may have replayed.
+    /// Null when no retry happened.</summary>
+    public string? RetryNote { get; set; }
     public string? ErrorMessage { get; set; }
 
     /// <summary>

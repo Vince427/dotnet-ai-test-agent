@@ -5,13 +5,26 @@ source of truth remains `docs/roadmap.md`; keep this file focused on near-term
 parallel work. For the **engineering-health backlog** (debt, doc-drift, proof
 gaps, the 1.0 tag) see the companion **`.claude/plans/improvement-plan.md`**.
 
-## RESUME SNAPSHOT — 2026-06-17 (read this first)
+## RESUME SNAPSHOT — 2026-07-02 (read this first)
 
-**`main` HEAD = `5c6c10a`** (Merge PR #36, MAUI + profile-validation example plans;
-on top of PR #35 plan-next, `--replay`, replay-secret substitution). Build clean on
-net48 + net8 + Avalonia + MAUI; **~309 `[Fact]/[Theory]` + gated E2E** on `main`
-(exact total is `dotnet test` output — see improvement-plan P0-2, stop quoting a frozen
-number); **CI green**. Single contributor identity: `Vince427` (noreply).
+**`main` HEAD = `cc05bf0`** (plan P4 note; on top of the RIG-TV idea-adoption merges
+**PR #37 Lot A · #40 Lot B · #39 Lot C**). Build clean on net48 + net8 + Avalonia + MAUI;
+**~389 `[Fact]/[Theory]` + 3 gated E2E (skipped)** on `main` (exact total is `dotnet test`
+output — see improvement-plan P0-2, stop quoting a frozen number); local `dotnet test` green.
+Single contributor identity: `Vince427` (noreply).
+
+**Since 2026-06-17 — RIG-TV idea adoption (details in `improvement-plan.md` §P3/§P4), all merged:**
+- **Lot A** (#37): atomic artifact writes (`ArtifactWriter`); `scripts/ensure-fresh.ps1` stale-binary
+  guard wired into `run-all.ps1`.
+- **Lot B** (#40): per-step dHash visual-diff (`UIAutomation/ScreenshotDiffService`,
+  `RunStep.ScreenshotDHash`/`ScreenshotDiffFromPrevious`); opt-in **`--retry-once`** → `Result="Flaky"`,
+  exit 0; **`--analytics --baseline <path>`** triage (`TriageBaseline`, `tests/baseline.example.json`).
+- **Lot C** (#39): `scripts/process-tree.ps1` (`Stop-ProcessTree`, clean teardown) + `scripts/log-wait.ps1`
+  (utility, no default caller). **C3 (parallel exec + AudienceLock) deferred by decision.**
+- **P4** analysis (agent-coding feedback loop vs RIG-TV): top transferable next piece = **P4-1 `RunDiffer`**
+  (run-to-run regressions/fixed_now diff). Deferred: rebuild-under-test (non-intrusive), autonomous respawn.
+- **Known pre-existing bug (see DISCOVERY_LOG):** `RunAnalytics` selector-drift dedup key uses an empty
+  separator — flagged during Lot B QA, **not yet fixed** (out of that scope).
 
 > ⚠️ **Known doc-drift to reconcile (improvement-plan P0-2):** `docs/status.md` still
 > says "~167 tests" + a stale `claude/runner-orchestrator` branch line; the
@@ -78,8 +91,11 @@ What remains is **proof + a few 1.0-gate items**, not new features.
 4. Live `--record` **"Click not captured"** finding (`DISCOVERY_LOG`) — the driver's Click may not raise
    the UIA Invoked event for record to capture; env-bound `--vision`/MAUI gated E2E.
 
-**Pending human action:** GitHub **Pages** still fails at `Configure Pages` — enable
-**Settings → Pages → Source: GitHub Actions** (the `enablement:true` auto-enable didn't take).
+**GitHub Pages — RESOLVED (2026-06-05):** Pages is enabled (`build_type: workflow`), the latest
+`pages.yml` run succeeded, and the site is live (HTTP 200) at
+https://vince427.github.io/dotnet-ai-test-agent/. The early `Configure Pages` failures were the
+runs *before* enablement took; the 14:40 run deployed. No human action remains — it redeploys on
+push to `docs/**`/`tests/**`/`src/AgentRunner/**`; force with `gh workflow run pages.yml`.
 
 **Working rhythm:** one feature branch per increment → QA via `code-reviewer` subagent → push →
 user merges PR (sequential) → I sync `main` + delete the branch. Commit msgs end with the

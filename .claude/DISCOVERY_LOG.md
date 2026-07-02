@@ -39,6 +39,24 @@ orchestrator.
 
 ## Open Entries
 
+## 2026-07-02 - claude/lot-b-quality-signals (RIG-TV adoption) - runner / analytics
+
+**Observation**: In `RunAnalytics.Compute` (`src/AgentRunner/RunAnalytics.cs`), selector-drift
+groups are keyed by `oldT + "" + newT` — an **empty** separator between the two targets. So
+`("ab","cd")` and `("a","bcd")` both yield the key `"abcd"` and get merged into one
+`SelectorDriftGroup`: `Count` is over-counted and `OldTarget`/`NewTarget` reflect whichever pair
+was seen first. The `+ "" +` betrays a forgotten separator.
+
+**Why it matters**: `--analytics` selector-drift stats can silently conflate distinct drifts,
+misleading whoever (human or agent) reads the drift report.
+
+**Suggestion**: use an unambiguous separator (`'\0'` or `'|'`) or a `ValueTuple<string,string>`
+dictionary key; add a test with two colliding pairs. Small, isolated.
+
+**Status**: `OPEN` — pre-existing (NOT introduced by the P3 RIG-TV work); surfaced by the Lot B QA
+panel and deliberately left untouched (out of that scope), only reported. See `improvement-plan.md`
+§P3 "Lot B — QA round".
+
 ## 2026-06-05 - claude/capture-foreground - automation
 
 **Observation**: Found by the first real third-party-app test (the OSS `dotnet-winforms-examples`

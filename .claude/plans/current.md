@@ -5,6 +5,13 @@ source of truth remains `docs/roadmap.md`; keep this file focused on near-term
 parallel work. For the **engineering-health backlog** (debt, doc-drift, proof
 gaps, the 1.0 tag) see the companion **`.claude/plans/improvement-plan.md`**.
 
+> 👉 **New agent starting cold? Read `.claude/plans/handoff.md` first.** It is a
+> *measured* snapshot (2026-07-29, `main` = `e265d72`, `v1.0.0` tagged, 389 passing /
+> 3 gated) with a ranked, ready-to-execute list — including one **confirmed unfixed bug**
+> (`RunAnalytics.cs:107`) and an environment gotcha that breaks the documented
+> `dotnet test <solution>` command. The snapshot below is older; where they disagree,
+> re-measure.
+
 ## RESUME SNAPSHOT — 2026-07-02 (read this first)
 
 **`main` HEAD = `cc05bf0`** (plan P4 note; on top of the RIG-TV idea-adoption merges
